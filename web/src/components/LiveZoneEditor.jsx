@@ -50,6 +50,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(true);
   const [objectLabel, setObjectLabel] = useState(trackedObjects[0] || 'person');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -243,34 +244,133 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   const hitRadiusX = Math.max(visibleRadius + 1, 18 * width / Math.max(1, svgPixelSize.width));
   const hitRadiusY = Math.max(visibleRadius + 1, 18 * height / Math.max(1, svgPixelSize.height));
 
+  const areaGroups = [
+    { key: 'zone:', title: 'Zonen', color: '#22c55e' },
+    { key: 'motion:', title: 'Bewegungsmasken', color: '#ef4444' },
+    { key: 'object:', title: 'Objektmasken', color: '#3b82f6' },
+  ];
+
+  const toolButtonClass = 'inline-flex w-auto items-center justify-center rounded-md border px-2.5 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40';
+  const secondaryButtonClass = toolButtonClass + ' border-slate-300 bg-white text-slate-800 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-700';
+
   return (
-    <div className="mt-2">
-      <div className="flex flex-wrap items-center gap-2 mb-2 text-sm">
-        <button type="button" className="rounded bg-green-700 text-white px-3 py-2" onClick={addZone} disabled={busy}>+ Zone</button>
-        <button type="button" className="rounded bg-red-700 text-white px-3 py-2" onClick={addMotionMask} disabled={busy}>+ Motion-Maske</button>
-        <select className="rounded dark:bg-gray-800" aria-label="Objektklasse" value={objectLabel} onChange={(e) => setObjectLabel(e.target.value)}>
-          {[...new Set([objectLabel, ...trackedObjects, ...Object.keys(data.object_masks)])].map((item) => <option key={item} value={item}>{item}</option>)}
-        </select>
-        <button type="button" className="rounded bg-blue-700 text-white px-3 py-2" onClick={addObjectMask} disabled={busy}>+ Objektmaske</button>
-        <button type="button" className="rounded bg-slate-700 text-white px-3 py-2" onClick={removeSelected} disabled={!selected || busy}>Bereich löschen</button>
-        <button type="button" className="rounded bg-slate-700 text-white px-3 py-2" onClick={() => setSelected(null)} disabled={!selected || busy}>Bearbeitung beenden</button>
-        <button type="button" className="rounded bg-slate-700 text-white px-3 py-2" onClick={load} disabled={busy}>Verwerfen</button>
-        <button type="button" className="rounded bg-green-800 text-white px-3 py-2" onClick={save} disabled={busy || !revision || !isDirty || !!invalidShape}>Speichern</button>
-        <button type="button" className="rounded px-3 py-2 border" onClick={handleClose}>Editor schließen</button>
-      </div>
-      <p className="text-xs mb-2">Bereich auswählen oder erneut anklicken, um ihn abzuwählen. Klicks ins Bild ergänzen Punkte zum gewählten Bereich – auch innerhalb anderer Zonen. Eckpunkte ziehen; Rechtsklick auf einen Eckpunkt entfernt ihn. Änderungen werden erst mit Speichern übernommen.</p>
-      <div className="flex flex-wrap gap-2 mb-2">
-        {shapes.map((shape) => (
-          <button key={shape.id} type="button" onClick={() => setSelected((current) => current === shape.id ? null : shape.id)}
-            className={selected === shape.id ? 'px-2 py-1 rounded border ring-2 ring-blue-500' : 'px-2 py-1 rounded border'}
-            style={{ borderColor: shape.color }}>{shape.label}</button>
-        ))}
-      </div>
-      {invalidShape && <p role="status" className="text-amber-500">
-        {invalidShape.label}: Mindestens 3 nicht auf einer Linie liegende Eckpunkte erforderlich, bevor gespeichert werden kann.
-      </p>}
-      {error && <p role="alert" className="text-red-500 whitespace-pre-wrap">{error}</p>}
-      {status && <p role="status" className="text-green-500">{status}</p>}
+    <div className="mt-2 w-full">
+      <div className="flex flex-col items-start gap-4 xl:flex-row">
+        <aside
+          aria-label="Werkzeuge und Bereiche"
+          className="order-first w-full shrink-0 rounded-lg border border-slate-300 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800 xl:order-last xl:w-72"
+        >
+          <button
+            type="button"
+            aria-controls="live-polygon-tools"
+            aria-expanded={mobileMenuOpen}
+            className="flex w-full items-center justify-between gap-2 text-left text-sm font-semibold xl:hidden"
+            onClick={() => setMobileMenuOpen((open) => !open)}
+          >
+            <span>Bearbeitungsmenü {selected ? '· Bereich ausgewählt' : ''}</span>
+            <span aria-hidden="true">{mobileMenuOpen ? '▲' : '▼'}</span>
+          </button>
+          <div
+            id="live-polygon-tools"
+            className={mobileMenuOpen ? 'mt-3 space-y-3 xl:mt-0' : 'hidden xl:block xl:space-y-3'}
+          >
+            <section aria-label="Neuen Bereich erstellen" className="space-y-2">
+              <h3 className="text-sm font-semibold">Neuen Bereich erstellen</h3>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" className={secondaryButtonClass} onClick={addZone} disabled={busy}>+ Zone</button>
+                <button type="button" className={secondaryButtonClass} onClick={addMotionMask} disabled={busy}>+ Motion-Maske</button>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  className="min-w-0 flex-1 rounded border-slate-300 bg-white py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900"
+                  aria-label="Objektklasse"
+                  value={objectLabel}
+                  onChange={(e) => setObjectLabel(e.target.value)}
+                >
+                  {[...new Set([objectLabel, ...trackedObjects, ...Object.keys(data.object_masks)])].map((item) => (
+                    <option key={item} value={item}>{item}</option>
+                  ))}
+                </select>
+                <button type="button" className={secondaryButtonClass} onClick={addObjectMask} disabled={busy}>+ Objektmaske</button>
+              </div>
+            </section>
+
+            <section aria-label="Vorhandene Bereiche" className="space-y-2 border-t border-slate-300 pt-3 dark:border-slate-600">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-sm font-semibold">Vorhandene Bereiche</h3>
+                <span className="text-xs text-slate-500 dark:text-slate-400">{shapes.length}</span>
+              </div>
+              <div className="max-h-64 space-y-3 overflow-y-auto pr-1">
+                {areaGroups.map((group) => {
+                  const groupShapes = shapes.filter((shape) => shape.id.startsWith(group.key));
+                  return (
+                    <div key={group.key} className="space-y-1.5">
+                      <h4 className="flex items-center gap-2 text-xs font-semibold">
+                        <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: group.color }} />
+                        {group.title} ({groupShapes.length})
+                      </h4>
+                      {groupShapes.length ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {groupShapes.map((shape) => (
+                            <button
+                              key={shape.id}
+                              type="button"
+                              aria-pressed={selected === shape.id}
+                              title={shape.label}
+                              onClick={() => setSelected((current) => current === shape.id ? null : shape.id)}
+                              className={selected === shape.id
+                                ? 'inline-flex w-auto max-w-full items-center rounded border border-blue-500 bg-blue-600 px-2 py-1 text-xs font-semibold text-white ring-1 ring-blue-400'
+                                : 'inline-flex w-auto max-w-full items-center rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-800 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-700'}
+                            >
+                              <span className="break-all">{selected === shape.id ? '✓ ' : ''}{shape.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Keine</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section aria-label="Bearbeitung" className="space-y-2 border-t border-slate-300 pt-3 dark:border-slate-600">
+              <h3 className="text-sm font-semibold">Bearbeitung</h3>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" className={secondaryButtonClass} onClick={() => setSelected(null)} disabled={!selected || busy}>Bearbeitung beenden</button>
+                <button type="button" className={toolButtonClass + ' border-red-600 text-red-700 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-950'} onClick={removeSelected} disabled={!selected || busy}>Bereich löschen</button>
+              </div>
+              <div className="flex flex-wrap gap-2 border-t border-slate-300 pt-3 dark:border-slate-600">
+                <button type="button" className={secondaryButtonClass} onClick={load} disabled={busy}>Verwerfen</button>
+                <button type="button" className={toolButtonClass + ' border-green-700 bg-green-700 text-white hover:bg-green-600'} onClick={save} disabled={busy || !revision || !isDirty || !!invalidShape}>Speichern</button>
+                <button type="button" className={secondaryButtonClass} onClick={handleClose}>Editor schließen</button>
+              </div>
+            </section>
+          </div>
+        </aside>
+
+        <div className="order-last w-full min-w-0 flex-1 xl:order-first">
+          {invalidShape && (
+            <p role="alert" className="mb-3 text-sm text-amber-600 dark:text-amber-400">
+              {invalidShape.label}: Mindestens 3 nicht auf einer Linie liegende Eckpunkte erforderlich, bevor gespeichert werden kann.
+            </p>
+          )}
+          {error && <p role="alert" className="mb-3 whitespace-pre-wrap text-sm text-red-600 dark:text-red-400">{error}</p>}
+          {status && status !== 'Nicht gespeicherte Änderungen' && !isDirty && (
+            <p role="status" className="mb-3 text-sm text-green-700 dark:text-green-400">{status}</p>
+          )}
+          {isDirty && (
+            <div role="status" className="mb-4">
+              <span className="inline-flex items-center gap-2 rounded-md bg-slate-700 px-3 py-2 text-lg font-bold text-white">
+                <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m10.29 3.86-8.12 14a2 2 0 0 0 1.71 3h16.24a2 2 0 0 0 1.71-3l-8.12-14a2 2 0 0 0-3.42 0Z" />
+                  <path d="M12 9v4M12 17h.01" />
+                </svg>
+                Nicht gespeicherte Änderungen
+              </span>
+            </div>
+          )}
       <div className="relative" style={{ width: (displayWidth || width) + 'px', maxWidth: '100%', aspectRatio: width + ' / ' + height }}>
         {children}
         <svg ref={svgRef} viewBox={'0 0 ' + width + ' ' + height} preserveAspectRatio="none"
@@ -322,6 +422,8 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
             </g>
           ))}
         </svg>
+      </div>
+        </div>
       </div>
     </div>
   );
