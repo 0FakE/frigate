@@ -5,7 +5,6 @@ import JSMpegPlayer from '../components/JSMpegPlayer';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import Heading from '../components/Heading';
-import Link from '../components/Link';
 import SettingsIcon from '../icons/Settings';
 import Switch from '../components/Switch';
 import ButtonsTabbed from '../components/ButtonsTabbed';
@@ -28,6 +27,7 @@ export default function Camera({ camera }) {
   const [showSettings, setShowSettings] = useState(false);
   const [viewMode, setViewMode] = useState('live');
   const [editLivePolygons, setEditLivePolygons] = useState(false);
+  const [editorDirty, setEditorDirty] = useState(false);
 
   const cameraConfig = config?.cameras[camera];
   const restreamEnabled =
@@ -64,6 +64,23 @@ export default function Camera({ camera }) {
   const handleToggleSettings = useCallback(() => {
     setShowSettings(!showSettings);
   }, [showSettings, setShowSettings]);
+
+  const handleChangeViewMode = useCallback(
+    (nextMode) => {
+      if (nextMode === viewMode) return;
+      if (editLivePolygons && editorDirty && !window.confirm('Ungespeicherte Änderungen verwerfen?')) return;
+      setEditLivePolygons(false);
+      setEditorDirty(false);
+      setViewMode(nextMode);
+    },
+    [viewMode, editLivePolygons, editorDirty]
+  );
+
+  const handleToggleEditor = useCallback(() => {
+    if (editLivePolygons && editorDirty && !window.confirm('Ungespeicherte Änderungen verwerfen?')) return;
+    setEditLivePolygons((current) => !current);
+    setEditorDirty(false);
+  }, [editLivePolygons, editorDirty]);
 
   if (!cameraConfig || !sourceIsLoaded) {
     return <ActivityIndicator />;
@@ -111,26 +128,19 @@ export default function Camera({ camera }) {
         label="Regions"
         labelPosition="after"
       />
-      <Link href={`/cameras/${camera}/editor`}>Mask & Zone creator</Link>
+      <button
+        type="button"
+        className="rounded bg-slate-700 text-white px-3 py-2"
+        onClick={handleToggleEditor}
+      >
+        {editLivePolygons ? 'Editor schließen' : 'Zonen & Masken bearbeiten'}
+      </button>
     </div>
   ) : null;
 
   let player;
   if (viewMode === 'live') {
-    if (editLivePolygons) {
-      player = (
-        <LiveZoneEditor
-          camera={camera}
-          width={cameraConfig.detect.width}
-          height={cameraConfig.detect.height}
-          displayWidth={jsmpegWidth}
-          trackedObjects={cameraConfig.objects?.track || []}
-          onClose={() => setEditLivePolygons(false)}
-        >
-          <JSMpegPlayer camera={camera} width={jsmpegWidth} height={cameraConfig.live.height} />
-        </LiveZoneEditor>
-      );
-    } else if (viewSource == 'mse' && restreamEnabled) {
+    if (viewSource == 'mse' && restreamEnabled) {
       if ('MediaSource' in window || 'ManagedMediaSource' in window) {
         player = (
           <Fragment>
@@ -173,9 +183,26 @@ export default function Camera({ camera }) {
   } else if (viewMode === 'debug') {
     player = (
       <Fragment>
-        <div>
-          <AutoUpdatingCameraImage camera={camera} searchParams={searchParams} />
-        </div>
+        {editLivePolygons ? (
+          <LiveZoneEditor
+            camera={camera}
+            width={cameraConfig.detect.width}
+            height={cameraConfig.detect.height}
+            displayWidth={jsmpegWidth}
+            trackedObjects={cameraConfig.objects?.track || []}
+            onClose={() => {
+              setEditLivePolygons(false);
+              setEditorDirty(false);
+            }}
+            onDirtyChange={setEditorDirty}
+          >
+            <JSMpegPlayer camera={camera} width={jsmpegWidth} height={cameraConfig.live.height} />
+          </LiveZoneEditor>
+        ) : (
+          <div>
+            <AutoUpdatingCameraImage camera={camera} searchParams={searchParams} />
+          </div>
+        )}
 
         <Button onClick={handleToggleSettings} type="text">
           <span className="w-5 h-5">
@@ -207,13 +234,7 @@ export default function Camera({ camera }) {
         </select>
       </div>
 
-      <ButtonsTabbed viewModes={['live', 'debug']} currentViewMode={viewMode} setViewMode={setViewMode} />
-      {viewMode === 'live' && (
-        <button type="button" className="rounded bg-slate-700 text-white px-3 py-2"
-          onClick={() => setEditLivePolygons((value) => !value)}>
-          {editLivePolygons ? 'Editor schließen' : 'Zonen & Masken bearbeiten'}
-        </button>
-      )}
+      <ButtonsTabbed viewModes={['live', 'debug']} currentViewMode={viewMode} setViewMode={handleChangeViewMode} />
 
       {player}
 
