@@ -9,6 +9,7 @@ on:
       - 'web/**'
       - 'frigate/http.py'
       - 'frigate/util/live_polygon_editor.py'
+      - 'frigate/util/editor_locale.py'
       - '.github/workflows/live-editor-image.yml'
   workflow_dispatch:
 
