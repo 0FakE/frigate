@@ -66,6 +66,23 @@ class TestLivePolygonEditor(unittest.TestCase):
         changed = update_polygons(BASE, "driveway", data, 640, 360)
         self.assertEqual(list(read_polygons(changed, "driveway")["zones"]), ["new_zone"])
 
+    def test_reject_collinear_polygon(self):
+        data = read_polygons(BASE, "driveway")
+        data["zones"]["front"] = [[10, 10], [20, 20], [30, 30]]
+        with self.assertRaisesRegex(ValueError, "non-zero area"):
+            update_polygons(BASE, "driveway", data, 640, 360)
+
+    def test_no_extra_empty_sections(self):
+        minimal = """cameras:
+  driveway:
+    detect:
+      width: 640
+      height: 360
+"""
+        data = read_polygons(minimal, "driveway")
+        self.assertEqual(update_polygons(minimal, "driveway", data, 640, 360), minimal)
+
+
 
 if __name__ == "__main__":
     unittest.main()
