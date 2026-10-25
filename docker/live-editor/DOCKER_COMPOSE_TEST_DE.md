@@ -90,7 +90,7 @@ Keinesfalls `docker compose down -v` ausführen: Das würde benannte Volumes lö
 In derselben Weboberfläche wie bisher die Kamera öffnen:
 
 1. In den Tab **Debug** wechseln.
-2. Im **Debug**-Tab auf **Zonen & Masken bearbeiten** klicken. Der Button steht nun **direkt neben Show/Hide Options** und ist unabhängig vom Aufklappen der Checkboxen sichtbar. Der normale Tab **Live** enthält keinen Editor-Button mehr. Beim Editieren wird bewusst **JSMpeg** verwendet.
+2. Im **Debug**-Tab auf **Zonen & Masken Editor** klicken. Der Button steht nun **direkt neben Show/Hide Options** und ist unabhängig vom Aufklappen der Checkboxen sichtbar. Der normale Tab **Live** enthält keinen Editor-Button mehr. Beim Editieren wird bewusst **JSMpeg** verwendet.
 3. Zuerst nur eine neue, nicht störende Testzone zeichnen.
 4. Drei oder mehr Eckpunkte setzen, Polygon auswählen/verschieben und **Speichern**.
 5. Kontrollieren, dass `config.yml` auf dem Host die neue `cameras.<kamera>.zones.<name>.coordinates` enthält. Bei einem Fehlschlag **nicht** weitermachen, sondern Logs ansehen.
@@ -104,8 +104,8 @@ docker compose -f docker-compose.yml -f docker-compose.live-editor.yml \
 Prüfe zusätzlich: Zonenwahl, Eckpunktverschiebung mit vergrößerter unsichtbarer Trefferfläche, Löschen über **Bereich löschen** (nur bei Auswahl aktiviert), Abwahl über **Bearbeitung beenden** ohne Speichern, Überlappung verschiedener Zonen bei Punkterstellung, Rücksetzen („Verwerfen“), korrekte Koordinaten bei unterschiedlichen Fensterbreiten, bestehende Masken und Speicherhinweise.
 
 **Neue Oberfläche prüfen:**
-- Im Tab **Debug** stehen die Buttons **Show/Hide Options** und **Zonen & Masken bearbeiten** direkt nebeneinander, beide mit **40 px Höhe**; auf kleinen Bildschirmen dürfen sie umbrechen. Im aufgeklappten Optionsbereich befinden sich nur die sechs Checkboxen.
-- Auf großen Bildschirmen steht rechts vom Videobild ein **330 px** breites Werkzeugmenü mit `Neuer Bereich erstellen`, `Vorhandene Bereiche (Anzahl)` und `Ausgewählter Bereich`. Neue Buttons heißen `+ Zone`, `+ Maske` und `+ Objektfilter`. Die bestehenden Gruppen heißen `Zonen`, `Abgedeckte Bereiche` und `Objektfilter`. Die Einträge heißen z. B. `Einfahrt`, `Maske 1` oder `person 1`, **ohne Haken** oder Präfix. Gruppenüberschriften, Auswahlbuttons und `Keine` sind **14 px** groß; das Objektklassen-Auswahlfeld ist etwa **145 px** breit.
+- Im Tab **Debug** stehen die Buttons **Show/Hide Options** und **Zonen & Masken Editor** direkt nebeneinander, beide mit **40 px Höhe**; auf kleinen Bildschirmen dürfen sie umbrechen. Im aufgeklappten Optionsbereich befinden sich nur die sechs Checkboxen.
+- Auf großen Bildschirmen steht rechts vom Videobild ein **330 px** breites Werkzeugmenü mit `Neuen Bereich erstellen`, `Vorhandene Bereiche (Anzahl)` und `Ausgewählter Bereich`. Neue Buttons heißen `+ Zone`, `+ Maske` und `+ Objektfilter`. Die bestehenden Gruppen heißen `Zonen`, `Abgedeckte Bereiche` und `Objektfilter`. Die Einträge heißen z. B. `Einfahrt`, `Maske 1` oder `person 1`, **ohne Haken** oder Präfix. Gruppenüberschriften, Auswahlbuttons und `Keine` sind **14 px** groß; das Objektklassen-Auswahlfeld ist etwa **145 px** breit.
 - Auf kleineren Bildschirmen wird das Menü **oberhalb** des Videobilds angezeigt und bleibt **immer vollständig sichtbar**, ohne Ein- oder Ausklappknopf. Alle Buttons, Auswahllisten und Speicheraktionen prüfen.
 - Nach einem **erfolgreichen** Klick auf `Speichern` wird die aktive Zonen- oder Maskenauswahl aufgehoben: Die Eckpunktmarkierungen verschwinden, die Polygone bleiben sichtbar. Schlägt das Speichern fehl, bleibt der Bereich ausgewählt. Die Tabs **Live** und **Debug** erscheinen als kompakte Icon-Leiste weiterhin **rechtsbündig**. Ein verweigerter Tab-Wechsel wegen ungespeicherter Änderungen darf die aktive Tab-Markierung nicht verändern.
 - Sobald Polygonänderungen vorliegen, erscheint **direkt über dem Videobild** `Nicht gespeicherte Änderungen` mit weißer, fetter **16-px-Schrift** und weißem Warnsymbol. **Unvollständige Polygone lösen während des Zeichnens keine Warnung aus**: Erst nach einem Klick auf `Speichern` erscheint bei ungültigen Polygonen ein vollständiger gelber Warnsatz; es erfolgt dann kein API-Aufruf. Ungültige und doppelte Zonennamen erzeugen unterschiedliche vollständige rote Fehlersätze, ohne zusätzliche Überschrift. Nach erfolgreichem Speichern erscheint die vollständig **grüne** Meldung `Die Änderungen wurden gespeichert. Ein Neustart von Frigate ist erforderlich.` samt Häkchen und fettem zweiten Satz.
@@ -116,6 +116,54 @@ Prüfe zusätzlich: Zonenwahl, Eckpunktverschiebung mit vergrößerter unsichtba
 - Neue Texte stammen aus `web/src/locales/de.json` mit verschachtelten Schlüsseln wie `cameras.debug.editor.button.mask` oder `cameras.debug.editor.header.existing_areas` und dynamischen Platzhaltern. Eine echte Sprachauswahl bzw. deren persistente Speicherung ist **erst für später vorgesehen**; derzeit bleibt Deutsch der Standard.
 
 **Erwartet:** Beim Speichern legt die API eine `config.yml.live-editor.bak` bzw. `config.yaml.live-editor.bak` an. Die ursprüngliche Sicherheitskopie aus Schritt 2 bleibt separat erhalten.
+
+## Vom Host editierbare deutsche Sprachdatei
+
+Dein Compose-Dienst `frigate-test` verwendet bereits den notwendigen Verzeichnis-Mount:
+
+```yaml
+services:
+  frigate-test:
+    container_name: frigate-test
+    image: ghcr.io/0fake/frigate:0.13.2-live-editor-dev
+    volumes:
+      - ./conf/frigate:/config
+      - ./data/frigate/media:/media/frigate
+```
+
+**Kein zusätzlicher Volume-Mount erforderlich.** Die relative Pfadangabe bezieht sich auf den Speicherort der Compose-Datei. Nach dem ersten Start mit dem neuen Image wird die Datei automatisch angelegt, sofern sie noch nicht existiert:
+
+- Host: `./conf/frigate/lang/de.json`
+- Container: `/config/lang/de.json`
+
+Die eingebauten Vorgaben stehen weiterhin unter `web/src/locales/de.json`. Eine bereits vom Host bearbeitete Datei wird beim Containerstart **niemals überschrieben**. Ihre Einträge können auch nur einzelne Textschlüssel enthalten; fehlende Schlüssel fallen automatisch auf die eingebauten deutschen Standardtexte zurück.
+
+Beispiel der editierbaren Datei:
+
+```json
+{
+  "cameras": {
+    "debug": {
+      "editor": {
+        "button": {
+          "open": "Zonen & Masken Editor"
+        },
+        "header": {
+          "new_area": "Neuen Bereich erstellen"
+        }
+      }
+    }
+  }
+}
+```
+
+1. Die Datei mit einem JSON-fähigen Texteditor auf dem Host ändern und speichern.
+2. **Die vollständige Weboberfläche neu laden** (z. B. Strg+F5); ein Frigate-/Docker-Neustart ist für die Textänderungen nicht erforderlich.
+3. Der Browser lädt die neue Datei über `/api/lang/de` ohne HTTP-Zwischenspeicherung.
+
+Bei fehlerhaftem JSON, einer unlesbaren Datei oder einem API-Fehler erscheint eine verständliche, schließbare Warnung; die integrierten deutschen Texte bleiben verwendbar. Das fehlerhafte Host-Dokument wird **nicht gelöscht oder überschrieben**. Der Container benötigt Schreibrechte auf `./conf/frigate`, damit `lang/de.json` beim ersten Start angelegt werden kann. Eine dauerhafte Sprachauswahl in Frigates Einstellungen ist noch nicht enthalten.
+
+`docker compose pull/up` muss mit dem tatsächlichen Dienstnamen **`frigate-test`** ausgeführt werden (nicht `frigate`, sofern dieser Dienst in deiner Compose-Datei nicht existiert).
 
 ## 7. Rollback auf die bisherige Version
 
