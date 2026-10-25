@@ -35,6 +35,7 @@ from werkzeug.utils import secure_filename
 
 from frigate.config import FrigateConfig
 from frigate.util.live_polygon_editor import read_polygons, update_polygons, revision
+from frigate.util.editor_locale import ensure_default_locale, read_german_locale
 from frigate.const import (
     CACHE_DIR,
     CLIPS_DIR,
@@ -105,6 +106,9 @@ def create_app(
     app.camera_error_image = None
     app.hwaccel_errors = []
 
+    # Create the editable /config/lang/de.json on first startup. A read-only
+    # mount is nonfatal: the browser falls back to bundled translations.
+    ensure_default_locale()
     app.register_blueprint(bp)
 
     return app
@@ -1193,6 +1197,18 @@ def config():
         ] = current_app.frigate_config.model.merged_labelmap
 
     return jsonify(config)
+
+
+@bp.route("/lang/de")
+def language_de():
+    """Return host-editable German strings with a bundled fallback.
+
+    Locale changes are picked up on the next page reload without restarting
+    Frigate. Never cache this endpoint across browser reloads.
+    """
+    response = jsonify(read_german_locale())
+    response.headers["Cache-Control"] = "no-store, max-age=0"
+    return response
 
 
 @bp.route("/config/raw")
