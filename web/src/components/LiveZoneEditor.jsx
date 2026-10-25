@@ -39,6 +39,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   const dragRef = useRef(null);
   const [data, setData] = useState(empty);
   const [revision, setRevision] = useState(null);
+  const [savedSnapshot, setSavedSnapshot] = useState('');
   const [selected, setSelected] = useState(null);
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
@@ -50,7 +51,9 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     setError('');
     try {
       const response = await axios.get('cameras/' + encodeURIComponent(camera) + '/polygons');
-      setData({ zones: response.data.zones, motion_masks: response.data.motion_masks, object_masks: response.data.object_masks });
+      const loaded = { zones: response.data.zones, motion_masks: response.data.motion_masks, object_masks: response.data.object_masks };
+      setData(loaded);
+      setSavedSnapshot(JSON.stringify(loaded));
       setRevision(response.data.revision);
       setSelected(null);
       setStatus('');
@@ -64,7 +67,13 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   useEffect(() => { load(); }, [load]);
 
   const shapes = shapesFrom(data);
-  const selectedShape = shapes.find((item) => item.id === selected);
+  const isDirty = JSON.stringify(data) !== savedSnapshot;
+  const invalidShape = shapes.find(({ points }) =>
+    points.length < 3 || Math.abs(points.reduce((total, point, i) => {
+      const next = points[(i + 1) % points.length];
+      return total + point[0] * next[1] - next[0] * point[1];
+    }, 0)) === 0
+  );
   const eventPoint = (event) => {
     const rect = svgRef.current.getBoundingClientRect();
     return [
@@ -171,12 +180,17 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     try {
       const response = await axios.put('cameras/' + encodeURIComponent(camera) + '/polygons', { revision, ...data });
       setRevision(response.data.revision);
+      setSavedSnapshot(JSON.stringify(data));
       setStatus('In config.yml gespeichert. Neustart zum Aktivieren erforderlich.');
     } catch (e) {
       setError(e.response?.data?.message || e.message);
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleClose = () => {
+    if (!isDirty || window.confirm('Ungespeicherte Änderungen verwerfen?')) onClose();
   };
 
   return (
@@ -190,8 +204,8 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
         <button type="button" className="rounded bg-blue-700 text-white px-3 py-2" onClick={addObjectMask} disabled={busy}>+ Objektmaske</button>
         <button type="button" className="rounded bg-slate-700 text-white px-3 py-2" onClick={removeSelected} disabled={!selected || busy}>Polygon löschen</button>
         <button type="button" className="rounded bg-slate-700 text-white px-3 py-2" onClick={load} disabled={busy}>Verwerfen</button>
-        <button type="button" className="rounded bg-green-800 text-white px-3 py-2" onClick={save} disabled={busy || !revision}>Speichern</button>
-        <button type="button" className="rounded px-3 py-2 border" onClick={onClose}>Editor schließen</button>
+        <button type="button" className="rounded bg-green-800 text-white px-3 py-2" onClick={save} disabled={busy || !revision || !isDirty || !!invalidShape}>Speichern</button>
+        <button type="button" className="rounded px-3 py-2 border" onClick={handleClose}>Editor schließen</button>
       </div>
       <p className="text-xs mb-2">Polygon auswählen, Punkte durch Klick ins Bild ergänzen, Punkte ziehen, Rechtsklick entfernt den Punkt. Bearbeitung erfolgt auf dem JSMpeg-Livestream.</p>
       <div className="flex flex-wrap gap-2 mb-2">
@@ -201,6 +215,9 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
             style={{ borderColor: shape.color }}>{shape.label}</button>
         ))}
       </div>
+      {invalidShape && <p role="status" className="text-amber-500">
+        {invalidShape.label}: Mindestens 3 nicht auf einer Linie liegende Eckpunkte erforderlich, bevor gespeichert werden kann.
+      </p>}
       {error && <p role="alert" className="text-red-500 whitespace-pre-wrap">{error}</p>}
       {status && <p role="status" className="text-green-500">{status}</p>}
       <div className="relative" style={{ width: (displayWidth || width) + 'px', maxWidth: '100%', aspectRatio: width + ' / ' + height }}>
