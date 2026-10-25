@@ -134,12 +134,14 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
 
   const startDrag = (event, id, index) => {
     // Only a primary-button press is a drag. Right-click stays available to remove points.
-    if (event.button !== 0 || busy) return;
+    if ((event.button != null && event.button !== 0) || busy) return;
     event.stopPropagation();
     event.preventDefault();
     suppressNextClickRef.current = true;
     dragRef.current = { id, index, pointerId: event.pointerId };
-    svgRef.current.setPointerCapture(event.pointerId);
+    if (typeof svgRef.current.setPointerCapture === 'function' && event.pointerId != null) {
+      svgRef.current.setPointerCapture(event.pointerId);
+    }
   };
   const moveDrag = (event) => {
     if (!dragRef.current) return;
@@ -279,7 +281,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
           onPointerUp={endDrag}
           onPointerCancel={endDrag}>
           {shapes.map((shape) => (
-            <g key={shape.id} pointerEvents="none">
+            <g key={shape.id} style={{ pointerEvents: 'none' }}>
               {shape.points.length >= 3 && (
                 <polygon
                   points={shape.points.map((p) => p.join(',')).join(' ')}
@@ -302,9 +304,9 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
               {shape.points.map(([x, y], i) => (
                 <g key={i}>
                   <circle cx={x} cy={y} r={visibleRadius} fill="white"
-                    stroke={shape.color} strokeWidth="2" pointerEvents="none" />
+                    stroke={shape.color} strokeWidth="2" style={{ pointerEvents: 'none' }} />
                   <ellipse cx={x} cy={y} rx={hitRadiusX} ry={hitRadiusY}
-                    fill="transparent" pointerEvents="all"
+                    fill="transparent" style={{ pointerEvents: 'all' }}
                     className="cursor-grab"
                     onPointerDown={(e) => startDrag(e, shape.id, i)}
                     onClick={(e) => e.stopPropagation()}
