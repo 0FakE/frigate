@@ -406,20 +406,24 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
         </aside>
 
         <div className="order-last w-full min-w-0 flex-1 xl:order-first">
-          {validationAttempted && invalidShape && (
-            <EditorNotice variant="warning">{t(invalidWarningKey, { name: invalidShape.label })}</EditorNotice>
-          )}
-          {error && <EditorNotice variant="error">{error}</EditorNotice>}
-          {status === 'saved' && !isDirty && (
-            <EditorNotice variant="success">
-              {t('cameras.debug.editor.status.saved')}{' '}
-              <strong>{t('cameras.debug.editor.status.restart_required')}</strong>
-            </EditorNotice>
-          )}
-          {isDirty && (
-            <EditorNotice variant="unsaved">{t('cameras.debug.editor.status.unsaved')}</EditorNotice>
-          )}
-      <div className="relative" style={{ width: (displayWidth || width) + 'px', maxWidth: '100%', aspectRatio: width + ' / ' + height }}>
+          {/* Reserve notice space before any selection or edit. A bounded, scrollable
+              slot keeps the camera image fixed even with multiple long warnings. */}
+          <div data-testid="live-editor-notices" className="mb-4 h-24 overflow-y-auto">
+            {validationAttempted && invalidShape && (
+              <EditorNotice variant="warning">{t(invalidWarningKey, { name: invalidShape.label })}</EditorNotice>
+            )}
+            {error && <EditorNotice variant="error">{error}</EditorNotice>}
+            {status === 'saved' && !isDirty && (
+              <EditorNotice variant="success">
+                {t('cameras.debug.editor.status.saved')}{' '}
+                <strong>{t('cameras.debug.editor.status.restart_required')}</strong>
+              </EditorNotice>
+            )}
+            {(isDirty || selected) && (
+              <EditorNotice variant="unsaved">{t('cameras.debug.editor.status.unsaved')}</EditorNotice>
+            )}
+          </div>
+          <div className="relative" style={{ width: (displayWidth || width) + 'px', maxWidth: '100%', aspectRatio: width + ' / ' + height }}>
         {children}
         {!streamReady && (
           <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-slate-900/80 px-4 text-center text-base font-semibold text-white" role="status">
@@ -475,7 +479,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
             </g>
           ))}
         </svg>
-      </div>
+          </div>
         </div>
       </div>
     </div>
