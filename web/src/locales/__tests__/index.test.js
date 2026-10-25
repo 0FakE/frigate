@@ -6,6 +6,7 @@ describe('nested German camera editor translations', () => {
   test('resolves UI copy by page, view, component and key', () => {
     expect(t('cameras.debug.editor.button.open')).toBe('Zonen & Masken Editor');
     expect(t('cameras.debug.editor.button.close')).toBe('Editor schließen');
+    expect(t('cameras.debug.editor.status.loading_stream')).toBe('Kamera Vorschau wird geladen…');
     expect(t('cameras.debug.editor.button.mask')).toBe('+ Maske');
     expect(t('cameras.debug.editor.button.object_filter')).toBe('+ Objektfilter');
     expect(t('cameras.debug.editor.header.new_area')).toBe('Neuen Bereich erstellen');
