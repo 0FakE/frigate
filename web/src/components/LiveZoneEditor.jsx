@@ -111,8 +111,9 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
 
   useEffect(() => {
     // A draft is not an invalid user action until Save is attempted.
+    // Do not clear errors here: pending effects must not hide a freshly
+    // reported invalid or duplicate name.
     setValidationAttempted(false);
-    setError('');
   }, [data]);
 
   const shapes = shapesFrom(data);
@@ -227,6 +228,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     setData((current) => ({ ...current, motion_masks: [...current.motion_masks, []] }));
     setSelected('motion:' + index);
     setStatus('');
+    setError('');
   };
 
   const addObjectMask = () => {
@@ -242,6 +244,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     }));
     setSelected('object:' + name + ':' + index);
     setStatus('');
+    setError('');
   };
 
   const removeSelected = () => {
