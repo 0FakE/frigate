@@ -5,10 +5,10 @@ import JSMpegPlayer from '../JSMpegPlayer';
 
 vi.mock('@cycjimmy/jsmpeg-player', () => ({
   default: {
-    VideoElement: vi.fn().mockImplementation(() => ({
-      els: { canvas: document.createElement('canvas') },
-      destroy: vi.fn(),
-    })),
+    VideoElement: vi.fn().mockImplementation(function FakeVideoElement() {
+      this.els = { canvas: document.createElement('canvas') };
+      this.destroy = vi.fn();
+    }),
   },
 }));
 
