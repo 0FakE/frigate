@@ -8,13 +8,13 @@ const clone = (value) => JSON.parse(JSON.stringify(value));
 function shapesFrom(data) {
   const shapes = [];
   Object.entries(data.zones).forEach(([name, points]) => {
-    shapes.push({ id: 'zone:' + name, label: 'Zone: ' + name, points, color: '#22c55e' });
+    shapes.push({ id: 'zone:' + name, label: name, points, color: '#22c55e' });
   });
   data.motion_masks.forEach((points, i) => {
-    shapes.push({ id: 'motion:' + i, label: 'Motion-Maske ' + (i + 1), points, color: '#ef4444' });
+    shapes.push({ id: 'motion:' + i, label: 'Maske ' + (i + 1), points, color: '#ef4444' });
   });
   Object.entries(data.object_masks).forEach(([name, masks]) => masks.forEach((points, i) => {
-    shapes.push({ id: 'object:' + name + ':' + i, label: 'Objektmaske: ' + name + ' ' + (i + 1), points, color: '#3b82f6' });
+    shapes.push({ id: 'object:' + name + ':' + i, label: name + ' ' + (i + 1), points, color: '#3b82f6' });
   }));
   return shapes;
 }
@@ -34,6 +34,35 @@ function segmentDistance(p, a, b) {
   return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy);
 }
 
+// Keep the icon and every part of a message the same color.
+function EditorNotice({ variant, children }) {
+  const styles = {
+    unsaved: 'font-bold text-white',
+    success: 'text-green-400',
+    warning: 'text-yellow-300',
+    error: 'text-red-400',
+  };
+  const alert = variant === 'error' || variant === 'warning';
+
+  return (
+    <div role={alert ? 'alert' : 'status'} className="mb-4">
+      <span className={'inline-flex max-w-full items-start gap-2 rounded-md bg-slate-700 px-3 py-2 text-base ' + styles[variant]}>
+        <svg aria-hidden="true" className="mt-0.5 h-[22px] w-[22px] shrink-0" viewBox="0 0 24 24"
+          fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          {variant === 'success' ? (
+            <><circle cx="12" cy="12" r="10" /><path d="m8 12 3 3 5-6" /></>
+          ) : variant === 'error' ? (
+            <><circle cx="12" cy="12" r="10" /><path d="m9 9 6 6M15 9l-6 6" /></>
+          ) : (
+            <><path d="m10.29 3.86-8.12 14a2 2 0 0 0 1.71 3h16.24a2 2 0 0 0 1.71-3l-8.12-14a2 2 0 0 0-3.42 0Z" /><path d="M12 9v4M12 17h.01" /></>
+          )}
+        </svg>
+        <span className="min-w-0 whitespace-pre-wrap break-words">{children}</span>
+      </span>
+    </div>
+  );
+}
+
 export default function LiveZoneEditor({ camera, width, height, displayWidth, trackedObjects = [], onClose, onDirtyChange, children }) {
   const svgRef = useRef(null);
   const dragRef = useRef(null);
@@ -50,7 +79,6 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(true);
   const [objectLabel, setObjectLabel] = useState(trackedObjects[0] || 'person');
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -227,7 +255,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
       const response = await axios.put('cameras/' + encodeURIComponent(camera) + '/polygons', { revision, ...data });
       setRevision(response.data.revision);
       setSavedSnapshot(JSON.stringify(data));
-      setStatus('In config.yml gespeichert. Neustart zum Aktivieren erforderlich.');
+      setStatus('Die Änderungen wurden gespeichert. Ein Neustart von Frigate ist erforderlich.');
     } catch (e) {
       setError(e.response?.data?.message || e.message);
     } finally {
@@ -258,22 +286,10 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
       <div className="flex flex-col items-start gap-4 xl:flex-row">
         <aside
           aria-label="Werkzeuge und Bereiche"
-          className="order-first w-full shrink-0 rounded-lg border border-slate-300 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800 xl:order-last xl:w-72"
+          className="order-first w-full shrink-0 rounded-lg border border-slate-300 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800 xl:order-last xl:w-[330px]"
         >
-          <button
-            type="button"
-            aria-controls="live-polygon-tools"
-            aria-expanded={mobileMenuOpen}
-            className="flex w-full items-center justify-between gap-2 text-left text-sm font-semibold xl:hidden"
-            onClick={() => setMobileMenuOpen((open) => !open)}
-          >
-            <span>Bearbeitungsmenü {selected ? '· Bereich ausgewählt' : ''}</span>
-            <span aria-hidden="true">{mobileMenuOpen ? '▲' : '▼'}</span>
-          </button>
-          <div
-            id="live-polygon-tools"
-            className={mobileMenuOpen ? 'mt-3 space-y-3 xl:mt-0' : 'hidden xl:block xl:space-y-3'}
-          >
+          <h2 className="mb-3 text-sm font-semibold xl:hidden">Bearbeitungsmenü</h2>
+          <div id="live-polygon-tools" className="space-y-3">
             <section aria-label="Neuen Bereich erstellen" className="space-y-2">
               <h3 className="text-sm font-semibold">Neuen Bereich erstellen</h3>
               <div className="flex flex-wrap gap-2">
@@ -335,8 +351,8 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
               </div>
             </section>
 
-            <section aria-label="Bearbeitung" className="space-y-2 border-t border-slate-300 pt-3 dark:border-slate-600">
-              <h3 className="text-sm font-semibold">Bearbeitung</h3>
+            <section aria-label="Ausgewählter Bereich" className="space-y-2 border-t border-slate-300 pt-3 dark:border-slate-600">
+              <h3 className="text-sm font-semibold">Ausgewählter Bereich</h3>
               <div className="flex flex-wrap gap-2">
                 <button type="button" className={secondaryButtonClass} onClick={() => setSelected(null)} disabled={!selected || busy}>Bearbeitung beenden</button>
                 <button type="button" className={toolButtonClass + ' border-red-600 text-red-700 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-950'} onClick={removeSelected} disabled={!selected || busy}>Bereich löschen</button>
@@ -352,24 +368,24 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
 
         <div className="order-last w-full min-w-0 flex-1 xl:order-first">
           {invalidShape && (
-            <p role="alert" className="mb-3 text-sm text-amber-600 dark:text-amber-400">
+            <EditorNotice variant="warning">
               {invalidShape.label}: Mindestens 3 nicht auf einer Linie liegende Eckpunkte erforderlich, bevor gespeichert werden kann.
-            </p>
+            </EditorNotice>
           )}
-          {error && <p role="alert" className="mb-3 whitespace-pre-wrap text-sm text-red-600 dark:text-red-400">{error}</p>}
-          {status && status !== 'Nicht gespeicherte Änderungen' && !isDirty && (
-            <p role="status" className="mb-3 text-sm text-green-700 dark:text-green-400">{status}</p>
+          {error && <EditorNotice variant="error">{error}</EditorNotice>}
+          {status && status !== 'Nicht gespeicherte Änderungen' && (
+            status === 'Die Änderungen wurden gespeichert. Ein Neustart von Frigate ist erforderlich.' ? (
+              !isDirty && (
+                <EditorNotice variant="success">
+                  Die Änderungen wurden gespeichert. <strong>Ein Neustart von Frigate ist erforderlich.</strong>
+                </EditorNotice>
+              )
+            ) : (
+              <EditorNotice variant="warning">{status}</EditorNotice>
+            )
           )}
           {isDirty && (
-            <div role="status" className="mb-4">
-              <span className="inline-flex items-center gap-2 rounded-md bg-slate-700 px-3 py-2 text-lg font-bold text-white">
-                <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m10.29 3.86-8.12 14a2 2 0 0 0 1.71 3h16.24a2 2 0 0 0 1.71-3l-8.12-14a2 2 0 0 0-3.42 0Z" />
-                  <path d="M12 9v4M12 17h.01" />
-                </svg>
-                Nicht gespeicherte Änderungen
-              </span>
-            </div>
+            <EditorNotice variant="unsaved">Nicht gespeicherte Änderungen</EditorNotice>
           )}
       <div className="relative" style={{ width: (displayWidth || width) + 'px', maxWidth: '100%', aspectRatio: width + ' / ' + height }}>
         {children}
