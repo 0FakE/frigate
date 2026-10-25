@@ -9,10 +9,7 @@ import Button from '../components/Button';
 import { editor, Uri } from 'monaco-editor';
 import { setDiagnosticsOptions } from 'monaco-yaml';
 import copy from 'copy-to-clipboard';
-
-// A Monaco model can outlive its route. Remember its last synchronized disk
-// contents so that a newer config.yml does not erase unsaved local edits.
-const syncedModelContents = new WeakMap();
+import { setSyncedConfigContents, syncConfigModel } from '../utils/configModelSync';
 
 export default function Config() {
   const apiHost = useApiHost();
@@ -34,7 +31,7 @@ export default function Config() {
       .then((response) => {
         if (response.status === 200) {
           const model = window.editor?.getModel();
-          if (model) syncedModelContents.set(model, submittedConfig);
+          if (model) setSyncedConfigContents(model, submittedConfig);
           updateRawConfig(submittedConfig, false);
           setError('');
           setSuccess(response.data.message);
@@ -64,17 +61,9 @@ export default function Config() {
     let yamlModel = editor.getModel(modelUri);
     if (!yamlModel) {
       yamlModel = editor.createModel(config, 'yaml', modelUri);
-      syncedModelContents.set(yamlModel, config);
+      setSyncedConfigContents(yamlModel, config);
     } else {
-      if (!syncedModelContents.has(yamlModel)) {
-        syncedModelContents.set(yamlModel, yamlModel.getValue());
-      }
-      const baseline = syncedModelContents.get(yamlModel);
-      if (yamlModel.getValue() === baseline && baseline !== config) {
-        // Only replace a clean model. Keep user-entered unsaved YAML intact.
-        yamlModel.setValue(config);
-        syncedModelContents.set(yamlModel, config);
-      }
+      syncConfigModel(yamlModel, config);
     }
 
     if (container.children.length > 0) return;
