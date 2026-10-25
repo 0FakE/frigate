@@ -90,7 +90,7 @@ Keinesfalls `docker compose down -v` ausführen: Das würde benannte Volumes lö
 In derselben Weboberfläche wie bisher die Kamera öffnen:
 
 1. In den Tab **Debug** wechseln.
-2. Unter dem Kamerabild **Show Options** anklicken und **Zonen & Masken bearbeiten** wählen. Der normale Tab **Live** enthält keinen Editor-Button mehr. Beim Editieren wird bewusst **JSMpeg** verwendet.
+2. Im **Debug**-Tab auf **Zonen & Masken bearbeiten** klicken. Der Button steht nun **direkt neben Show/Hide Options** und ist unabhängig vom Aufklappen der Checkboxen sichtbar. Der normale Tab **Live** enthält keinen Editor-Button mehr. Beim Editieren wird bewusst **JSMpeg** verwendet.
 3. Zuerst nur eine neue, nicht störende Testzone zeichnen.
 4. Drei oder mehr Eckpunkte setzen, Polygon auswählen/verschieben und **Speichern**.
 5. Kontrollieren, dass `config.yml` auf dem Host die neue `cameras.<kamera>.zones.<name>.coordinates` enthält. Bei einem Fehlschlag **nicht** weitermachen, sondern Logs ansehen.
@@ -104,9 +104,10 @@ docker compose -f docker-compose.yml -f docker-compose.live-editor.yml \
 Prüfe zusätzlich: Zonenwahl, Eckpunktverschiebung mit vergrößerter unsichtbarer Trefferfläche, Löschen über **Bereich löschen** (nur bei Auswahl aktiviert), Abwahl über **Bearbeitung beenden** ohne Speichern, Überlappung verschiedener Zonen bei Punkterstellung, Rücksetzen („Verwerfen“), korrekte Koordinaten bei unterschiedlichen Fensterbreiten, bestehende Masken und Speicherhinweise.
 
 **Neue Oberfläche prüfen:**
-- Im Tab `Debug → Show Options` stehen zuerst alle sechs Checkboxen; danach folgt eine durchgehende horizontale Trennlinie, dann in einer eigenen Zeile der kompakte Button `Zonen & Masken bearbeiten`.
-- Auf großen Bildschirmen steht rechts vom Videobild ein **330 px** breites Werkzeugmenü mit den Gruppen `Neuen Bereich erstellen`, `Vorhandene Bereiche` (Zonen, Bewegungsmasken, Objektmasken) und `Ausgewählter Bereich`. Die Bereichsschaltflächen zeigen nur den Namen (etwa `Einfahrt`, `Maske 1`, `person 1`), keine redundanten Präfixe. Das Videobild bleibt links.
+- Im Tab **Debug** stehen die Buttons **Show/Hide Options** und **Zonen & Masken bearbeiten** direkt nebeneinander; auf kleinen Bildschirmen dürfen sie umbrechen. Im aufgeklappten Optionsbereich befinden sich nur die sechs Checkboxen, ohne separaten Editor-Button oder die frühere Trennlinie.
+- Auf großen Bildschirmen steht rechts vom Videobild ein **330 px** breites Werkzeugmenü mit den Gruppen `Neuen Bereich erstellen`, `Vorhandene Bereiche` (Zonen, Bewegungsmasken, Objektmasken) und `Ausgewählter Bereich`. Die Bereichsschaltflächen zeigen nur den Namen (etwa `Einfahrt`, `Maske 1`, `person 1`), keine redundanten Präfixe. Gruppenüberschriften und Bereichsbuttons sind mit **14 px** etwas größer. Das Videobild bleibt links.
 - Auf kleineren Bildschirmen wird das Menü **oberhalb** des Videobilds angezeigt und bleibt **immer vollständig sichtbar**, ohne Ein- oder Ausklappknopf. Alle Buttons, Auswahllisten und Speicheraktionen prüfen.
+- Nach einem **erfolgreichen** Klick auf `Speichern` wird die aktive Zonen- oder Maskenauswahl aufgehoben: Die Eckpunktmarkierungen verschwinden, die Polygone bleiben sichtbar. Schlägt das Speichern fehl, bleibt der Bereich ausgewählt. Die Tabs **Live** und **Debug** erscheinen als kompakte Icon-Leiste weiterhin **rechtsbündig**. Ein verweigerter Tab-Wechsel wegen ungespeicherter Änderungen darf die aktive Tab-Markierung nicht verändern.
 - Sobald Polygonänderungen vorliegen, erscheint **direkt über dem Videobild** der Text `Nicht gespeicherte Änderungen` mit weißer, fetter **16-px-Schrift**, weißem Warnsymbol und 16 px Abstand zum Videobild. Warnungen haben gelben Text und gelbes Warnsymbol, Fehler roten Text und rotes Fehlersymbol. Nach erfolgreichem Speichern erscheint im selben dunkelgrauen Element eine vollständig **grüne** Meldung samt grünem Häkchen: `Die Änderungen wurden gespeichert. Ein Neustart von Frigate ist erforderlich.` Der gesamte zweite Satz ist fett. Nach erneutem Bearbeiten erscheint wieder der weiße Warnhinweis; `Verwerfen` entfernt ihn.
 - Der frühere lange Hilfetext wird nicht mehr angezeigt. Das Modal nach **Restart Frigate** sollte über dem Editor erscheinen. Beim Wechsel zu **Live** mit ungespeicherten Änderungen sollte eine Warnung erscheinen.
 
