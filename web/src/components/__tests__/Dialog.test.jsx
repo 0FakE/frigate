@@ -19,5 +19,6 @@ describe('Dialog', () => {
     render(<Dialog>Sample</Dialog>);
     expect(screen.getByText('Sample')).toBeInTheDocument();
     expect(screen.getByRole('modal').closest('#dialogs')).not.toBeNull();
+    expect(screen.getByTestId('scrim')).toHaveClass('z-50');
   });
 });
