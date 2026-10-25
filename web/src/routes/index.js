@@ -1,8 +1,3 @@
-export async function getCameraMap(_url, _cb, _props) {
-  const module = await import('./CameraMap.jsx');
-  return module.default;
-}
-
 export async function getCamera(_url, _cb, _props) {
   const module = await import('./Camera.jsx');
   return module.default;
