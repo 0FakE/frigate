@@ -16,3 +16,6 @@ WORKDIR /opt/frigate
 COPY --from=web-build /work/dist/ /opt/frigate/web/
 COPY frigate/http.py /opt/frigate/frigate/http.py
 COPY frigate/util/live_polygon_editor.py /opt/frigate/frigate/util/live_polygon_editor.py
+
+# Fail the preview build if the newly added backend code has syntax errors.
+RUN python3 -m py_compile /opt/frigate/frigate/http.py /opt/frigate/frigate/util/live_polygon_editor.py
