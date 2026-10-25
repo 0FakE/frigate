@@ -88,20 +88,21 @@ describe('LiveZoneEditor vertex interactions', () => {
     const noticeSlot = screen.getByTestId('live-editor-notices');
     const video = container.querySelector('.relative');
 
-    expect(noticeSlot).toHaveClass('min-h-[56px]', 'mb-4');
-    expect(noticeSlot).not.toHaveClass('h-24', 'overflow-y-auto');
+    expect(noticeSlot).toHaveClass('min-h-10', 'mb-4', 'flex', 'flex-col', 'gap-3');
+    expect(noticeSlot).not.toHaveClass('h-24', 'overflow-y-auto', 'min-h-[56px]');
     expect(noticeSlot.nextElementSibling).toBe(video);
     expect(screen.queryByText('Nicht gespeicherte Änderungen')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
     expect(screen.getByRole('status')).toHaveTextContent('Nicht gespeicherte Änderungen');
     expect(noticeSlot.nextElementSibling).toBe(video);
-    expect(noticeSlot).toHaveClass('min-h-[56px]');
+    expect(noticeSlot).toHaveClass('min-h-10');
+    expect(screen.getByRole('status')).not.toHaveClass('mb-4');
 
     fireEvent.click(screen.getByRole('button', { name: 'Bearbeitung beenden' }));
     expect(screen.queryByText('Nicht gespeicherte Änderungen')).not.toBeInTheDocument();
     expect(noticeSlot.nextElementSibling).toBe(video);
-    expect(noticeSlot).toHaveClass('min-h-[56px]');
+    expect(noticeSlot).toHaveClass('min-h-10');
   });
 
   test('additional error messages stack below the first notice without clipping', async () => {
@@ -121,9 +122,12 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(noticeSlot.querySelector('[role="status"]')).toHaveTextContent(
       'Nicht gespeicherte Änderungen'
     );
-    expect(noticeSlot).toHaveClass('min-h-[56px]');
-    expect(noticeSlot).not.toHaveClass('overflow-y-auto', 'overflow-hidden', 'h-24');
+    expect(noticeSlot).toHaveClass('min-h-10');
+    expect(noticeSlot).not.toHaveClass('overflow-y-auto', 'overflow-hidden', 'h-24', 'min-h-[56px]');
     expect(noticeSlot.nextElementSibling).toBe(video);
+    expect(noticeSlot).toHaveClass('mb-4', 'gap-3', 'flex-col');
+    expect([...noticeSlot.children]).toHaveLength(2);
+    expect([...noticeSlot.children].every((notice) => !notice.classList.contains('mb-4'))).toBe(true);
   });
 
   test('shows the status immediately when selecting an unchanged area without marking data dirty', async () => {
@@ -218,7 +222,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     fireEvent.click(svg, { button: 0, clientX: 35, clientY: 90 });
     const warning = screen.getByRole('status');
     expect(warning).toHaveTextContent('Nicht gespeicherte Änderungen');
-    expect(warning).toHaveClass('mb-4');
+    expect(warning).not.toHaveClass('mb-4');
     expect(warning.firstElementChild).toHaveClass('font-bold', 'text-white', 'text-base');
     expect(warning.firstElementChild).not.toHaveClass('text-lg');
     expect(warning.querySelector('svg[stroke="currentColor"]')).not.toBeNull();
@@ -227,7 +231,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     await waitFor(() => expect(axios.put).toHaveBeenCalledTimes(1));
 
     const saved = screen.getByRole('status');
-    expect(saved).toHaveClass('mb-4');
+    expect(saved).not.toHaveClass('mb-4');
     expect(saved.firstElementChild).toHaveClass('text-green-400', 'text-base');
     expect(saved.firstElementChild).not.toHaveClass('text-white');
     expect(saved).toHaveTextContent('Die Änderungen wurden gespeichert. Ein Neustart von Frigate ist erforderlich.');
@@ -253,7 +257,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(screen.getByRole('button', { name: 'Speichern' })).not.toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
     const invalid = screen.getByText(/Die Zone „valid_zone“ kann nicht gespeichert werden/).closest('[role="alert"]');
-    expect(invalid).toHaveClass('mb-4');
+    expect(invalid).not.toHaveClass('mb-4');
     expect(invalid.firstElementChild).toHaveClass('text-yellow-300', 'text-base');
     expect(invalid.querySelector('svg[stroke="currentColor"]')).not.toBeNull();
     expect(axios.put).not.toHaveBeenCalled();
