@@ -83,6 +83,46 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(svg.querySelectorAll('ellipse')).toHaveLength(4);
   });
 
+  test('reserves a fixed notice slot before any selection, without moving the video container', async () => {
+    const { container } = await openEditor();
+    const noticeSlot = screen.getByTestId('live-editor-notices');
+    const video = container.querySelector('.relative');
+
+    expect(noticeSlot).toHaveClass('h-24', 'overflow-y-auto', 'mb-4');
+    expect(noticeSlot.nextElementSibling).toBe(video);
+    expect(screen.queryByText('Nicht gespeicherte Änderungen')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
+    expect(screen.getByRole('status')).toHaveTextContent('Nicht gespeicherte Änderungen');
+    expect(noticeSlot.nextElementSibling).toBe(video);
+    expect(noticeSlot).toHaveClass('h-24');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bearbeitung beenden' }));
+    expect(screen.queryByText('Nicht gespeicherte Änderungen')).not.toBeInTheDocument();
+    expect(noticeSlot.nextElementSibling).toBe(video);
+    expect(noticeSlot).toHaveClass('h-24');
+  });
+
+  test('shows the status immediately when selecting an unchanged area without marking data dirty', async () => {
+    const { svg, onDirtyChange } = await openEditor();
+    const area = screen.getByRole('button', { name: 'area_a' });
+    const save = screen.getByRole('button', { name: 'Speichern' });
+
+    expect(save).toBeDisabled();
+    expect(screen.queryByText('Nicht gespeicherte Änderungen')).not.toBeInTheDocument();
+
+    fireEvent.click(area);
+    expect(area).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText('Nicht gespeicherte Änderungen')).toBeInTheDocument();
+    expect(save).toBeDisabled();
+    expect(onDirtyChange).not.toHaveBeenCalledWith(true);
+
+    fireEvent.click(svg, { button: 0, clientX: 35, clientY: 90 });
+    expect(screen.getByText('Nicht gespeicherte Änderungen')).toBeInTheDocument();
+    expect(save).not.toBeDisabled();
+    await waitFor(() => expect(onDirtyChange).toHaveBeenCalledWith(true));
+  });
+
   test('deselection keeps unsaved changes and does not require Save', async () => {
     const { svg } = await openEditor();
     const save = screen.getByRole('button', { name: 'Speichern' });
