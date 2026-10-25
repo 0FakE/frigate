@@ -58,7 +58,7 @@ describe('LiveZoneEditor vertex interactions', () => {
 
   test('overlapping shapes do not intercept clicks intended for the selected zone', async () => {
     const { svg, onDirtyChange } = await openEditor();
-    const areaA = screen.getByRole('button', { name: 'Zone: area_a' });
+    const areaA = screen.getByRole('button', { name: 'area_a' });
     const remove = screen.getByRole('button', { name: 'Bereich löschen' });
 
     expect(remove).toBeDisabled();
@@ -86,7 +86,7 @@ describe('LiveZoneEditor vertex interactions', () => {
   test('deselection keeps unsaved changes and does not require Save', async () => {
     const { svg } = await openEditor();
     const save = screen.getByRole('button', { name: 'Speichern' });
-    fireEvent.click(screen.getByRole('button', { name: 'Zone: area_a' }));
+    fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
     fireEvent.click(svg, { button: 0, clientX: 35, clientY: 90 });
     expect(save).not.toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: 'Bearbeitung beenden' }));
@@ -99,48 +99,102 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(axios.put.mock.calls[0][1].zones.area_a).toHaveLength(4);
   });
 
-  test('groups area controls in a compact sidebar and expands the menu on small screens', async () => {
+  test('keeps the grouped tools visible on mobile in a fixed 330px desktop sidebar', async () => {
     const { container } = await openEditor();
-    const menu = screen.getByRole('button', { name: /Bearbeitungsmenü/ });
     const panel = screen.getByRole('complementary', { name: 'Werkzeuge und Bereiche' });
 
-    expect(panel).toHaveClass('xl:order-last');
-    expect(panel).toHaveClass('xl:w-72');
-    expect(menu).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.queryByText('Bereich auswählen oder erneut anklicken')).not.toBeInTheDocument();
-
-    fireEvent.click(menu);
-    expect(menu).toHaveAttribute('aria-expanded', 'true');
+    expect(panel).toHaveClass('xl:order-last', 'xl:w-[330px]');
+    expect(screen.getByRole('heading', { name: 'Bearbeitungsmenü' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Bearbeitungsmenü/ })).not.toBeInTheDocument();
+    expect(container.querySelector('#live-polygon-tools')).toHaveClass('space-y-3');
+    expect(container.querySelector('#live-polygon-tools')).not.toHaveClass('hidden');
     expect(screen.getByRole('heading', { name: 'Neuen Bereich erstellen' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Vorhandene Bereiche' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Bearbeitung' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Ausgewählter Bereich' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Zonen (2)' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Bewegungsmasken (0)' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Objektmasken (0)' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Zone: area_a' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: 'area_a' })).toHaveAttribute('aria-pressed', 'false');
     expect(container.querySelector('.xl\\:order-first')).not.toBeNull();
-    fireEvent.click(menu);
-    expect(menu).toHaveAttribute('aria-expanded', 'false');
   });
 
-  test('uses a bold white 18px warning with an icon and 16px bottom margin only when dirty', async () => {
+  test('shows an accessible bold white 16px dirty notice and a matching green save confirmation', async () => {
     const { svg } = await openEditor();
     expect(screen.queryByText('Nicht gespeicherte Änderungen')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Zone: area_a' }));
+    fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
     fireEvent.click(svg, { button: 0, clientX: 35, clientY: 90 });
     const warning = screen.getByRole('status');
     expect(warning).toHaveTextContent('Nicht gespeicherte Änderungen');
     expect(warning).toHaveClass('mb-4');
-    expect(warning.querySelector('span')).toHaveClass('font-bold', 'text-white', 'text-lg');
-    expect(warning.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+    expect(warning.firstElementChild).toHaveClass('font-bold', 'text-white', 'text-base');
+    expect(warning.firstElementChild).not.toHaveClass('text-lg');
+    expect(warning.querySelector('svg[stroke="currentColor"]')).not.toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Verwerfen' }));
-    await waitFor(() => expect(screen.queryByText('Nicht gespeicherte Änderungen')).not.toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
+    await waitFor(() => expect(axios.put).toHaveBeenCalledTimes(1));
+
+    const saved = screen.getByRole('status');
+    expect(saved).toHaveClass('mb-4');
+    expect(saved.firstElementChild).toHaveClass('text-green-400', 'text-base');
+    expect(saved.firstElementChild).not.toHaveClass('text-white');
+    expect(saved).toHaveTextContent('Die Änderungen wurden gespeichert. Ein Neustart von Frigate ist erforderlich.');
+    expect(saved.querySelector('strong')).toHaveTextContent('Ein Neustart von Frigate ist erforderlich.');
+    expect(saved.querySelector('svg[stroke="currentColor"]')).not.toBeNull();
+    expect(screen.queryByText('Nicht gespeicherte Änderungen')).not.toBeInTheDocument();
+  });
+
+  test('uses matching yellow warning text/icon and red error text/icon', async () => {
+    const { svg } = await openEditor();
+    vi.spyOn(window, 'prompt').mockReturnValueOnce('invalid name').mockReturnValueOnce('valid_zone');
+
+    fireEvent.click(screen.getByRole('button', { name: '+ Zone' }));
+    const error = screen.getByRole('alert');
+    expect(error).toHaveTextContent('Ungültiger oder bereits vergebener Zonenname');
+    expect(error.firstElementChild).toHaveClass('text-red-400', 'text-base');
+    expect(error.querySelector('svg[stroke="currentColor"]')).not.toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: '+ Zone' }));
+    const invalid = screen.getByText(/Mindestens 3 nicht auf einer Linie liegende Eckpunkte/).closest('[role="alert"]');
+    expect(invalid).toHaveClass('mb-4');
+    expect(invalid.firstElementChild).toHaveClass('text-yellow-300', 'text-base');
+    expect(invalid.querySelector('svg[stroke="currentColor"]')).not.toBeNull();
+    expect(svg.querySelectorAll('ellipse')).toHaveLength(0);
+  });
+
+  test('shows only the short names of existing zones, motion masks and object masks', async () => {
+    axios.get.mockResolvedValue({
+      data: {
+        ...cameraData(),
+        motion_masks: [[[20, 20], [40, 20], [40, 40]]],
+        object_masks: { person: [[[30, 30], [80, 30], [80, 80]]] },
+      },
+    });
+    await openEditor();
+    expect(screen.getByRole('button', { name: 'area_a' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Maske 1' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'person 1' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Zone: area_a' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Objektmaske: person 1' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Bewegungsmasken (1)' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Objektmasken (1)' })).toBeInTheDocument();
+  });
+
+  test('failed API writes show red errors while the unsaved indicator remains visible', async () => {
+    axios.put.mockRejectedValueOnce({ response: { data: { message: 'Speichern fehlgeschlagen' } } });
+    const { svg } = await openEditor();
+    fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
+    fireEvent.click(svg, { button: 0, clientX: 35, clientY: 90 });
+    fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
+    await waitFor(() => expect(screen.getByText('Speichern fehlgeschlagen')).toBeInTheDocument());
+    const error = screen.getByRole('alert');
+    expect(error.firstElementChild).toHaveClass('text-red-400');
+    expect(error.querySelector('svg[stroke="currentColor"]')).not.toBeNull();
+    expect(screen.getByText('Nicht gespeicherte Änderungen')).toBeInTheDocument();
   });
 
   test('vertices are smaller but have a larger hit target; dragging cannot add vertices', async () => {
     const { svg } = await openEditor();
-    fireEvent.click(screen.getByRole('button', { name: 'Zone: area_a' }));
+    fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
     const visual = svg.querySelector('circle');
     const target = svg.querySelector('ellipse');
     expect(Number(visual.getAttribute('r'))).toBeCloseTo(Math.max(4, 640 / 150) * (2 / 3));
