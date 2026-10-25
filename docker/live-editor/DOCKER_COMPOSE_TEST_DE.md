@@ -101,7 +101,14 @@ docker compose -f docker-compose.yml -f docker-compose.live-editor.yml \
   restart frigate
 ```
 
-Prüfe zusätzlich: Zonenwahl, Eckpunktverschiebung mit vergrößerter unsichtbarer Trefferfläche, Löschen über **Bereich löschen** (nur bei Auswahl aktiviert), Abwahl über **Bearbeitung beenden** ohne Speichern, Überlappung verschiedener Zonen bei Punkterstellung, Rücksetzen („Verwerfen“), korrekte Koordinaten bei unterschiedlichen Fensterbreiten, bestehende Masken und Speicherhinweise. Das Modal nach **Restart Frigate** sollte über dem Editor erscheinen. Beim Wechsel zu **Live** mit ungespeicherten Änderungen sollte eine Warnung erscheinen.
+Prüfe zusätzlich: Zonenwahl, Eckpunktverschiebung mit vergrößerter unsichtbarer Trefferfläche, Löschen über **Bereich löschen** (nur bei Auswahl aktiviert), Abwahl über **Bearbeitung beenden** ohne Speichern, Überlappung verschiedener Zonen bei Punkterstellung, Rücksetzen („Verwerfen“), korrekte Koordinaten bei unterschiedlichen Fensterbreiten, bestehende Masken und Speicherhinweise.
+
+**Neue Oberfläche prüfen:**
+- Im Tab `Debug → Show Options` stehen zuerst alle sechs Checkboxen; erst darunter erscheint in einer eigenen Zeile der kompakte Button `Zonen & Masken bearbeiten`.
+- Auf großen Bildschirmen steht rechts vom Videobild ein ca. 288 px breites Werkzeugmenü mit den Gruppen `Neuen Bereich erstellen`, `Vorhandene Bereiche` (Zonen, Bewegungsmasken, Objektmasken) und `Bearbeitung`. Das Videobild bleibt links.
+- Unterhalb der großen Desktopansicht wird das Menü **oberhalb** des Videobilds angezeigt und kann über `Bearbeitungsmenü` aus- oder eingeklappt werden. Nach dem Öffnen alle Buttons, Auswahllisten und Speicheraktionen prüfen.
+- Sobald Polygonänderungen vorliegen, erscheint **direkt über dem Videobild** der Text `Nicht gespeicherte Änderungen` mit weißer, fetter 18-px-Schrift, Warnsymbol und etwa 16 px Abstand zum Videobild. Nach `Speichern` oder `Verwerfen` verschwindet der Warnhinweis.
+- Der frühere lange Hilfetext wird nicht mehr angezeigt. Das Modal nach **Restart Frigate** sollte über dem Editor erscheinen. Beim Wechsel zu **Live** mit ungespeicherten Änderungen sollte eine Warnung erscheinen.
 
 **Erwartet:** Beim Speichern legt die API eine `config.yml.live-editor.bak` bzw. `config.yaml.live-editor.bak` an. Die ursprüngliche Sicherheitskopie aus Schritt 2 bleibt separat erhalten.
 
