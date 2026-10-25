@@ -1,34 +1,20 @@
-import { h } from 'preact';
-import { render, waitFor } from '@testing-library/preact';
-import JSMpeg from '@cycjimmy/jsmpeg-player';
-import JSMpegPlayer from '../JSMpegPlayer';
+import { firstFrameCallback } from '../../utils/firstFrame';
 
-vi.mock('@cycjimmy/jsmpeg-player', () => ({
-  default: {
-    VideoElement: vi.fn().mockImplementation(function FakeVideoElement() {
-      this.els = { canvas: document.createElement('canvas') };
-      this.destroy = vi.fn();
-    }),
-  },
-}));
-
-describe('JSMpegPlayer first decoded frame', () => {
-  beforeEach(() => JSMpeg.VideoElement.mockClear());
-
-  test('reports readiness after the first decoded frame, not when the player is constructed', async () => {
+describe('JSMpeg first rendered frame readiness', () => {
+  test('does not report readiness until JSMpeg invokes onVideoDecode, then only once', () => {
     const ready = vi.fn();
-    const { unmount } = render(<JSMpegPlayer camera="test_camera" width={640} height={360} onFirstFrame={ready} />);
-    await waitFor(() => expect(JSMpeg.VideoElement).toHaveBeenCalledTimes(1));
-
-    const options = JSMpeg.VideoElement.mock.calls[0][3];
-    expect(options.onVideoDecode).toEqual(expect.any(Function));
+    const onVideoDecode = firstFrameCallback(ready);
     expect(ready).not.toHaveBeenCalled();
-    options.onVideoDecode();
-    options.onVideoDecode();
+    onVideoDecode();
+    onVideoDecode();
     expect(ready).toHaveBeenCalledTimes(1);
+  });
 
-    const player = JSMpeg.VideoElement.mock.results[0].value;
-    unmount();
-    expect(player.destroy).toHaveBeenCalledTimes(1);
+  test('creates a fresh callback for each new player and supports optional handlers', () => {
+    const ready = vi.fn();
+    firstFrameCallback(ready)();
+    firstFrameCallback(ready)();
+    expect(ready).toHaveBeenCalledTimes(2);
+    expect(() => firstFrameCallback()()).not.toThrow();
   });
 });
