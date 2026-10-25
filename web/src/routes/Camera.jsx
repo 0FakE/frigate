@@ -16,6 +16,7 @@ import useSWR from 'swr';
 import WebRtcPlayer from '../components/WebRtcPlayer';
 import '../components/MsePlayer';
 import CameraControlPanel from '../components/CameraControlPanel';
+import LiveZoneEditor from '../components/LiveZoneEditor';
 import { baseUrl } from '../api/baseUrl';
 
 const emptyObject = Object.freeze({});
@@ -26,6 +27,7 @@ export default function Camera({ camera }) {
   const apiHost = useApiHost();
   const [showSettings, setShowSettings] = useState(false);
   const [viewMode, setViewMode] = useState('live');
+  const [editLivePolygons, setEditLivePolygons] = useState(false);
 
   const cameraConfig = config?.cameras[camera];
   const restreamEnabled =
@@ -115,7 +117,20 @@ export default function Camera({ camera }) {
 
   let player;
   if (viewMode === 'live') {
-    if (viewSource == 'mse' && restreamEnabled) {
+    if (editLivePolygons) {
+      player = (
+        <LiveZoneEditor
+          camera={camera}
+          width={cameraConfig.detect.width}
+          height={cameraConfig.detect.height}
+          displayWidth={jsmpegWidth}
+          trackedObjects={cameraConfig.objects?.track || []}
+          onClose={() => setEditLivePolygons(false)}
+        >
+          <JSMpegPlayer camera={camera} width={jsmpegWidth} height={cameraConfig.live.height} />
+        </LiveZoneEditor>
+      );
+    } else if (viewSource == 'mse' && restreamEnabled) {
       if ('MediaSource' in window || 'ManagedMediaSource' in window) {
         player = (
           <Fragment>
@@ -193,6 +208,12 @@ export default function Camera({ camera }) {
       </div>
 
       <ButtonsTabbed viewModes={['live', 'debug']} currentViewMode={viewMode} setViewMode={setViewMode} />
+      {viewMode === 'live' && (
+        <button type="button" className="rounded bg-slate-700 text-white px-3 py-2"
+          onClick={() => setEditLivePolygons((value) => !value)}>
+          {editLivePolygons ? 'Editor schließen' : 'Zonen & Masken bearbeiten'}
+        </button>
+      )}
 
       {player}
 
