@@ -32,7 +32,7 @@ function editShape(data, id, fn) {
 
 function readableDetail(error) {
   const raw = String(error.response?.data?.message || error.message || '').trim();
-  const detail = raw || 'Ein unbekannter Fehler ist aufgetreten.';
+  const detail = raw || t('cameras.debug.editor.error.unknown_details');
   return /[.!?]$/.test(detail) ? detail : detail + '.';
 }
 
