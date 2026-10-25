@@ -10,10 +10,14 @@ import { editor, Uri } from 'monaco-editor';
 import { setDiagnosticsOptions } from 'monaco-yaml';
 import copy from 'copy-to-clipboard';
 
+// A Monaco model can outlive its route. Remember its last synchronized disk
+// contents so that a newer config.yml does not erase unsaved local edits.
+const syncedModelContents = new WeakMap();
+
 export default function Config() {
   const apiHost = useApiHost();
 
-  const { data: config } = useSWR('config/raw');
+  const { data: config, mutate: updateRawConfig } = useSWR('config/raw', { revalidateOnMount: true });
   const [success, setSuccess] = useState();
   const [error, setError] = useState();
 
@@ -22,12 +26,16 @@ export default function Config() {
       e.stopPropagation();
     }
 
+    const submittedConfig = window.editor.getValue();
     axios
-      .post(`config/save?save_option=${save_option}`, window.editor.getValue(), {
+      .post(`config/save?save_option=${save_option}`, submittedConfig, {
         headers: { 'Content-Type': 'text/plain' },
       })
       .then((response) => {
         if (response.status === 200) {
+          const model = window.editor?.getModel();
+          if (model) syncedModelContents.set(model, submittedConfig);
+          updateRawConfig(submittedConfig, false);
           setError('');
           setSuccess(response.data.message);
         }
@@ -48,23 +56,28 @@ export default function Config() {
   };
 
   useEffect(() => {
-    if (!config) {
-      return;
-    }
-
-    if (document.getElementById('container').children.length > 0) {
-      // we don't need to recreate the editor if it already exists
-      return;
-    }
+    if (typeof config !== 'string') return;
+    const container = document.getElementById('container');
+    if (!container) return;
 
     const modelUri = Uri.parse('a://b/api/config/schema.json');
-
-    let yamlModel;
-    if (editor.getModels().length > 0) {
-      yamlModel = editor.getModel(modelUri);
-    } else {
+    let yamlModel = editor.getModel(modelUri);
+    if (!yamlModel) {
       yamlModel = editor.createModel(config, 'yaml', modelUri);
+      syncedModelContents.set(yamlModel, config);
+    } else {
+      if (!syncedModelContents.has(yamlModel)) {
+        syncedModelContents.set(yamlModel, yamlModel.getValue());
+      }
+      const baseline = syncedModelContents.get(yamlModel);
+      if (yamlModel.getValue() === baseline && baseline !== config) {
+        // Only replace a clean model. Keep user-entered unsaved YAML intact.
+        yamlModel.setValue(config);
+        syncedModelContents.set(yamlModel, config);
+      }
     }
+
+    if (container.children.length > 0) return;
 
     setDiagnosticsOptions({
       enableSchemaRequest: true,
@@ -80,13 +93,19 @@ export default function Config() {
       ],
     });
 
-    window.editor = editor.create(document.getElementById('container'), {
+    window.editor = editor.create(container, {
       language: 'yaml',
       model: yamlModel,
       scrollBeyondLastLine: false,
       theme: 'vs-dark',
     });
-  });
+  }, [config, apiHost]);
+
+  useEffect(() => () => {
+    // Reuse the YAML model, but not a Monaco widget attached to an old page.
+    window.editor?.dispose();
+    window.editor = null;
+  }, []);
 
   if (!config) {
     return <ActivityIndicator />;
