@@ -1,0 +1,44 @@
+name: Live Zone Editor Preview Image
+
+on:
+  push:
+    branches:
+      - feature/live-zone-editor
+    paths:
+      - 'docker/live-editor/**'
+      - 'web/**'
+      - 'frigate/http.py'
+      - 'frigate/util/live_polygon_editor.py'
+      - '.github/workflows/live-editor-image.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: preview-image-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preview-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and publish experimental AMD64 image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/live-editor/Dockerfile
+          push: true
+          platforms: linux/amd64
+          tags: ghcr.io/0fake/frigate:0.13.2-live-editor-dev
+          cache-from: type=gha,scope=live-editor
+          cache-to: type=gha,mode=max,scope=live-editor
