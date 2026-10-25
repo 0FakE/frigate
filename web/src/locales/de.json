@@ -10,7 +10,7 @@
       },
       "editor": {
         "button": {
-          "open": "Zonen & Masken bearbeiten",
+          "open": "Zonen & Masken Editor",
           "close": "Editor schließen",
           "zone": "+ Zone",
           "mask": "+ Maske",
@@ -22,7 +22,7 @@
         },
         "header": {
           "mobile_menu": "Bearbeitungsmenü",
-          "new_area": "Neuer Bereich erstellen",
+          "new_area": "Neuen Bereich erstellen",
           "existing_areas": "Vorhandene Bereiche ({count})",
           "selected_area": "Ausgewählter Bereich",
           "zones": "Zonen ({count})",
@@ -63,5 +63,16 @@
       }
     }
   },
-  "config": {}
+  "config": {},
+  "app": {
+    "status": {
+      "loading_translations": "Sprachdatei wird geladen …"
+    },
+    "button": {
+      "dismiss_warning": "Hinweis schließen"
+    },
+    "error": {
+      "loading_translations": "Die externe Sprachdatei konnte nicht geladen werden. Die integrierten deutschen Texte werden verwendet."
+    }
+  }
 }
