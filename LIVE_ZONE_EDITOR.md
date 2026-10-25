@@ -1,12 +1,12 @@
 # Live Mask & Zone Editor – Frigate 0.13.2 (MVP)
 
-This feature branch is based on **v0.13.2**. It adds a polygon editor to the camera's **Debug → Zonen & Masken bearbeiten** button, displayed directly beside **Show/Hide Options**, using a live JSMpeg stream while editing. This is still an experimental preview release.
+This feature branch is based on **v0.13.2**. It adds a polygon editor to the camera's **Debug → Zonen & Masken Editor** button, displayed directly beside **Show/Hide Options**, using a live JSMpeg stream while editing. This is still an experimental preview release.
 
 ## Architecture
 
-- `web/src/routes/Camera.jsx`: the “Zonen & Masken bearbeiten” button is always visible in Debug directly next to “Show/Hide Options”. Both controls are **40px high** and wrap on narrow screens. The six debug checkboxes still require “Show Options”. Editing selects JSMpeg regardless of the usual MSE/WebRTC preference; the video overlay uses detect-resolution coordinates.
+- `web/src/routes/Camera.jsx`: the “Zonen & Masken Editor” button is always visible in Debug directly next to “Show/Hide Options”. Both controls are **40px high** and wrap on narrow screens. The six debug checkboxes still require “Show Options”. Editing selects JSMpeg regardless of the usual MSE/WebRTC preference; the video overlay uses detect-resolution coordinates.
 - `web/src/components/LiveZoneEditor.jsx`: Preact polygon editor with selection, point dragging, point insertion/removal, zone/motion/object mask creation and removal.
-- The editor layout uses a **330px-wide right-hand tool panel** on large screens (`xl` breakpoint), with **Neuer Bereich erstellen**, **Vorhandene Bereiche ({count})**, and **Ausgewählter Bereich**. Group names are **Zonen**, **Abgedeckte Bereiche**, and **Objektfilter**. The creation buttons are `+ Zone`, `+ Maske`, and `+ Objektfilter`. The object-class dropdown is approximately **145px** wide; selected areas are indicated by blue styling without a leading checkmark. Empty groups use 14px text. On smaller screens the panel sits **above the livestream and stays fully expanded**.
+- The editor layout uses a **330px-wide right-hand tool panel** on large screens (`xl` breakpoint), with **Neuen Bereich erstellen**, **Vorhandene Bereiche ({count})**, and **Ausgewählter Bereich**. Group names are **Zonen**, **Abgedeckte Bereiche**, and **Objektfilter**. The creation buttons are `+ Zone`, `+ Maske`, and `+ Objektfilter`. The object-class dropdown is approximately **145px** wide; selected areas are indicated by blue styling without a leading checkmark. Empty groups use 14px text. On smaller screens the panel sits **above the livestream and stays fully expanded**.
 - Status notices share a dark background, 16px type, matching text/icon colors, and 16px bottom margin: **white/bold** for unsaved edits, **yellow** for polygon validation warnings, **red** for errors, and **green** for successful saves. Incomplete new areas are normal drafts; their warnings are displayed **only when Save is attempted**, not while creating/drawing. Save remains clickable for incomplete drafts but never sends invalid polygons to the API. Invalid and duplicate zone names have distinct complete error sentences. The save confirmation reads `Die Änderungen wurden gespeichert. Ein Neustart von Frigate ist erforderlich.`, with the entire second sentence bold.
 - `web/src/components/ButtonsTabbed.jsx` provides an opt-in compact icon/pill style for camera Live/Debug tabs, preserving **right alignment**, controlled selection, and the unsaved-change confirmation on view switches; other routes retain the previous style.
 - The legacy `/cameras/:camera/editor` route and “Mask & Zone creator” link were removed from the UI; the old source module is retained for easy rollback.
@@ -22,7 +22,10 @@ This feature branch is based on **v0.13.2**. It adds a polygon editor to the cam
 - The polygon API writes camera-local YAML to disk and returns a revision. After a successful save, the browser fetches `api/config/raw` and updates the `config/raw` SWR cache. The Config route reuses its Monaco model but updates its content **only when it matches the previously synchronized value**, never clobbering unsaved local text. On entering Config it also revalidates the raw file.
 - The **running** `api/config` endpoint is intentionally separate from raw YAML and is not reloaded before a Frigate restart; no live detector state is changed by a save.
 - The existing JSMpeg wrapper accepts an optional `onFirstFrame` callback, fired from the *first decoded/rendered video frame*, not socket connection. The polygon editor shows a loading message and does **not render any polygons/handles** until this callback arrives. The menu remains visible.
-- Newly introduced interface strings live in the nested German file `web/src/locales/de.json`, resolved through `web/src/locales/index.js` using dot paths, for example `t('cameras.debug.editor.header.existing_areas', { count: 4 })`. Dynamic names and counts use `{name}` and `{count}` placeholders. The `config` subtree is intentionally empty for future work. A settings-page language picker and persistent language selection are **not implemented** yet: these keys and helpers only prepare for adding translations later.
+- The bundled German template is `web/src/locales/de.json` and uses nested keys such as `cameras.debug.editor.header.existing_areas` with placeholders like `{count}`. At Frigate startup, the backend copies it **only if missing** into the user's mounted `/config/lang/de.json`. Existing host files are never overwritten. The configured `CONFIG_FILE` directory determines the `lang` folder (normally `/config/lang`). In Docker Compose, `./conf/frigate:/config` already exposes the editable file as `./conf/frigate/lang/de.json`; no extra volume is needed.
+- The browser requests uncached `GET /api/lang/de` at page startup, before rendering the app. Saving `/config/lang/de.json` followed by a **browser page refresh** applies text changes without restarting Frigate or rebuilding the image. Incomplete host key structures fall back **per missing key** to the bundled default.
+- An invalid JSON file, unaccepted structure, unreadable file, or failed HTTP fetch never breaks the whole UI: built-in German copy is used, and the user receives a dismissible visible warning. The server refuses symlink-based host locale files and files over 256 KiB; it does not overwrite them. Check `docker logs frigate-test` for server-side details.
+- A settings-page language picker and persistent language selection are **not yet implemented**. The host-editable `de.json` is the only language currently loaded.
 
 ## Running tests
 
@@ -35,7 +38,7 @@ npm ci
 npm run build
 ```
 
-GitHub Actions verifies frontend build/lint, Python YAML tests, and targeted Vitest regressions (`LiveZoneEditor`, `Dialog`, `ButtonsTabbed`, first JSMpeg frame handling, Config model synchronization, and locale placeholders). The preview Docker image builds separately. Real camera integration and render behavior still require manual verification.
+GitHub Actions verifies frontend build/lint, Python polygon YAML and host-locale tests, and targeted Vitest regressions (`LiveZoneEditor`, `Dialog`, `ButtonsTabbed`, first JSMpeg frame handling, Config model synchronization, and locale placeholders). The preview Docker image builds separately. Real camera integration and render behavior still require manual verification.
 
 ## Deployment notes
 
@@ -87,7 +90,7 @@ The preview currently targets **AMD64**; arm64 hardware requires a separate imag
 The version 0.13.2 configuration schema is required. Do not reuse a newer
 Frigate config without reviewing incompatibilities and making a backup.
 
-Once running, open a camera's **Debug** tab and choose **Zonen & Masken bearbeiten** next to **Show/Hide Options** (no need to expand the checkboxes). Wait for the first real video frame before polygon overlays appear, then
+Once running, open a camera's **Debug** tab and choose **Zonen & Masken Editor** next to **Show/Hide Options** (no need to expand the checkboxes). Wait for the first real video frame before polygon overlays appear, then
 create or edit polygons. Press **Speichern** to update `config.yml` and the Config editor's raw YAML view **without restarting**. Restart Frigate separately to apply the changes to detection
 the saved config. A `config.yml.live-editor.bak` or `config.yaml.live-editor.bak`
 will contain the immediately preceding file state.
