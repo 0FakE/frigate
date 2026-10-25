@@ -63,7 +63,7 @@ describe('LiveZoneEditor vertex interactions', () => {
 
     expect(remove).toBeDisabled();
     expect(svg.querySelectorAll('polygon')).toHaveLength(2);
-    expect([...svg.querySelectorAll('polygon')].every((p) => p.parentElement.getAttribute('pointer-events') === 'none')).toBe(true);
+    expect([...svg.querySelectorAll('polygon')].every((p) => p.parentElement.style.pointerEvents === 'none')).toBe(true);
 
     fireEvent.click(areaA);
     expect(remove).not.toBeDisabled();
