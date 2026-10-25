@@ -45,7 +45,7 @@
           "unsaved": "Nicht gespeicherte Änderungen",
           "saved": "Die Änderungen wurden gespeichert.",
           "restart_required": "Ein Neustart von Frigate ist erforderlich.",
-          "loading_stream": "Livebild wird geladen …"
+          "loading_stream": "Kamera Vorschau wird geladen…"
         },
         "error": {
           "invalid_zone_name": "Der eingegebene Zonenname ist ungültig. Bitte verwende ausschließlich Buchstaben, Zahlen und Unterstriche.",
