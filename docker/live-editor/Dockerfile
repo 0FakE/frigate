@@ -1,0 +1,18 @@
+# syntax=docker/dockerfile:1.6
+# Lightweight preview: keep all native dependencies, media tooling and entrypoint
+# from the official Frigate 0.13.2 image; overlay only our code and rebuilt UI.
+FROM --platform=$BUILDPLATFORM node:20-bookworm AS web-build
+
+WORKDIR /work
+COPY web/package.json web/package-lock.json ./
+RUN npm ci
+COPY web/ ./
+RUN npm run build \
+    && mv dist/BASE_PATH/monacoeditorwork/* dist/assets/ \
+    && rm -rf dist/BASE_PATH
+
+FROM ghcr.io/blakeblackshear/frigate:0.13.2
+WORKDIR /opt/frigate
+COPY --from=web-build /work/dist/ /opt/frigate/web/
+COPY frigate/http.py /opt/frigate/frigate/http.py
+COPY frigate/util/live_polygon_editor.py /opt/frigate/frigate/util/live_polygon_editor.py
