@@ -99,6 +99,36 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(axios.put.mock.calls[0][1].zones.area_a).toHaveLength(4);
   });
 
+  test('successful Save deselects the active polygon without hiding its shape', async () => {
+    const { svg } = await openEditor();
+    const areaA = screen.getByRole('button', { name: 'area_a' });
+    fireEvent.click(areaA);
+    fireEvent.click(svg, { button: 0, clientX: 35, clientY: 90 });
+    expect(areaA).toHaveAttribute('aria-pressed', 'true');
+    expect(svg.querySelectorAll('ellipse')).toHaveLength(4);
+    expect(screen.getByRole('button', { name: 'Bereich löschen' })).not.toBeDisabled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Die Änderungen wurden gespeichert.'));
+
+    expect(areaA).toHaveAttribute('aria-pressed', 'false');
+    expect(svg.querySelectorAll('ellipse')).toHaveLength(0);
+    expect(svg.querySelectorAll('polygon')).toHaveLength(2);
+    expect(screen.getByRole('button', { name: 'Bearbeitung beenden' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Bereich löschen' })).toBeDisabled();
+  });
+
+  test('group headings and selected and unselected area buttons use 14px text', async () => {
+    await openEditor();
+    expect(screen.getByRole('heading', { name: 'Zonen (2)' })).toHaveClass('text-sm');
+    expect(screen.getByRole('heading', { name: 'Bewegungsmasken (0)' })).toHaveClass('text-sm');
+    expect(screen.getByRole('heading', { name: 'Objektmasken (0)' })).toHaveClass('text-sm');
+    const areaA = screen.getByRole('button', { name: 'area_a' });
+    expect(areaA).toHaveClass('text-sm');
+    fireEvent.click(areaA);
+    expect(areaA).toHaveClass('text-sm');
+  });
+
   test('keeps the grouped tools visible on mobile in a fixed 330px desktop sidebar', async () => {
     const { container } = await openEditor();
     const panel = screen.getByRole('complementary', { name: 'Werkzeuge und Bereiche' });
@@ -190,6 +220,8 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(error.firstElementChild).toHaveClass('text-red-400');
     expect(error.querySelector('svg[stroke="currentColor"]')).not.toBeNull();
     expect(screen.getByText('Nicht gespeicherte Änderungen')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'area_a' })).toHaveAttribute('aria-pressed', 'true');
+    expect(svg.querySelectorAll('ellipse')).toHaveLength(4);
   });
 
   test('vertices are smaller but have a larger hit target; dragging cannot add vertices', async () => {
