@@ -96,6 +96,13 @@ def _validate_polygon(points: Any, width: int, height: int) -> str:
         packed.extend([str(x), str(y)])
     if len(set(tuple(p) for p in points)) < 3:
         raise ValueError("Polygon needs 3 different points")
+    doubled_area = sum(
+        points[i][0] * points[(i + 1) % len(points)][1]
+        - points[(i + 1) % len(points)][0] * points[i][1]
+        for i in range(len(points))
+    )
+    if doubled_area == 0:
+        raise ValueError("Polygon must enclose a non-zero area")
     return ",".join(packed)
 
 
@@ -135,29 +142,33 @@ def update_polygons(raw: str, camera: str, payload: dict, width: int, height: in
     yaml = _yaml()
     data = yaml.load(raw)
     cfg = _camera(data, camera)
-    zone_cfg = cfg.setdefault("zones", {})
-    for name in list(zone_cfg):
-        if name not in checked_zones:
-            del zone_cfg[name]
-    for name, coordinates in checked_zones.items():
-        zone_cfg.setdefault(name, {})["coordinates"] = coordinates
+    zone_cfg = cfg.get("zones")
+    if checked_zones or zone_cfg is not None:
+        zone_cfg = cfg.setdefault("zones", {})
+        for name in list(zone_cfg):
+            if name not in checked_zones:
+                del zone_cfg[name]
+        for name, coordinates in checked_zones.items():
+            zone_cfg.setdefault(name, {})["coordinates"] = coordinates
 
-    motion_cfg = cfg.setdefault("motion", {})
+    motion_cfg = cfg.get("motion")
     if checked_motions:
-        motion_cfg["mask"] = checked_motions
-    else:
+        cfg.setdefault("motion", {})["mask"] = checked_motions
+    elif motion_cfg is not None:
         motion_cfg.pop("mask", None)
 
-    objects_cfg = cfg.setdefault("objects", {})
-    filters = objects_cfg.setdefault("filters", {})
-    for name, old in list(filters.items()):
-        if name not in checked_objects:
-            old.pop("mask", None)
-    for name, masks in checked_objects.items():
-        if masks:
-            filters.setdefault(name, {})["mask"] = masks
-        elif name in filters:
-            filters[name].pop("mask", None)
+    objects_cfg = cfg.get("objects")
+    filters = (objects_cfg or {}).get("filters")
+    if checked_objects or filters is not None:
+        filters = cfg.setdefault("objects", {}).setdefault("filters", {})
+        for name, old in list(filters.items()):
+            if name not in checked_objects:
+                old.pop("mask", None)
+        for name, masks in checked_objects.items():
+            if masks:
+                filters.setdefault(name, {})["mask"] = masks
+            elif name in filters:
+                filters[name].pop("mask", None)
     stream = io.StringIO()
     yaml.dump(data, stream)
     return stream.getvalue()
