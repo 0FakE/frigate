@@ -17,6 +17,7 @@ import '../components/MsePlayer';
 import CameraControlPanel from '../components/CameraControlPanel';
 import LiveZoneEditor from '../components/LiveZoneEditor';
 import { baseUrl } from '../api/baseUrl';
+import { t } from '../locales';
 
 const emptyObject = Object.freeze({});
 
@@ -28,6 +29,8 @@ export default function Camera({ camera }) {
   const [viewMode, setViewMode] = useState('live');
   const [editLivePolygons, setEditLivePolygons] = useState(false);
   const [editorDirty, setEditorDirty] = useState(false);
+  const [editorStreamReady, setEditorStreamReady] = useState(false);
+  const handleFirstEditorFrame = useCallback(() => setEditorStreamReady(true), []);
 
   const cameraConfig = config?.cameras[camera];
   const restreamEnabled =
@@ -68,18 +71,20 @@ export default function Camera({ camera }) {
   const handleChangeViewMode = useCallback(
     (nextMode) => {
       if (nextMode === viewMode) return;
-      if (editLivePolygons && editorDirty && !window.confirm('Ungespeicherte Änderungen verwerfen?')) return;
+      if (editLivePolygons && editorDirty && !window.confirm(t('cameras.debug.editor.prompt.discard_unsaved'))) return;
       setEditLivePolygons(false);
       setEditorDirty(false);
+      setEditorStreamReady(false);
       setViewMode(nextMode);
     },
     [viewMode, editLivePolygons, editorDirty]
   );
 
   const handleToggleEditor = useCallback(() => {
-    if (editLivePolygons && editorDirty && !window.confirm('Ungespeicherte Änderungen verwerfen?')) return;
+    if (editLivePolygons && editorDirty && !window.confirm(t('cameras.debug.editor.prompt.discard_unsaved'))) return;
     setEditLivePolygons((current) => !current);
     setEditorDirty(false);
+    setEditorStreamReady(false);
   }, [editLivePolygons, editorDirty]);
 
   if (!cameraConfig || !sourceIsLoaded) {
@@ -186,10 +191,12 @@ export default function Camera({ camera }) {
             onClose={() => {
               setEditLivePolygons(false);
               setEditorDirty(false);
+              setEditorStreamReady(false);
             }}
             onDirtyChange={setEditorDirty}
+            streamReady={editorStreamReady}
           >
-            <JSMpegPlayer camera={camera} width={jsmpegWidth} height={cameraConfig.live.height} />
+            <JSMpegPlayer camera={camera} width={jsmpegWidth} height={cameraConfig.live.height} onFirstFrame={handleFirstEditorFrame} />
           </LiveZoneEditor>
         ) : (
           <div>
@@ -198,7 +205,7 @@ export default function Camera({ camera }) {
         )}
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button onClick={handleToggleSettings} type="text">
+          <Button onClick={handleToggleSettings} type="text" className="h-10">
             <span className="w-5 h-5">
               <SettingsIcon />
             </span>{' '}
@@ -206,14 +213,14 @@ export default function Camera({ camera }) {
           </Button>
           <button
             type="button"
-            className="inline-flex w-auto items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold uppercase text-slate-700 transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-800"
+            className="inline-flex h-10 w-auto items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold uppercase text-slate-700 transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-800"
             onClick={handleToggleEditor}
           >
             <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
               <path d="m12 2 9 7-3.5 11h-11L3 9Z" />
               <path d="M3 9 12 14l9-5M12 14v7" />
             </svg>
-            {editLivePolygons ? 'Editor schließen' : 'Zonen & Masken bearbeiten'}
+            {t(editLivePolygons ? 'cameras.debug.editor.button.close' : 'cameras.debug.editor.button.open')}
           </button>
         </div>
         {showSettings ? <Card header="Options" elevated={false} content={optionContent} /> : null}
