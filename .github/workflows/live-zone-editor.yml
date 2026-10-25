@@ -1,0 +1,52 @@
+name: Live Zone Editor Checks
+
+on:
+  push:
+    branches:
+      - feature/live-zone-editor
+    paths:
+      - 'web/**'
+      - 'frigate/util/live_polygon_editor.py'
+      - 'frigate/http.py'
+      - 'frigate/test/test_live_polygon_editor.py'
+      - '.github/workflows/live-zone-editor.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-zone-editor-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install isolated YAML dependency
+        run: python -m pip install 'ruamel.yaml>=0.17,<0.19'
+      - name: Run polygon YAML tests
+        run: python -m unittest frigate.test.test_live_polygon_editor -v
+      - name: Check Python syntax
+        run: python -m py_compile frigate/util/live_polygon_editor.py frigate/http.py frigate/test/test_live_polygon_editor.py
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install frontend dependencies
+        run: npm ci
+      - name: Build original v0.13 frontend with the editor
+        run: npm run build
