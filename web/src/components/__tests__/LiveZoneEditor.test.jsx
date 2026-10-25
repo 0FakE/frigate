@@ -83,26 +83,27 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(svg.querySelectorAll('ellipse')).toHaveLength(4);
   });
 
-  test('reserves space for one notice before selection and does not move the video container', async () => {
+  test('shows no empty notice slot and uses 16px spacing only when a notice is visible', async () => {
     const { container } = await openEditor();
-    const noticeSlot = screen.getByTestId('live-editor-notices');
     const video = container.querySelector('.relative');
+    const videoParent = video.parentElement;
 
-    expect(noticeSlot).toHaveClass('min-h-10', 'mb-4', 'flex', 'flex-col', 'gap-3');
-    expect(noticeSlot).not.toHaveClass('h-24', 'overflow-y-auto', 'min-h-[56px]');
-    expect(noticeSlot.nextElementSibling).toBe(video);
+    expect(screen.queryByTestId('live-editor-notices')).not.toBeInTheDocument();
+    expect(videoParent.firstElementChild).toBe(video);
     expect(screen.queryByText('Nicht gespeicherte Änderungen')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
+    const noticeSlot = screen.getByTestId('live-editor-notices');
     expect(screen.getByRole('status')).toHaveTextContent('Nicht gespeicherte Änderungen');
-    expect(noticeSlot.nextElementSibling).toBe(video);
-    expect(noticeSlot).toHaveClass('min-h-10');
+    expect(noticeSlot).toHaveClass('mb-4', 'flex', 'flex-col', 'gap-4');
+    expect(noticeSlot).not.toHaveClass('min-h-10', 'gap-3', 'overflow-y-auto');
     expect(screen.getByRole('status')).not.toHaveClass('mb-4');
+    expect(noticeSlot.nextElementSibling).toBe(video);
 
     fireEvent.click(screen.getByRole('button', { name: 'Bearbeitung beenden' }));
+    expect(screen.queryByTestId('live-editor-notices')).not.toBeInTheDocument();
+    expect(videoParent.firstElementChild).toBe(video);
     expect(screen.queryByText('Nicht gespeicherte Änderungen')).not.toBeInTheDocument();
-    expect(noticeSlot.nextElementSibling).toBe(video);
-    expect(noticeSlot).toHaveClass('min-h-10');
   });
 
   test('additional error messages stack below the first notice without clipping', async () => {
@@ -122,10 +123,9 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(noticeSlot.querySelector('[role="status"]')).toHaveTextContent(
       'Nicht gespeicherte Änderungen'
     );
-    expect(noticeSlot).toHaveClass('min-h-10');
-    expect(noticeSlot).not.toHaveClass('overflow-y-auto', 'overflow-hidden', 'h-24', 'min-h-[56px]');
+    expect(noticeSlot).toHaveClass('mb-4', 'gap-4', 'flex-col');
+    expect(noticeSlot).not.toHaveClass('gap-3', 'min-h-10', 'overflow-y-auto', 'overflow-hidden', 'h-24');
     expect(noticeSlot.nextElementSibling).toBe(video);
-    expect(noticeSlot).toHaveClass('mb-4', 'gap-3', 'flex-col');
     expect([...noticeSlot.children]).toHaveLength(2);
     expect([...noticeSlot.children].every((notice) => !notice.classList.contains('mb-4'))).toBe(true);
   });
@@ -321,7 +321,7 @@ describe('LiveZoneEditor vertex interactions', () => {
 
   test('hides polygons and vertex hit targets until a video frame is available', async () => {
     const { container, rerender, svg } = await openEditor({ streamReady: false });
-    expect(screen.getByText('Livebild wird geladen …')).toBeInTheDocument();
+    expect(screen.getByText('Kamera Vorschau wird geladen…')).toBeInTheDocument();
     expect(svg.querySelectorAll('polygon')).toHaveLength(0);
     expect(svg).toHaveClass('invisible', 'pointer-events-none');
 
@@ -331,9 +331,27 @@ describe('LiveZoneEditor vertex interactions', () => {
         <div>Live stream</div>
       </LiveZoneEditor>
     );
-    expect(screen.queryByText('Livebild wird geladen …')).not.toBeInTheDocument();
+    expect(screen.queryByText('Kamera Vorschau wird geladen…')).not.toBeInTheDocument();
     expect(container.querySelector('svg').querySelectorAll('polygon')).toHaveLength(2);
     expect(container.querySelector('svg')).not.toHaveClass('invisible');
+  });
+
+  test('loading background covers the same expanding grid as the camera canvas', async () => {
+    const { container, svg } = await openEditor({ streamReady: false });
+    const preview = container.querySelector('.relative');
+    const fallback = preview.querySelector('[aria-hidden="true"]');
+    const streamSlot = fallback.nextElementSibling;
+    const loading = screen.getByText('Kamera Vorschau wird geladen…');
+
+    expect(preview).toHaveClass('relative', 'grid');
+    expect(preview.style.aspectRatio).toBe('');
+    expect(fallback).toHaveClass('col-start-1', 'row-start-1', 'w-full');
+    expect(fallback.style.aspectRatio).toBe('640 / 360');
+    expect(streamSlot).toHaveClass('col-start-1', 'row-start-1');
+    expect(streamSlot).toHaveTextContent('Live stream');
+    expect(loading).toHaveClass('absolute', 'inset-0');
+    expect(loading.parentElement).toBe(preview);
+    expect(svg).toHaveClass('absolute', 'inset-0');
   });
 
   test('compact object-class select and no selection checkmark', async () => {
