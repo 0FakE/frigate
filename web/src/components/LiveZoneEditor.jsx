@@ -406,25 +406,33 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
         </aside>
 
         <div className="order-last w-full min-w-0 flex-1 xl:order-first">
-          {/* Reserve exactly one normal notice (40px), then consistently leave
-              16px to the video. Additional notices use a 12px internal gap. */}
-          <div data-testid="live-editor-notices" className="mb-4 flex min-h-10 flex-col gap-3">
-            {validationAttempted && invalidShape && (
-              <EditorNotice variant="warning">{t(invalidWarningKey, { name: invalidShape.label })}</EditorNotice>
-            )}
-            {error && <EditorNotice variant="error">{error}</EditorNotice>}
-            {status === 'saved' && !isDirty && (
-              <EditorNotice variant="success">
-                {t('cameras.debug.editor.status.saved')}{' '}
-                <strong>{t('cameras.debug.editor.status.restart_required')}</strong>
-              </EditorNotice>
-            )}
-            {(isDirty || selected) && (
-              <EditorNotice variant="unsaved">{t('cameras.debug.editor.status.unsaved')}</EditorNotice>
-            )}
-          </div>
-          <div className="relative" style={{ width: (displayWidth || width) + 'px', maxWidth: '100%', aspectRatio: width + ' / ' + height }}>
-        {children}
+          {/* Only visible notices occupy space. Every gap, including the final
+              gap to the video, is 16px; an empty editor has no notice margin. */}
+          {(Boolean(validationAttempted && invalidShape) || Boolean(error) ||
+            (status === 'saved' && !isDirty) || isDirty || Boolean(selected)) && (
+            <div data-testid="live-editor-notices" className="mb-4 flex flex-col gap-4">
+              {validationAttempted && invalidShape && (
+                <EditorNotice variant="warning">{t(invalidWarningKey, { name: invalidShape.label })}</EditorNotice>
+              )}
+              {error && <EditorNotice variant="error">{error}</EditorNotice>}
+              {status === 'saved' && !isDirty && (
+                <EditorNotice variant="success">
+                  {t('cameras.debug.editor.status.saved')}{' '}
+                  <strong>{t('cameras.debug.editor.status.restart_required')}</strong>
+                </EditorNotice>
+              )}
+              {(isDirty || selected) && (
+                <EditorNotice variant="unsaved">{t('cameras.debug.editor.status.unsaved')}</EditorNotice>
+              )}
+            </div>
+          )}
+          {/* Let the actual JSMpeg element define the video height. A grid cell
+              with the detect aspect ratio supplies a fallback until the canvas
+              is initialized; the preview and fallback share the *same* row, so
+              a taller real stream expands the loading cover too. */}
+          <div className="relative grid" style={{ width: (displayWidth || width) + 'px', maxWidth: '100%' }}>
+            <div aria-hidden="true" className="col-start-1 row-start-1 w-full" style={{ aspectRatio: width + ' / ' + height }} />
+            <div className="col-start-1 row-start-1 min-w-0">{children}</div>
         {!streamReady && (
           <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-slate-900/80 px-4 text-center text-base font-semibold text-white" role="status">
             {t('cameras.debug.editor.status.loading_stream')}
