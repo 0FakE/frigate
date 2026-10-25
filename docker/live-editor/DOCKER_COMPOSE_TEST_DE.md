@@ -89,8 +89,8 @@ Keinesfalls `docker compose down -v` ausführen: Das würde benannte Volumes lö
 
 In derselben Weboberfläche wie bisher die Kamera öffnen:
 
-1. In die **Live-Ansicht** wechseln.
-2. **Zonen & Masken bearbeiten** wählen. Beim Editieren wird bewusst **JSMpeg** verwendet.
+1. In den Tab **Debug** wechseln.
+2. Unter dem Kamerabild **Show Options** anklicken und **Zonen & Masken bearbeiten** wählen. Der normale Tab **Live** enthält keinen Editor-Button mehr. Beim Editieren wird bewusst **JSMpeg** verwendet.
 3. Zuerst nur eine neue, nicht störende Testzone zeichnen.
 4. Drei oder mehr Eckpunkte setzen, Polygon auswählen/verschieben und **Speichern**.
 5. Kontrollieren, dass `config.yml` auf dem Host die neue `cameras.<kamera>.zones.<name>.coordinates` enthält. Bei einem Fehlschlag **nicht** weitermachen, sondern Logs ansehen.
@@ -101,7 +101,7 @@ docker compose -f docker-compose.yml -f docker-compose.live-editor.yml \
   restart frigate
 ```
 
-Prüfe zusätzlich: Zonenwahl, Eckpunktverschiebung, Löschen, Rücksetzen („Verwerfen“), korrekte Koordinaten bei unterschiedlichen Fensterbreiten, bestehende Masken, Speicherhinweise.
+Prüfe zusätzlich: Zonenwahl, Eckpunktverschiebung mit vergrößerter unsichtbarer Trefferfläche, Löschen über **Bereich löschen** (nur bei Auswahl aktiviert), Abwahl über **Bearbeitung beenden** ohne Speichern, Überlappung verschiedener Zonen bei Punkterstellung, Rücksetzen („Verwerfen“), korrekte Koordinaten bei unterschiedlichen Fensterbreiten, bestehende Masken und Speicherhinweise. Das Modal nach **Restart Frigate** sollte über dem Editor erscheinen. Beim Wechsel zu **Live** mit ungespeicherten Änderungen sollte eine Warnung erscheinen.
 
 **Erwartet:** Beim Speichern legt die API eine `config.yml.live-editor.bak` bzw. `config.yaml.live-editor.bak` an. Die ursprüngliche Sicherheitskopie aus Schritt 2 bleibt separat erhalten.
 
