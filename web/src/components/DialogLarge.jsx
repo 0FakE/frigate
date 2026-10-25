@@ -17,7 +17,7 @@ export default function LargeDialog({ children, portalRootID = 'dialogs' }) {
       <div
         data-testid="scrim"
         key="scrim"
-        className="fixed bg-fixed inset-0 z-10 flex justify-center items-center bg-black bg-opacity-40"
+        className="fixed bg-fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-40"
       >
         <div
           role="modal"
