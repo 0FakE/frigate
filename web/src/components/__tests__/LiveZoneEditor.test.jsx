@@ -337,22 +337,38 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(container.querySelector('svg')).not.toHaveClass('invisible');
   });
 
-  test('loading background covers the same expanding grid as the camera canvas', async () => {
+  test('stream, loading cover, and polygon overlay share one explicit viewport', async () => {
     const { container, svg } = await openEditor({ streamReady: false });
-    const preview = container.querySelector('.relative');
-    const fallback = preview.querySelector('[aria-hidden="true"]');
-    const streamSlot = fallback.nextElementSibling;
+    const preview = screen.getByTestId('live-editor-viewport');
+    const streamSlot = screen.getByTestId('live-editor-video-slot');
     const loading = screen.getByText('Kamera Vorschau wird geladen…');
 
-    expect(preview).toHaveClass('relative', 'grid', 'live-polygon-preview');
-    expect(preview.style.aspectRatio).toBe('');
-    expect(fallback).toHaveClass('col-start-1', 'row-start-1', 'w-full');
-    expect(fallback.style.aspectRatio).toBe('640 / 360');
-    expect(streamSlot).toHaveClass('col-start-1', 'row-start-1');
+    expect(preview).toHaveClass('relative', 'live-polygon-preview', 'overflow-hidden');
+    expect(preview).not.toHaveClass('grid');
+    expect(preview.style.width).toBe('640px');
+    expect(preview.style.maxWidth).toBe('100%');
+    expect(preview.style.aspectRatio).toBe('640 / 360');
+    expect(streamSlot.parentElement).toBe(preview);
+    expect(streamSlot).toHaveClass('absolute', 'inset-0');
     expect(streamSlot).toHaveTextContent('Live stream');
     expect(loading).toHaveClass('absolute', 'inset-0');
     expect(loading.parentElement).toBe(preview);
     expect(svg).toHaveClass('absolute', 'inset-0');
+    expect(svg.parentElement).toBe(preview);
+    expect(container.querySelector('.relative')).toBe(preview);
+  });
+
+  test('shared viewport scales responsively without changing detect coordinate space', async () => {
+    const { svg } = await openEditor({
+      width: 800, height: 600, displayWidth: 400, streamReady: false,
+    });
+    const preview = screen.getByTestId('live-editor-viewport');
+    expect(preview.style.width).toBe('400px');
+    expect(preview.style.maxWidth).toBe('100%');
+    expect(preview.style.aspectRatio).toBe('800 / 600');
+    expect(svg.getAttribute('viewBox')).toBe('0 0 800 600');
+    expect(screen.getByTestId('live-editor-video-slot')).toHaveClass('absolute', 'inset-0');
+    expect(screen.getByText('Kamera Vorschau wird geladen…').parentElement).toBe(preview);
   });
 
   test('compact object-class select and no selection checkmark', async () => {
