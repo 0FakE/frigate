@@ -4,7 +4,7 @@ import { useRef, useEffect } from 'preact/hooks';
 import JSMpeg from '@cycjimmy/jsmpeg-player';
 import { firstFrameCallback } from '../utils/firstFrame';
 
-export default function JSMpegPlayer({ camera, width, height, onFirstFrame }) {
+export default function JSMpegPlayer({ camera, width, height, onFirstFrame, fillContainer = false }) {
   const playerRef = useRef();
   const url = `${baseUrl.replace(/^http/, 'ws')}live/jsmpeg/${camera}`;
 
@@ -36,6 +36,11 @@ export default function JSMpegPlayer({ camera, width, height, onFirstFrame }) {
   }, [url, onFirstFrame]);
 
   return (
-    <div ref={playerRef} class="jsmpeg" style={`max-height: ${height}px; max-width: ${width}px`} />
+    <div ref={playerRef}
+      class={fillContainer ? 'jsmpeg live-editor-jsmpeg' : 'jsmpeg'}
+      style={fillContainer
+        ? 'width: 100%; height: 100%; max-width: none; max-height: none;'
+        : `max-height: ${height}px; max-width: ${width}px`}
+    />
   );
 }
