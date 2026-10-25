@@ -221,7 +221,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
     fireEvent.click(svg, { button: 0, clientX: 35, clientY: 90 });
     fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
-    await waitFor(() => expect(screen.getByText('Speichern fehlgeschlagen')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Die Änderungen konnten nicht gespeichert werden. Speichern fehlgeschlagen.'));
     const error = screen.getByRole('alert');
     expect(error.firstElementChild).toHaveClass('text-red-400');
     expect(error.querySelector('svg[stroke="currentColor"]')).not.toBeNull();
