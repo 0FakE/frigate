@@ -426,13 +426,12 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
               )}
             </div>
           )}
-          {/* Let the actual JSMpeg element define the video height. A grid cell
-              with the detect aspect ratio supplies a fallback until the canvas
-              is initialized; the preview and fallback share the *same* row, so
-              a taller real stream expands the loading cover too. */}
-          <div className="relative grid live-polygon-preview" style={{ width: (displayWidth || width) + 'px', maxWidth: '100%' }}>
-            <div aria-hidden="true" className="col-start-1 row-start-1 w-full" style={{ aspectRatio: width + ' / ' + height }} />
-            <div className="col-start-1 row-start-1 min-w-0">{children}</div>
+          {/* One authoritative viewport controls the JSMpeg canvas, the loading
+              background, and the polygon SVG. JSMpeg must not increase the
+              height independently and leave a strip outside the overlay. */}
+          <div data-testid="live-editor-viewport" className="relative live-polygon-preview overflow-hidden"
+            style={{ width: (displayWidth || width) + 'px', maxWidth: '100%', aspectRatio: width + ' / ' + height }}>
+            <div data-testid="live-editor-video-slot" className="absolute inset-0">{children}</div>
         {!streamReady && (
           <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-slate-900/80 px-4 text-center text-base font-semibold text-white" role="status">
             {t('cameras.debug.editor.status.loading_stream')}
