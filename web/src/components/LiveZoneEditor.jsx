@@ -34,9 +34,14 @@ function segmentDistance(p, a, b) {
   return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy);
 }
 
-export default function LiveZoneEditor({ camera, width, height, displayWidth, trackedObjects = [], onClose, children }) {
+export default function LiveZoneEditor({ camera, width, height, displayWidth, trackedObjects = [], onClose, onDirtyChange, children }) {
   const svgRef = useRef(null);
   const dragRef = useRef(null);
+  const suppressNextClickRef = useRef(false);
+  const [svgPixelSize, setSvgPixelSize] = useState({
+    width: displayWidth || width,
+    height: (displayWidth || width) * height / width,
+  });
   const [data, setData] = useState(empty);
   const [revision, setRevision] = useState(null);
   const [savedSnapshot, setSavedSnapshot] = useState('');
@@ -67,7 +72,27 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   useEffect(() => { load(); }, [load]);
 
   const shapes = shapesFrom(data);
-  const isDirty = JSON.stringify(data) !== savedSnapshot;
+  const isDirty = Boolean(revision) && JSON.stringify(data) !== savedSnapshot;
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const updateSize = () => {
+      const rect = svg.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        setSvgPixelSize({ width: rect.width, height: rect.height });
+      }
+    };
+    updateSize();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(svg);
+    return () => observer.disconnect();
+  }, [width, height]);
   const invalidShape = shapes.find(({ points }) =>
     points.length < 3 || Math.abs(points.reduce((total, point, i) => {
       const next = points[(i + 1) % points.length];
@@ -83,7 +108,13 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   };
 
   const addPoint = (event) => {
-    if (!selected || dragRef.current || busy) return;
+    // A pointer drag can finish with a synthetic click targeting the SVG.
+    // Never turn that click into another vertex.
+    if (suppressNextClickRef.current) {
+      suppressNextClickRef.current = false;
+      return;
+    }
+    if (event.button !== 0 || event.target !== svgRef.current || !selected || dragRef.current || busy) return;
     const point = eventPoint(event);
     setData((current) => editShape(current, selected, (points) => {
       const next = [...points];
@@ -102,9 +133,12 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   };
 
   const startDrag = (event, id, index) => {
+    // Only a primary-button press is a drag. Right-click stays available to remove points.
+    if (event.button !== 0 || busy) return;
     event.stopPropagation();
-    setSelected(id);
-    dragRef.current = { id, index };
+    event.preventDefault();
+    suppressNextClickRef.current = true;
+    dragRef.current = { id, index, pointerId: event.pointerId };
     svgRef.current.setPointerCapture(event.pointerId);
   };
   const moveDrag = (event) => {
@@ -114,7 +148,16 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     setData((current) => editShape(current, id, (points) => points.map((p, i) => i === index ? point : p)));
     setStatus('Nicht gespeicherte Änderungen');
   };
-  const endDrag = () => { dragRef.current = null; };
+  const endDrag = (event) => {
+    if (dragRef.current && dragRef.current.pointerId === event.pointerId) {
+      dragRef.current = null;
+    }
+  };
+
+  const handleCanvasPointerDown = (event) => {
+    // A fresh click on the background must work even if a prior drag was cancelled.
+    if (event.target === svgRef.current) suppressNextClickRef.current = false;
+  };
 
   const addZone = () => {
     const name = window.prompt('Zonenname (Buchstaben, Zahlen, Unterstriche):');
@@ -193,6 +236,11 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     if (!isDirty || window.confirm('Ungespeicherte Änderungen verwerfen?')) onClose();
   };
 
+  // Radius is expressed in source video coordinates; keep hit targets in screen pixels.
+  const visibleRadius = Math.max(4, width / 150) * (2 / 3);
+  const hitRadiusX = Math.max(visibleRadius + 1, 18 * width / Math.max(1, svgPixelSize.width));
+  const hitRadiusY = Math.max(visibleRadius + 1, 18 * height / Math.max(1, svgPixelSize.height));
+
   return (
     <div className="mt-2">
       <div className="flex flex-wrap items-center gap-2 mb-2 text-sm">
@@ -202,15 +250,16 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
           {[...new Set([objectLabel, ...trackedObjects, ...Object.keys(data.object_masks)])].map((item) => <option key={item} value={item}>{item}</option>)}
         </select>
         <button type="button" className="rounded bg-blue-700 text-white px-3 py-2" onClick={addObjectMask} disabled={busy}>+ Objektmaske</button>
-        <button type="button" className="rounded bg-slate-700 text-white px-3 py-2" onClick={removeSelected} disabled={!selected || busy}>Polygon löschen</button>
+        <button type="button" className="rounded bg-slate-700 text-white px-3 py-2" onClick={removeSelected} disabled={!selected || busy}>Bereich löschen</button>
+        <button type="button" className="rounded bg-slate-700 text-white px-3 py-2" onClick={() => setSelected(null)} disabled={!selected || busy}>Bearbeitung beenden</button>
         <button type="button" className="rounded bg-slate-700 text-white px-3 py-2" onClick={load} disabled={busy}>Verwerfen</button>
         <button type="button" className="rounded bg-green-800 text-white px-3 py-2" onClick={save} disabled={busy || !revision || !isDirty || !!invalidShape}>Speichern</button>
         <button type="button" className="rounded px-3 py-2 border" onClick={handleClose}>Editor schließen</button>
       </div>
-      <p className="text-xs mb-2">Polygon auswählen, Punkte durch Klick ins Bild ergänzen, Punkte ziehen, Rechtsklick entfernt den Punkt. Bearbeitung erfolgt auf dem JSMpeg-Livestream.</p>
+      <p className="text-xs mb-2">Bereich auswählen oder erneut anklicken, um ihn abzuwählen. Klicks ins Bild ergänzen Punkte zum gewählten Bereich – auch innerhalb anderer Zonen. Eckpunkte ziehen; Rechtsklick auf einen Eckpunkt entfernt ihn. Änderungen werden erst mit Speichern übernommen.</p>
       <div className="flex flex-wrap gap-2 mb-2">
         {shapes.map((shape) => (
-          <button key={shape.id} type="button" onClick={() => setSelected(shape.id)}
+          <button key={shape.id} type="button" onClick={() => setSelected((current) => current === shape.id ? null : shape.id)}
             className={selected === shape.id ? 'px-2 py-1 rounded border ring-2 ring-blue-500' : 'px-2 py-1 rounded border'}
             style={{ borderColor: shape.color }}>{shape.label}</button>
         ))}
@@ -224,16 +273,49 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
         {children}
         <svg ref={svgRef} viewBox={'0 0 ' + width + ' ' + height} preserveAspectRatio="none"
           className="absolute inset-0 w-full h-full z-20 touch-none cursor-crosshair"
-          onClick={addPoint} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag}>
+          onPointerDown={handleCanvasPointerDown}
+          onClick={addPoint}
+          onPointerMove={moveDrag}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}>
           {shapes.map((shape) => (
+            <g key={shape.id} pointerEvents="none">
+              {shape.points.length >= 3 && (
+                <polygon
+                  points={shape.points.map((p) => p.join(',')).join(' ')}
+                  fill={shape.color} fillOpacity="0.2" stroke={shape.color}
+                  strokeWidth="3" vectorEffect="non-scaling-stroke"
+                />
+              )}
+              {shape.points.length === 2 && (
+                <polyline
+                  points={shape.points.map((p) => p.join(',')).join(' ')}
+                  stroke={shape.color} strokeWidth="3" fill="none"
+                  vectorEffect="non-scaling-stroke"
+                />
+              )}
+            </g>
+          ))}
+          {/* Active vertices are always drawn last, above any overlapping polygons. */}
+          {selected && shapes.filter((shape) => shape.id === selected).map((shape) => (
             <g key={shape.id}>
-              {shape.points.length >= 3 && <polygon points={shape.points.map((p) => p.join(',')).join(' ')} fill={shape.color} fillOpacity="0.2" stroke={shape.color} strokeWidth="3" vectorEffect="non-scaling-stroke" onClick={(e) => { e.stopPropagation(); setSelected(shape.id); }} />}
-              {shape.points.length === 2 && <polyline points={shape.points.map((p) => p.join(',')).join(' ')} stroke={shape.color} strokeWidth="3" fill="none" vectorEffect="non-scaling-stroke" />}
-              {selected === shape.id && shape.points.map(([x, y], i) => (
-                <circle key={i} cx={x} cy={y} r={Math.max(4, width / 150)} fill="white" stroke={shape.color} strokeWidth="3"
-                  onPointerDown={(e) => startDrag(e, shape.id, i)}
-                  onClick={(e) => e.stopPropagation()}
-                  onContextMenu={(e) => { e.preventDefault(); removePoint(i); }} />
+              {shape.points.map(([x, y], i) => (
+                <g key={i}>
+                  <circle cx={x} cy={y} r={visibleRadius} fill="white"
+                    stroke={shape.color} strokeWidth="2" pointerEvents="none" />
+                  <ellipse cx={x} cy={y} rx={hitRadiusX} ry={hitRadiusY}
+                    fill="transparent" pointerEvents="all"
+                    className="cursor-grab"
+                    onPointerDown={(e) => startDrag(e, shape.id, i)}
+                    onClick={(e) => e.stopPropagation()}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (!busy) removePoint(i);
+                    }}
+                    aria-label={'Eckpunkt ' + (i + 1) + ' von ' + shape.label}
+                  />
+                </g>
               ))}
             </g>
           ))}
