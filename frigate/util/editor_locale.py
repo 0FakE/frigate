@@ -52,10 +52,13 @@ def ensure_default_locale(config_dir=None, bundled_path=None):
     path = locale_path(config_dir)
     try:
         source = Path(bundled_path) if bundled_path is not None else BUNDLED_LOCALE
+        # Read the bundled template *before* creating a new file, so an
+        # unavailable template cannot leave an empty permanent host file.
+        template = source.read_text(encoding="utf-8")
         path.parent.mkdir(parents=True, exist_ok=True)
         try:
             with path.open("x", encoding="utf-8") as host_file:
-                host_file.write(source.read_text(encoding="utf-8"))
+                host_file.write(template)
             logger.info("Created editable German translations at %s", path)
         except FileExistsError:
             pass
