@@ -83,24 +83,47 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(svg.querySelectorAll('ellipse')).toHaveLength(4);
   });
 
-  test('reserves a fixed notice slot before any selection, without moving the video container', async () => {
+  test('reserves space for one notice before selection and does not move the video container', async () => {
     const { container } = await openEditor();
     const noticeSlot = screen.getByTestId('live-editor-notices');
     const video = container.querySelector('.relative');
 
-    expect(noticeSlot).toHaveClass('h-24', 'overflow-y-auto', 'mb-4');
+    expect(noticeSlot).toHaveClass('min-h-[56px]', 'mb-4');
+    expect(noticeSlot).not.toHaveClass('h-24', 'overflow-y-auto');
     expect(noticeSlot.nextElementSibling).toBe(video);
     expect(screen.queryByText('Nicht gespeicherte Änderungen')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
     expect(screen.getByRole('status')).toHaveTextContent('Nicht gespeicherte Änderungen');
     expect(noticeSlot.nextElementSibling).toBe(video);
-    expect(noticeSlot).toHaveClass('h-24');
+    expect(noticeSlot).toHaveClass('min-h-[56px]');
 
     fireEvent.click(screen.getByRole('button', { name: 'Bearbeitung beenden' }));
     expect(screen.queryByText('Nicht gespeicherte Änderungen')).not.toBeInTheDocument();
     expect(noticeSlot.nextElementSibling).toBe(video);
-    expect(noticeSlot).toHaveClass('h-24');
+    expect(noticeSlot).toHaveClass('min-h-[56px]');
+  });
+
+  test('additional error messages stack below the first notice without clipping', async () => {
+    const { container } = await openEditor();
+    const noticeSlot = screen.getByTestId('live-editor-notices');
+    const video = container.querySelector('.relative');
+
+    fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
+    expect(noticeSlot.querySelectorAll('[role="status"]')).toHaveLength(1);
+
+    vi.spyOn(window, 'prompt').mockReturnValueOnce('area_a');
+    fireEvent.click(screen.getByRole('button', { name: '+ Zone' }));
+
+    expect(noticeSlot.querySelector('[role="alert"]')).toHaveTextContent(
+      'Eine Zone mit diesem Namen ist bereits vorhanden.'
+    );
+    expect(noticeSlot.querySelector('[role="status"]')).toHaveTextContent(
+      'Nicht gespeicherte Änderungen'
+    );
+    expect(noticeSlot).toHaveClass('min-h-[56px]');
+    expect(noticeSlot).not.toHaveClass('overflow-y-auto', 'overflow-hidden', 'h-24');
+    expect(noticeSlot.nextElementSibling).toBe(video);
   });
 
   test('shows the status immediately when selecting an unchanged area without marking data dirty', async () => {
