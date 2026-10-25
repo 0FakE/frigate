@@ -50,5 +50,7 @@ jobs:
         run: npm ci
       - name: Lint Frigate frontend
         run: npm run lint
+      - name: Test live editor interactions and dialog stacking
+        run: npx vitest run src/components/__tests__/LiveZoneEditor.test.jsx src/components/__tests__/Dialog.test.jsx src/components/__tests__/ButtonsTabbed.test.jsx
       - name: Build original v0.13 frontend with the editor
         run: npm run build
