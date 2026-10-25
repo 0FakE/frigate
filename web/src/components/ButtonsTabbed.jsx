@@ -1,5 +1,5 @@
 import { h } from 'preact';
-import { useCallback, useState } from 'preact/hooks';
+import { useCallback } from 'preact/hooks';
 
 export default function ButtonsTabbed({
   viewModes = [''],
@@ -10,7 +10,7 @@ export default function ButtonsTabbed({
   className = 'text-gray-600 py-0 px-4 block hover:text-gray-500',
   selectedClassName = `${className} focus:outline-none border-b-2 font-medium border-gray-500`,
 }) {
-  const [selected, setSelected] = useState(viewModes ? viewModes.indexOf(currentViewMode) : 0);
+  const selected = viewModes.indexOf(currentViewMode);
   const captitalize = (str) => {
     return `${str.charAt(0).toUpperCase()}${str.slice(1)}`;
   };
@@ -24,11 +24,10 @@ export default function ButtonsTabbed({
 
   const handleClick = useCallback(
     (i) => {
-      setSelected(i);
       setViewMode && setViewMode(viewModes[i]);
       setHeader && setHeader(getHeader(i));
     },
-    [setViewMode, setHeader, setSelected, viewModes, getHeader]
+    [setViewMode, setHeader, viewModes, getHeader]
   );
 
   setHeader && setHeader(getHeader(selected));
