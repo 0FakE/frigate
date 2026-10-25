@@ -108,10 +108,11 @@ describe('LiveZoneEditor vertex interactions', () => {
 
   test('additional error messages stack below the first notice without clipping', async () => {
     const { container } = await openEditor();
-    const noticeSlot = screen.getByTestId('live-editor-notices');
     const video = container.querySelector('.relative');
+    expect(screen.queryByTestId('live-editor-notices')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
+    const noticeSlot = screen.getByTestId('live-editor-notices');
     expect(noticeSlot.querySelectorAll('[role="status"]')).toHaveLength(1);
 
     vi.spyOn(window, 'prompt').mockReturnValueOnce('area_a');
