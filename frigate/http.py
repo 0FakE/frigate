@@ -34,6 +34,7 @@ from tzlocal import get_localzone_name
 from werkzeug.utils import secure_filename
 
 from frigate.config import FrigateConfig
+from frigate.util.live_polygon_editor import read_polygons, update_polygons, revision
 from frigate.const import (
     CACHE_DIR,
     CLIPS_DIR,
@@ -1351,6 +1352,84 @@ def config_set():
         ),
         200,
     )
+
+
+
+@bp.route("/cameras/<camera_name>/polygons", methods=["GET", "PUT"])
+def camera_polygons(camera_name):
+    """Read/write camera-local mask and zone polygons without replacing unrelated YAML."""
+    import fcntl
+    import shutil
+    import tempfile
+
+    if camera_name not in current_app.frigate_config.cameras:
+        return jsonify({"success": False, "message": "Unknown camera"}), 404
+
+    config_file = os.environ.get("CONFIG_FILE", f"{CONFIG_DIR}/config.yml")
+    config_file_yaml = config_file.replace(".yml", ".yaml")
+    if os.path.isfile(config_file_yaml):
+        config_file = config_file_yaml
+    path = Path(config_file)
+
+    try:
+        # A stable sidecar lock protects editor requests from each other.
+        # Other legacy Frigate config endpoints do not acquire this lock.
+        with open(path.parent / ".live-polygon-editor.lock", "a+") as lock:
+            fcntl.flock(lock.fileno(), fcntl.LOCK_EX if request.method == "PUT" else fcntl.LOCK_SH)
+            raw = path.read_text(encoding="utf-8")
+            if request.method == "GET":
+                return jsonify(read_polygons(raw, camera_name))
+
+            data = request.get_json(silent=True)
+            if not isinstance(data, dict):
+                return jsonify({"success": False, "message": "JSON object required"}), 400
+            camera_cfg = current_app.frigate_config.cameras[camera_name]
+            try:
+                edited = update_polygons(
+                    raw, camera_name, data, camera_cfg.detect.width, camera_cfg.detect.height
+                )
+            except RuntimeError as e:
+                return jsonify({"success": False, "message": str(e)}), 409
+            except (ValueError, TypeError) as e:
+                return jsonify({"success": False, "message": str(e)}), 400
+
+            try:
+                FrigateConfig.parse_raw(edited)
+            except Exception as e:
+                logger.warning("Invalid edited polygon config: %s", e)
+                return jsonify({
+                    "success": False,
+                    "message": "Edited config failed validation; check Frigate logs.",
+                }), 400
+
+            with tempfile.NamedTemporaryFile(
+                mode="w", encoding="utf-8", dir=str(path.parent),
+                prefix=".config-live-editor-", delete=False,
+            ) as candidate:
+                tmp_path = Path(candidate.name)
+                candidate.write(edited)
+                candidate.flush()
+                os.fsync(candidate.fileno())
+            try:
+                os.chmod(tmp_path, path.stat().st_mode & 0o777)
+                shutil.copy2(path, path.with_name(path.name + ".live-editor.bak"))
+                os.replace(tmp_path, path)
+            finally:
+                tmp_path.unlink(missing_ok=True)
+            return jsonify({
+                "success": True,
+                "revision": revision(edited),
+                "message": "Saved; restart Frigate to apply",
+            })
+    except OSError:
+        logger.exception("Could not atomically update camera polygons")
+        return jsonify({
+            "success": False,
+            "message": "Cannot write config; /config must be a writable directory mount.",
+        }), 500
+    except Exception:
+        logger.exception("Error editing camera polygons")
+        return jsonify({"success": False, "message": "Polygon editor failed; check logs."}), 500
 
 
 @bp.route("/config/schema.json")
