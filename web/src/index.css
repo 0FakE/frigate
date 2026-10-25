@@ -30,6 +30,20 @@
   position: static !important;
 }
 
+/* The editor overlay must cover the *displayed* JSMpeg canvas, not only the
+   detect-aspect placeholder. A fixed player max-height would let a taller
+   canvas overflow outside the overlay's layout box. Scope this to the editor
+   so ordinary camera players keep their existing maximum dimensions. */
+.live-polygon-preview .jsmpeg {
+  max-height: none !important;
+}
+
+.live-polygon-preview .jsmpeg canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
 .hide-scroll::-webkit-scrollbar {
   display: none;
 }
