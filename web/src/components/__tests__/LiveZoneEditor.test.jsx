@@ -344,7 +344,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     const streamSlot = fallback.nextElementSibling;
     const loading = screen.getByText('Kamera Vorschau wird geladen…');
 
-    expect(preview).toHaveClass('relative', 'grid');
+    expect(preview).toHaveClass('relative', 'grid', 'live-polygon-preview');
     expect(preview.style.aspectRatio).toBe('');
     expect(fallback).toHaveClass('col-start-1', 'row-start-1', 'w-full');
     expect(fallback.style.aspectRatio).toBe('640 / 360');
