@@ -1,6 +1,8 @@
 import { h } from 'preact';
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import axios from 'axios';
+import { mutate } from 'swr';
+import { t } from '../locales';
 
 const empty = () => ({ zones: {}, motion_masks: [], object_masks: {} });
 const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -11,10 +13,10 @@ function shapesFrom(data) {
     shapes.push({ id: 'zone:' + name, label: name, points, color: '#22c55e' });
   });
   data.motion_masks.forEach((points, i) => {
-    shapes.push({ id: 'motion:' + i, label: 'Maske ' + (i + 1), points, color: '#ef4444' });
+    shapes.push({ id: 'motion:' + i, label: t('cameras.debug.editor.label.mask_name', { number: i + 1 }), points, color: '#ef4444' });
   });
   Object.entries(data.object_masks).forEach(([name, masks]) => masks.forEach((points, i) => {
-    shapes.push({ id: 'object:' + name + ':' + i, label: name + ' ' + (i + 1), points, color: '#3b82f6' });
+    shapes.push({ id: 'object:' + name + ':' + i, label: t('cameras.debug.editor.label.object_filter_name', { name, number: i + 1 }), points, color: '#3b82f6' });
   }));
   return shapes;
 }
@@ -26,6 +28,12 @@ function editShape(data, id, fn) {
   if (type === 'motion') next.motion_masks[Number(key)] = fn(next.motion_masks[Number(key)]);
   if (type === 'object') next.object_masks[key][Number(subkey)] = fn(next.object_masks[key][Number(subkey)]);
   return next;
+}
+
+function readableDetail(error) {
+  const raw = String(error.response?.data?.message || error.message || '').trim();
+  const detail = raw || 'Ein unbekannter Fehler ist aufgetreten.';
+  return /[.!?]$/.test(detail) ? detail : detail + '.';
 }
 
 function segmentDistance(p, a, b) {
@@ -63,7 +71,7 @@ function EditorNotice({ variant, children }) {
   );
 }
 
-export default function LiveZoneEditor({ camera, width, height, displayWidth, trackedObjects = [], onClose, onDirtyChange, children }) {
+export default function LiveZoneEditor({ camera, width, height, displayWidth, trackedObjects = [], onClose, onDirtyChange, streamReady = true, children }) {
   const svgRef = useRef(null);
   const dragRef = useRef(null);
   const suppressNextClickRef = useRef(false);
@@ -79,6 +87,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(true);
   const [objectLabel, setObjectLabel] = useState(trackedObjects[0] || 'person');
+  const [validationAttempted, setValidationAttempted] = useState(false);
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -92,13 +101,19 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
       setSelected(null);
       setStatus('');
     } catch (e) {
-      setError(e.response?.data?.message || e.message);
+      setError(t('cameras.debug.editor.error.load_failed', { details: readableDetail(e) }));
     } finally {
       setBusy(false);
     }
   }, [camera]);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    // A draft is not an invalid user action until Save is attempted.
+    setValidationAttempted(false);
+    setError('');
+  }, [data]);
 
   const shapes = shapesFrom(data);
   const isDirty = Boolean(revision) && JSON.stringify(data) !== savedSnapshot;
@@ -158,7 +173,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
       }
       return next;
     }));
-    setStatus('Nicht gespeicherte Änderungen');
+    setStatus('');
   };
 
   const startDrag = (event, id, index) => {
@@ -177,7 +192,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     const { id, index } = dragRef.current;
     const point = eventPoint(event);
     setData((current) => editShape(current, id, (points) => points.map((p, i) => i === index ? point : p)));
-    setStatus('Nicht gespeicherte Änderungen');
+    setStatus('');
   };
   const endDrag = (event) => {
     if (dragRef.current && dragRef.current.pointerId === event.pointerId) {
@@ -191,15 +206,19 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   };
 
   const addZone = () => {
-    const name = window.prompt('Zonenname (Buchstaben, Zahlen, Unterstriche):');
+    const name = window.prompt(t('cameras.debug.editor.prompt.zone_name'));
     if (!name) return;
-    if (!/^[A-Za-z0-9_]+$/.test(name) || data.zones[name]) {
-      setError('Ungültiger oder bereits vergebener Zonenname');
+    if (!/^[A-Za-z0-9_]+$/.test(name)) {
+      setError(t('cameras.debug.editor.error.invalid_zone_name'));
+      return;
+    }
+    if (Object.prototype.hasOwnProperty.call(data.zones, name)) {
+      setError(t('cameras.debug.editor.error.duplicate_zone_name'));
       return;
     }
     setData((current) => ({ ...current, zones: { ...current.zones, [name]: [] } }));
     setSelected('zone:' + name);
-    setStatus('Zum Zeichnen ins Videobild klicken');
+    setStatus('');
     setError('');
   };
 
@@ -207,13 +226,13 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     const index = data.motion_masks.length;
     setData((current) => ({ ...current, motion_masks: [...current.motion_masks, []] }));
     setSelected('motion:' + index);
-    setStatus('Zum Zeichnen ins Videobild klicken');
+    setStatus('');
   };
 
   const addObjectMask = () => {
     const name = objectLabel.trim();
     if (!/^[A-Za-z0-9_]+$/.test(name)) {
-      setError('Ungültiger Objektname');
+      setError(t('cameras.debug.editor.error.invalid_object_name'));
       return;
     }
     const index = (data.object_masks[name] || []).length;
@@ -222,7 +241,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
       object_masks: { ...current.object_masks, [name]: [...(current.object_masks[name] || []), []] },
     }));
     setSelected('object:' + name + ':' + index);
-    setStatus('Zum Zeichnen ins Videobild klicken');
+    setStatus('');
   };
 
   const removeSelected = () => {
@@ -239,34 +258,46 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
       return next;
     });
     setSelected(null);
-    setStatus('Nicht gespeicherte Änderungen');
+    setStatus('');
   };
 
   const removePoint = (index) => {
     if (!selected) return;
     setData((current) => editShape(current, selected, (points) => points.filter((_, i) => i !== index)));
-    setStatus('Nicht gespeicherte Änderungen');
+    setStatus('');
   };
 
   const save = async () => {
+    if (invalidShape) {
+      setValidationAttempted(true);
+      return;
+    }
+    setValidationAttempted(false);
     setBusy(true);
     setError('');
     try {
       const response = await axios.put('cameras/' + encodeURIComponent(camera) + '/polygons', { revision, ...data });
       setRevision(response.data.revision);
       setSavedSnapshot(JSON.stringify(data));
-      // Exit vertex editing only after the server confirms the save.
       setSelected(null);
-      setStatus('Die Änderungen wurden gespeichert. Ein Neustart von Frigate ist erforderlich.');
+      setStatus('saved');
+      // Refresh the raw YAML separately; it is different from the runtime /config endpoint.
+      try {
+        const raw = await axios.get('config/raw');
+        await mutate('config/raw', raw.data, false);
+      } catch (refreshError) {
+        // An unsuccessful refresh does not mean the polygons failed to save.
+        await mutate('config/raw');
+      }
     } catch (e) {
-      setError(e.response?.data?.message || e.message);
+      setError(t('cameras.debug.editor.error.save_failed', { details: readableDetail(e) }));
     } finally {
       setBusy(false);
     }
   };
 
   const handleClose = () => {
-    if (!isDirty || window.confirm('Ungespeicherte Änderungen verwerfen?')) onClose();
+    if (!isDirty || window.confirm(t('cameras.debug.editor.prompt.discard_unsaved'))) onClose();
   };
 
   // Radius is expressed in source video coordinates; keep hit targets in screen pixels.
@@ -275,10 +306,15 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   const hitRadiusY = Math.max(visibleRadius + 1, 18 * height / Math.max(1, svgPixelSize.height));
 
   const areaGroups = [
-    { key: 'zone:', title: 'Zonen', color: '#22c55e' },
-    { key: 'motion:', title: 'Bewegungsmasken', color: '#ef4444' },
-    { key: 'object:', title: 'Objektmasken', color: '#3b82f6' },
+    { key: 'zone:', titleKey: 'cameras.debug.editor.header.zones', color: '#22c55e' },
+    { key: 'motion:', titleKey: 'cameras.debug.editor.header.covered_areas', color: '#ef4444' },
+    { key: 'object:', titleKey: 'cameras.debug.editor.header.object_filters', color: '#3b82f6' },
   ];
+  const invalidWarningKey = invalidShape?.id.startsWith('zone:')
+    ? 'cameras.debug.editor.warning.invalid_zone'
+    : invalidShape?.id.startsWith('motion:')
+      ? 'cameras.debug.editor.warning.invalid_covered_area'
+      : 'cameras.debug.editor.warning.invalid_object_filter';
 
   const toolButtonClass = 'inline-flex w-auto items-center justify-center rounded-md border px-2.5 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40';
   const secondaryButtonClass = toolButtonClass + ' border-slate-300 bg-white text-slate-800 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-700';
@@ -287,21 +323,21 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     <div className="mt-2 w-full">
       <div className="flex flex-col items-start gap-4 xl:flex-row">
         <aside
-          aria-label="Werkzeuge und Bereiche"
+          aria-label={t('cameras.debug.editor.label.sidebar')}
           className="order-first w-full shrink-0 rounded-lg border border-slate-300 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800 xl:order-last xl:w-[330px]"
         >
-          <h2 className="mb-3 text-sm font-semibold xl:hidden">Bearbeitungsmenü</h2>
+          <h2 className="mb-3 text-sm font-semibold xl:hidden">{t('cameras.debug.editor.header.mobile_menu')}</h2>
           <div id="live-polygon-tools" className="space-y-3">
-            <section aria-label="Neuen Bereich erstellen" className="space-y-2">
-              <h3 className="text-sm font-semibold">Neuen Bereich erstellen</h3>
+            <section aria-label={t('cameras.debug.editor.header.new_area')} className="space-y-2">
+              <h3 className="text-sm font-semibold">{t('cameras.debug.editor.header.new_area')}</h3>
               <div className="flex flex-wrap gap-2">
-                <button type="button" className={secondaryButtonClass} onClick={addZone} disabled={busy}>+ Zone</button>
-                <button type="button" className={secondaryButtonClass} onClick={addMotionMask} disabled={busy}>+ Motion-Maske</button>
+                <button type="button" className={secondaryButtonClass} onClick={addZone} disabled={busy}>{t('cameras.debug.editor.button.zone')}</button>
+                <button type="button" className={secondaryButtonClass} onClick={addMotionMask} disabled={busy}>{t('cameras.debug.editor.button.mask')}</button>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <select
-                  className="min-w-0 flex-1 rounded border-slate-300 bg-white py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900"
-                  aria-label="Objektklasse"
+                  className="w-[145px] max-w-full shrink-0 rounded border-slate-300 bg-white py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900"
+                  aria-label={t('cameras.debug.editor.label.object_class')}
                   value={objectLabel}
                   onChange={(e) => setObjectLabel(e.target.value)}
                 >
@@ -309,15 +345,12 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                     <option key={item} value={item}>{item}</option>
                   ))}
                 </select>
-                <button type="button" className={secondaryButtonClass} onClick={addObjectMask} disabled={busy}>+ Objektmaske</button>
+                <button type="button" className={secondaryButtonClass} onClick={addObjectMask} disabled={busy}>{t('cameras.debug.editor.button.object_filter')}</button>
               </div>
             </section>
 
-            <section aria-label="Vorhandene Bereiche" className="space-y-2 border-t border-slate-300 pt-3 dark:border-slate-600">
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="text-sm font-semibold">Vorhandene Bereiche</h3>
-                <span className="text-xs text-slate-500 dark:text-slate-400">{shapes.length}</span>
-              </div>
+            <section aria-label={t('cameras.debug.editor.header.existing_areas', { count: shapes.length })} className="space-y-2 border-t border-slate-300 pt-3 dark:border-slate-600">
+              <h3 className="text-sm font-semibold">{t('cameras.debug.editor.header.existing_areas', { count: shapes.length })}</h3>
               <div className="max-h-64 space-y-3 overflow-y-auto pr-1">
                 {areaGroups.map((group) => {
                   const groupShapes = shapes.filter((shape) => shape.id.startsWith(group.key));
@@ -325,7 +358,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                     <div key={group.key} className="space-y-1.5">
                       <h4 className="flex items-center gap-2 text-sm font-semibold">
                         <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: group.color }} />
-                        {group.title} ({groupShapes.length})
+                        {t(group.titleKey, { count: groupShapes.length })}
                       </h4>
                       {groupShapes.length ? (
                         <div className="flex flex-wrap gap-1.5">
@@ -341,12 +374,12 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                                 ? 'inline-flex w-auto max-w-full items-center rounded border border-blue-500 bg-blue-600 px-2 py-1 text-sm font-semibold text-white ring-1 ring-blue-400'
                                 : 'inline-flex w-auto max-w-full items-center rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-800 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-700'}
                             >
-                              <span className="break-all">{selected === shape.id ? '✓ ' : ''}{shape.label}</span>
+                              <span className="break-all">{shape.label}</span>
                             </button>
                           ))}
                         </div>
                       ) : (
-                        <p className="text-xs text-slate-500 dark:text-slate-400">Keine</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">{t('cameras.debug.editor.label.empty')}</p>
                       )}
                     </div>
                   );
@@ -354,52 +387,50 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
               </div>
             </section>
 
-            <section aria-label="Ausgewählter Bereich" className="space-y-2 border-t border-slate-300 pt-3 dark:border-slate-600">
-              <h3 className="text-sm font-semibold">Ausgewählter Bereich</h3>
+            <section aria-label={t('cameras.debug.editor.header.selected_area')} className="space-y-2 border-t border-slate-300 pt-3 dark:border-slate-600">
+              <h3 className="text-sm font-semibold">{t('cameras.debug.editor.header.selected_area')}</h3>
               <div className="flex flex-wrap gap-2">
-                <button type="button" className={secondaryButtonClass} onClick={() => setSelected(null)} disabled={!selected || busy}>Bearbeitung beenden</button>
-                <button type="button" className={toolButtonClass + ' border-red-600 text-red-700 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-950'} onClick={removeSelected} disabled={!selected || busy}>Bereich löschen</button>
+                <button type="button" className={secondaryButtonClass} onClick={() => setSelected(null)} disabled={!selected || busy}>{t('cameras.debug.editor.button.end_editing')}</button>
+                <button type="button" className={toolButtonClass + ' border-red-600 text-red-700 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-950'} onClick={removeSelected} disabled={!selected || busy}>{t('cameras.debug.editor.button.delete_area')}</button>
               </div>
               <div className="flex flex-wrap gap-2 border-t border-slate-300 pt-3 dark:border-slate-600">
-                <button type="button" className={secondaryButtonClass} onClick={load} disabled={busy}>Verwerfen</button>
-                <button type="button" className={toolButtonClass + ' border-green-700 bg-green-700 text-white hover:bg-green-600'} onClick={save} disabled={busy || !revision || !isDirty || !!invalidShape}>Speichern</button>
-                <button type="button" className={secondaryButtonClass} onClick={handleClose}>Editor schließen</button>
+                <button type="button" className={secondaryButtonClass} onClick={load} disabled={busy}>{t('cameras.debug.editor.button.discard')}</button>
+                <button type="button" className={toolButtonClass + ' border-green-700 bg-green-700 text-white hover:bg-green-600'} onClick={save} disabled={busy || !revision || !isDirty}>{t('cameras.debug.editor.button.save')}</button>
+                <button type="button" className={secondaryButtonClass} onClick={handleClose}>{t('cameras.debug.editor.button.close')}</button>
               </div>
             </section>
           </div>
         </aside>
 
         <div className="order-last w-full min-w-0 flex-1 xl:order-first">
-          {invalidShape && (
-            <EditorNotice variant="warning">
-              {invalidShape.label}: Mindestens 3 nicht auf einer Linie liegende Eckpunkte erforderlich, bevor gespeichert werden kann.
-            </EditorNotice>
+          {validationAttempted && invalidShape && (
+            <EditorNotice variant="warning">{t(invalidWarningKey, { name: invalidShape.label })}</EditorNotice>
           )}
           {error && <EditorNotice variant="error">{error}</EditorNotice>}
-          {status && status !== 'Nicht gespeicherte Änderungen' && (
-            status === 'Die Änderungen wurden gespeichert. Ein Neustart von Frigate ist erforderlich.' ? (
-              !isDirty && (
-                <EditorNotice variant="success">
-                  Die Änderungen wurden gespeichert. <strong>Ein Neustart von Frigate ist erforderlich.</strong>
-                </EditorNotice>
-              )
-            ) : (
-              <EditorNotice variant="warning">{status}</EditorNotice>
-            )
+          {status === 'saved' && !isDirty && (
+            <EditorNotice variant="success">
+              {t('cameras.debug.editor.status.saved')}{' '}
+              <strong>{t('cameras.debug.editor.status.restart_required')}</strong>
+            </EditorNotice>
           )}
           {isDirty && (
-            <EditorNotice variant="unsaved">Nicht gespeicherte Änderungen</EditorNotice>
+            <EditorNotice variant="unsaved">{t('cameras.debug.editor.status.unsaved')}</EditorNotice>
           )}
       <div className="relative" style={{ width: (displayWidth || width) + 'px', maxWidth: '100%', aspectRatio: width + ' / ' + height }}>
         {children}
+        {!streamReady && (
+          <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-slate-900/80 px-4 text-center text-base font-semibold text-white" role="status">
+            {t('cameras.debug.editor.status.loading_stream')}
+          </div>
+        )}
         <svg ref={svgRef} viewBox={'0 0 ' + width + ' ' + height} preserveAspectRatio="none"
-          className="absolute inset-0 w-full h-full z-20 touch-none cursor-crosshair"
+          className={"absolute inset-0 w-full h-full z-20 touch-none cursor-crosshair " + (!streamReady ? "invisible pointer-events-none" : "")}
           onPointerDown={handleCanvasPointerDown}
           onClick={addPoint}
           onPointerMove={moveDrag}
           onPointerUp={endDrag}
           onPointerCancel={endDrag}>
-          {shapes.map((shape) => (
+          {streamReady && shapes.map((shape) => (
             <g key={shape.id} style={{ pointerEvents: 'none' }}>
               {shape.points.length >= 3 && (
                 <polygon
@@ -418,7 +449,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
             </g>
           ))}
           {/* Active vertices are always drawn last, above any overlapping polygons. */}
-          {selected && shapes.filter((shape) => shape.id === selected).map((shape) => (
+          {streamReady && selected && shapes.filter((shape) => shape.id === selected).map((shape) => (
             <g key={shape.id}>
               {shape.points.map(([x, y], i) => (
                 <g key={i}>
@@ -434,7 +465,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                       e.stopPropagation();
                       if (!busy) removePoint(i);
                     }}
-                    aria-label={'Eckpunkt ' + (i + 1) + ' von ' + shape.label}
+                    aria-label={t('cameras.debug.editor.label.vertex', { number: i + 1, name: shape.label })}
                   />
                 </g>
               ))}
