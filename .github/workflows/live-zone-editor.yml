@@ -48,5 +48,7 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - name: Install frontend dependencies
         run: npm ci
+      - name: Lint Frigate frontend
+        run: npm run lint
       - name: Build original v0.13 frontend with the editor
         run: npm run build
