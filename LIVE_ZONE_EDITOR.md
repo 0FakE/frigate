@@ -1,11 +1,14 @@
 # Live Mask & Zone Editor – Frigate 0.13.2 (MVP)
 
-This feature branch is based on **v0.13.2**. It adds a polygon editor directly to the camera live view; it is **not a production-tested release**.
+This feature branch is based on **v0.13.2**. It adds a polygon editor to the camera's **Debug → Show Options → Zonen & Masken bearbeiten** panel, using a live JSMpeg stream while editing. This is still an experimental preview release.
 
 ## Architecture
 
-- `web/src/routes/Camera.jsx`: “Zonen & Masken bearbeiten” button in the live camera view. Editing selects the JSMpeg stream regardless of the usual MSE/WebRTC preference, so the overlay can use the detect-resolution coordinate space.
+- `web/src/routes/Camera.jsx`: “Zonen & Masken bearbeiten” button in the Debug options only (not the normal Live tab). Editing selects the JSMpeg stream regardless of the usual MSE/WebRTC preference, so the overlay can use the detect-resolution coordinate space.
 - `web/src/components/LiveZoneEditor.jsx`: Preact polygon editor with selection, point dragging, point insertion/removal, zone/motion/object mask creation and removal.
+- The legacy `/cameras/:camera/editor` route and “Mask & Zone creator” link were removed from the UI; the old source module is retained for easy rollback.
+- The polygon editor keeps the selected area locked while clicking the image (including other polygons); the selection can be toggled off with the same button or “Bearbeitung beenden”, without saving. Visual vertex handles are 2/3 their original radius and separate transparent hit areas are at least 18 screen pixels. Drag-release clicks are suppressed to prevent accidental point insertion.
+- Confirmation modals such as “Restart Frigate” appear above the editor.
 - `frigate/http.py`: GET/PUT `/api/cameras/<camera_name>/polygons`.
 - `frigate/util/live_polygon_editor.py`: preserving existing YAML structure and comments, legacy pixel coordinates, validation and optimistic file revision checks.
 - `frigate/test/test_live_polygon_editor.py`: basic geometry and YAML tests.
@@ -21,7 +24,7 @@ npm ci
 npm run build
 ```
 
-The isolated YAML helper tests were also executed successfully before this code was pushed. The **complete Frontend build, Docker build and Frigate integration tests have not yet been performed**.
+GitHub Actions verifies the full frontend build and lint, Python YAML tests, and targeted Vitest interaction/regression tests (`LiveZoneEditor`, `Dialog`, `ButtonsTabbed`). The preview Docker image build is handled separately. The new UI placement and mouse interactions still require a manual test with a real camera.
 
 ## Deployment notes
 
@@ -34,7 +37,7 @@ The isolated YAML helper tests were also executed successfully before this code 
 
 ## Next engineering tasks
 
-1. Run the full Vite/TypeScript build against v0.13.2 and fix any integration errors.
+1. Verify the Debug-option entry point, modal stacking, and mouse pointer behavior with a real camera (the automated build/tests pass).
 2. Verify JSMpeg rendering sizes and coordinate alignment at various screen sizes, especially fullscreen/mobile.
 3. Extend testing for motion/object masks, deleted vertices, YAML edge cases, and active global/inherited config.
 4. Verify Frigate restart and Docker deployment with a real camera.
@@ -73,7 +76,7 @@ The preview currently targets **AMD64**; arm64 hardware requires a separate imag
 The version 0.13.2 configuration schema is required. Do not reuse a newer
 Frigate config without reviewing incompatibilities and making a backup.
 
-Once running, open a camera's Live tab, choose **Zonen & Masken bearbeiten**,
+Once running, open a camera's **Debug** tab, choose **Show Options**, then **Zonen & Masken bearbeiten**,
 create or edit the polygons, press **Speichern** and restart Frigate to apply
 the saved config. A `config.yml.live-editor.bak` or `config.yaml.live-editor.bak`
 will contain the immediately preceding file state.
