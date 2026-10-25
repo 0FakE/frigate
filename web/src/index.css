@@ -30,18 +30,28 @@
   position: static !important;
 }
 
-/* The editor overlay must cover the *displayed* JSMpeg canvas, not only the
-   detect-aspect placeholder. A fixed player max-height would let a taller
-   canvas overflow outside the overlay's layout box. Scope this to the editor
-   so ordinary camera players keep their existing maximum dimensions. */
-.live-polygon-preview .jsmpeg {
+/* In the zone editor the container, canvas, loader and polygon SVG share
+   exactly the same viewport. The decoder's own canvas dimensions must not
+   expand the layout or protrude below the loading background. These overrides
+   are deliberately scoped: ordinary JSMpeg players are unchanged. */
+.live-polygon-preview .live-editor-jsmpeg {
+  position: absolute !important;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
   max-height: none !important;
+  overflow: hidden;
 }
 
-.live-polygon-preview .jsmpeg canvas {
+.live-polygon-preview .live-editor-jsmpeg canvas {
+  position: absolute !important;
+  inset: 0;
   display: block;
-  max-width: 100%;
-  height: auto;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
 }
 
 .hide-scroll::-webkit-scrollbar {
