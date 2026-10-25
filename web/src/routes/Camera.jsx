@@ -91,7 +91,8 @@ export default function Camera({ camera }) {
   }
 
   const optionContent = showSettings ? (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
       <Switch
         checked={options['bbox']}
         id="bbox"
@@ -128,13 +129,16 @@ export default function Camera({ camera }) {
         label="Regions"
         labelPosition="after"
       />
-      <button
-        type="button"
-        className="rounded bg-slate-700 text-white px-3 py-2"
-        onClick={handleToggleEditor}
-      >
-        {editLivePolygons ? 'Editor schließen' : 'Zonen & Masken bearbeiten'}
-      </button>
+      </div>
+      <div className="pt-1">
+        <button
+          type="button"
+          className="inline-flex w-auto items-center rounded bg-slate-700 px-3 py-2 text-sm font-medium text-white hover:bg-slate-600"
+          onClick={handleToggleEditor}
+        >
+          {editLivePolygons ? 'Editor schließen' : 'Zonen & Masken bearbeiten'}
+        </button>
+      </div>
     </div>
   ) : null;
 
