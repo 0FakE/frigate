@@ -1,0 +1,15 @@
+# Beispiel-Override für den vorhandenen Compose-Dienst 'frigate'.
+# DIESES IMAGE IST EIN EXPERIMENTELLER TESTBUILD, NICHT PRODUKTIONSREIF.
+#
+# Aufruf (aus dem Verzeichnis mit der bestehenden docker-compose.yml):
+#   docker compose -f docker-compose.yml -f docker-compose.live-editor.yml config --images
+#   docker compose -f docker-compose.yml -f docker-compose.live-editor.yml up -d --no-deps --force-recreate frigate
+#
+# Vorher config.yml/config.yaml und die ursprüngliche Compose-Datei sichern.
+# Falls dein Dienst anders heißt: 'frigate' in dieser Datei und den Befehlen anpassen.
+#
+# Achtung: Dieses Override ersetzt den laufenden Container vorübergehend.
+# Die alten Volumes werden weiter genutzt (es ist KEINE isolierte Parallel-Installation).
+services:
+  frigate:
+    image: ghcr.io/0fake/frigate:0.13.2-live-editor-dev
