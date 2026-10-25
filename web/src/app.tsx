@@ -27,7 +27,6 @@ export default function App() {
               <Sidebar />
               <div className="w-full flex-auto mt-16 min-w-0">
                 <Router>
-                  <AsyncRoute path="/cameras/:camera/editor" getComponent={Routes.getCameraMap} />
                   <AsyncRoute path="/cameras/:camera" getComponent={cameraComponent} />
                   <AsyncRoute path="/birdseye" getComponent={Routes.getBirdseye} />
                   <AsyncRoute path="/events" getComponent={Routes.getEvents} />
