@@ -1,16 +1,16 @@
 # Live Mask & Zone Editor – Frigate 0.13.2 (MVP)
 
-This feature branch is based on **v0.13.2**. It adds a polygon editor to the camera's **Debug → Show Options → Zonen & Masken bearbeiten** panel, using a live JSMpeg stream while editing. This is still an experimental preview release.
+This feature branch is based on **v0.13.2**. It adds a polygon editor to the camera's **Debug → Zonen & Masken bearbeiten** button, displayed directly beside **Show/Hide Options**, using a live JSMpeg stream while editing. This is still an experimental preview release.
 
 ## Architecture
 
-- `web/src/routes/Camera.jsx`: “Zonen & Masken bearbeiten” button in the Debug options only (not the normal Live tab), below a full-width horizontal separator after all checkbox options. Editing selects the JSMpeg stream regardless of the usual MSE/WebRTC preference, so the overlay can use the detect-resolution coordinate space.
+- `web/src/routes/Camera.jsx`: the “Zonen & Masken bearbeiten” button is always visible in Debug directly next to “Show/Hide Options”; the six debug checkboxes are still revealed by “Show Options” only. The two buttons wrap on narrow screens. Editing selects the JSMpeg stream regardless of the usual MSE/WebRTC preference, so the overlay can use the detect-resolution coordinate space.
 - `web/src/components/LiveZoneEditor.jsx`: Preact polygon editor with selection, point dragging, point insertion/removal, zone/motion/object mask creation and removal.
 - The editor layout uses a **330px-wide right-hand tool panel on large screens** (`xl` breakpoint), with grouped creation controls, color-coded zone/motion/object selections, and separate actions under **Ausgewählter Bereich**. On smaller screens, the panel sits **above the livestream and stays fully expanded**. Selection buttons show just zone names, `Maske N`, or `<object> N`, without redundant type prefixes.
 - Status notices share a dark background, 16px type, matching message/icon colors, and 16px bottom margin directly above the camera image: **white/bold** for unsaved edits, **yellow** for validation warnings, **red** for errors, and **green** for a successful save. The save confirmation reads `Die Änderungen wurden gespeichert. Ein Neustart von Frigate ist erforderlich.`, with the entire second sentence bold. The previous instructional paragraph has been removed.
-- In the Debug `Show Options` panel the editor button occupies its own compact row beneath all six checkboxes, rather than an extra grid cell.
+- `web/src/components/ButtonsTabbed.jsx` provides an opt-in compact icon/pill style for camera Live/Debug tabs, preserving **right alignment**, controlled selection, and the unsaved-change confirmation on view switches; other routes retain the previous style.
 - The legacy `/cameras/:camera/editor` route and “Mask & Zone creator” link were removed from the UI; the old source module is retained for easy rollback.
-- The polygon editor keeps the selected area locked while clicking the image (including other polygons); the selection can be toggled off with the same button or “Bearbeitung beenden”, without saving. Visual vertex handles are 2/3 their original radius and separate transparent hit areas are at least 18 screen pixels. Drag-release clicks are suppressed to prevent accidental point insertion.
+- The polygon editor keeps the selected area locked while clicking the image (including other polygons); the selection can be toggled off with the same button or “Bearbeitung beenden”, without saving. **Saving successfully deselects the currently selected polygon**; failed saves leave it selected. The existing area selectors and their group headings use **14px** text. Visual vertex handles are 2/3 their original radius and separate transparent hit areas are at least 18 screen pixels. Drag-release clicks are suppressed to prevent accidental point insertion.
 - Confirmation modals such as “Restart Frigate” appear above the editor.
 - `frigate/http.py`: GET/PUT `/api/cameras/<camera_name>/polygons`.
 - `frigate/util/live_polygon_editor.py`: preserving existing YAML structure and comments, legacy pixel coordinates, validation and optimistic file revision checks.
@@ -79,7 +79,7 @@ The preview currently targets **AMD64**; arm64 hardware requires a separate imag
 The version 0.13.2 configuration schema is required. Do not reuse a newer
 Frigate config without reviewing incompatibilities and making a backup.
 
-Once running, open a camera's **Debug** tab, choose **Show Options**, then **Zonen & Masken bearbeiten**,
+Once running, open a camera's **Debug** tab and choose **Zonen & Masken bearbeiten** directly next to **Show/Hide Options** (no need to expand the checkboxes),
 create or edit the polygons, press **Speichern** and restart Frigate to apply
 the saved config. A `config.yml.live-editor.bak` or `config.yaml.live-editor.bak`
 will contain the immediately preceding file state.
