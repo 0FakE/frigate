@@ -406,9 +406,9 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
         </aside>
 
         <div className="order-last w-full min-w-0 flex-1 xl:order-first">
-          {/* Reserve notice space before any selection or edit. A bounded, scrollable
-              slot keeps the camera image fixed even with multiple long warnings. */}
-          <div data-testid="live-editor-notices" className="mb-4 h-24 overflow-y-auto">
+          {/* Reserve enough room for one ordinary status message from the start.
+              Additional errors and warnings can grow the container naturally. */}
+          <div data-testid="live-editor-notices" className="mb-4 min-h-[56px]">
             {validationAttempted && invalidShape && (
               <EditorNotice variant="warning">{t(invalidWarningKey, { name: invalidShape.label })}</EditorNotice>
             )}
