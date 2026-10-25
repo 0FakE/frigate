@@ -6,6 +6,9 @@ This feature branch is based on **v0.13.2**. It adds a polygon editor to the cam
 
 - `web/src/routes/Camera.jsx`: “Zonen & Masken bearbeiten” button in the Debug options only (not the normal Live tab). Editing selects the JSMpeg stream regardless of the usual MSE/WebRTC preference, so the overlay can use the detect-resolution coordinate space.
 - `web/src/components/LiveZoneEditor.jsx`: Preact polygon editor with selection, point dragging, point insertion/removal, zone/motion/object mask creation and removal.
+- The editor layout uses a **compact right-hand tool panel on large screens** (`xl` breakpoint), with grouped creation controls, color-coded zone/motion/object selections, and separate edit/save actions. On smaller screens, the panel sits **above the livestream** and collapses by default.
+- A dirty configuration is indicated **directly above the camera image** using a white bold 18px warning label, warning icon and 16px bottom margin. The previous instructional paragraph has been removed.
+- In the Debug `Show Options` panel the editor button occupies its own compact row beneath all six checkboxes, rather than an extra grid cell.
 - The legacy `/cameras/:camera/editor` route and “Mask & Zone creator” link were removed from the UI; the old source module is retained for easy rollback.
 - The polygon editor keeps the selected area locked while clicking the image (including other polygons); the selection can be toggled off with the same button or “Bearbeitung beenden”, without saving. Visual vertex handles are 2/3 their original radius and separate transparent hit areas are at least 18 screen pixels. Drag-release clicks are suppressed to prevent accidental point insertion.
 - Confirmation modals such as “Restart Frigate” appear above the editor.
