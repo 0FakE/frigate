@@ -2,25 +2,20 @@ import { h } from 'preact';
 import { baseUrl } from '../api/baseUrl';
 import { useRef, useEffect } from 'preact/hooks';
 import JSMpeg from '@cycjimmy/jsmpeg-player';
+import { firstFrameCallback } from '../utils/firstFrame';
 
 export default function JSMpegPlayer({ camera, width, height, onFirstFrame }) {
   const playerRef = useRef();
   const url = `${baseUrl.replace(/^http/, 'ws')}live/jsmpeg/${camera}`;
 
   useEffect(() => {
-    let firstFrameSeen = false;
     const video = new JSMpeg.VideoElement(
       playerRef.current,
       url,
       {},
       {
         protocols: [], audio: false, videoBufferSize: 1024*1024*4,
-        onVideoDecode: () => {
-          if (!firstFrameSeen) {
-            firstFrameSeen = true;
-            onFirstFrame?.();
-          }
-        },
+        onVideoDecode: firstFrameCallback(onFirstFrame),
       }
     );
 
