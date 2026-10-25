@@ -255,6 +255,8 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
       const response = await axios.put('cameras/' + encodeURIComponent(camera) + '/polygons', { revision, ...data });
       setRevision(response.data.revision);
       setSavedSnapshot(JSON.stringify(data));
+      // Exit vertex editing only after the server confirms the save.
+      setSelected(null);
       setStatus('Die Änderungen wurden gespeichert. Ein Neustart von Frigate ist erforderlich.');
     } catch (e) {
       setError(e.response?.data?.message || e.message);
@@ -321,7 +323,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                   const groupShapes = shapes.filter((shape) => shape.id.startsWith(group.key));
                   return (
                     <div key={group.key} className="space-y-1.5">
-                      <h4 className="flex items-center gap-2 text-xs font-semibold">
+                      <h4 className="flex items-center gap-2 text-sm font-semibold">
                         <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: group.color }} />
                         {group.title} ({groupShapes.length})
                       </h4>
@@ -335,8 +337,8 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                               title={shape.label}
                               onClick={() => setSelected((current) => current === shape.id ? null : shape.id)}
                               className={selected === shape.id
-                                ? 'inline-flex w-auto max-w-full items-center rounded border border-blue-500 bg-blue-600 px-2 py-1 text-xs font-semibold text-white ring-1 ring-blue-400'
-                                : 'inline-flex w-auto max-w-full items-center rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-800 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-700'}
+                                ? 'inline-flex w-auto max-w-full items-center rounded border border-blue-500 bg-blue-600 px-2 py-1 text-sm font-semibold text-white ring-1 ring-blue-400'
+                                : 'inline-flex w-auto max-w-full items-center rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-800 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-700'}
                             >
                               <span className="break-all">{selected === shape.id ? '✓ ' : ''}{shape.label}</span>
                             </button>
