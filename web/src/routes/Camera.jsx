@@ -196,7 +196,8 @@ export default function Camera({ camera }) {
             onDirtyChange={setEditorDirty}
             streamReady={editorStreamReady}
           >
-            <JSMpegPlayer camera={camera} width={jsmpegWidth} height={cameraConfig.live.height} onFirstFrame={handleFirstEditorFrame} />
+            <JSMpegPlayer camera={camera} width={jsmpegWidth} height={cameraConfig.live.height}
+              fillContainer onFirstFrame={handleFirstEditorFrame} />
           </LiveZoneEditor>
         ) : (
           <div>
