@@ -430,7 +430,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
               with the detect aspect ratio supplies a fallback until the canvas
               is initialized; the preview and fallback share the *same* row, so
               a taller real stream expands the loading cover too. */}
-          <div className="relative grid" style={{ width: (displayWidth || width) + 'px', maxWidth: '100%' }}>
+          <div className="relative grid live-polygon-preview" style={{ width: (displayWidth || width) + 'px', maxWidth: '100%' }}>
             <div aria-hidden="true" className="col-start-1 row-start-1 w-full" style={{ aspectRatio: width + ' / ' + height }} />
             <div className="col-start-1 row-start-1 min-w-0">{children}</div>
         {!streamReady && (
