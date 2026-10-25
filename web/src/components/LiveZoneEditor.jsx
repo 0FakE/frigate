@@ -334,6 +334,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                               key={shape.id}
                               type="button"
                               aria-pressed={selected === shape.id}
+                              aria-label={shape.label}
                               title={shape.label}
                               onClick={() => setSelected((current) => current === shape.id ? null : shape.id)}
                               className={selected === shape.id
