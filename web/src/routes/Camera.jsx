@@ -130,7 +130,7 @@ export default function Camera({ camera }) {
         labelPosition="after"
       />
       </div>
-      <div className="pt-1">
+      <div className="border-t border-slate-300 pt-4 dark:border-slate-600">
         <button
           type="button"
           className="inline-flex w-auto items-center rounded bg-slate-700 px-3 py-2 text-sm font-medium text-white hover:bg-slate-600"
