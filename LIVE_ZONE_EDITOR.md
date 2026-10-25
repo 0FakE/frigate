@@ -39,3 +39,48 @@ The isolated YAML helper tests were also executed successfully before this code 
 3. Extend testing for motion/object masks, deleted vertices, YAML edge cases, and active global/inherited config.
 4. Verify Frigate restart and Docker deployment with a real camera.
 5. Harden concurrency with all config API endpoints and add a safe “Save & restart” control.
+
+
+## Lightweight Docker preview
+
+To test this branch without rebuilding Frigate's native dependencies, use
+`docker/live-editor/Dockerfile`. It starts from the upstream **official**
+`ghcr.io/blakeblackshear/frigate:0.13.2` image, rebuilds the frontend
+and replaces only the patched Python modules.
+
+The separate GitHub Actions workflow `.github/workflows/live-editor-image.yml`
+builds and attempts to publish an **experimental linux/amd64 image** at:
+
+```text
+ghcr.io/0fake/frigate:0.13.2-live-editor-dev
+```
+
+**Use the tag only after the preview-image workflow succeeds.** Depending on
+package visibility, a GitHub Container Registry login may be required to pull it.
+
+Alternatively, build locally from this branch:
+
+```bash
+docker build -f docker/live-editor/Dockerfile -t frigate:0.13.2-live-editor-dev .
+```
+
+For an existing Docker Compose deployment, make a copy of its compose file and
+**back up the existing /config directory**. On a test system, substitute only
+the service's `image:` value with the image above, leaving its ports, volumes
+and device settings unchanged. Mount the entire config directory as `/config`.
+The preview currently targets **AMD64**; arm64 hardware requires a separate image.
+
+The version 0.13.2 configuration schema is required. Do not reuse a newer
+Frigate config without reviewing incompatibilities and making a backup.
+
+Once running, open a camera's Live tab, choose **Zonen & Masken bearbeiten**,
+create or edit the polygons, press **Speichern** and restart Frigate to apply
+the saved config. A `config.yml.live-editor.bak` or `config.yaml.live-editor.bak`
+will contain the immediately preceding file state.
+
+### Build caveat
+
+The upstream Frigate 0.13.2 devcontainer build uses Debian 11 repository
+packages whose archive URLs may now return HTTP 404. This is unrelated to
+the editor and is one reason for the overlay-based preview build. It still
+needs on-camera integration testing before any production rollout.
