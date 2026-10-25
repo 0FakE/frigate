@@ -53,7 +53,7 @@ function EditorNotice({ variant, children }) {
   const alert = variant === 'error' || variant === 'warning';
 
   return (
-    <div role={alert ? 'alert' : 'status'} className="mb-4">
+    <div role={alert ? 'alert' : 'status'}>
       <span className={'inline-flex max-w-full items-start gap-2 rounded-md bg-slate-700 px-3 py-2 text-base ' + styles[variant]}>
         <svg aria-hidden="true" className="mt-0.5 h-[22px] w-[22px] shrink-0" viewBox="0 0 24 24"
           fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -406,9 +406,9 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
         </aside>
 
         <div className="order-last w-full min-w-0 flex-1 xl:order-first">
-          {/* Reserve enough room for one ordinary status message from the start.
-              Additional errors and warnings can grow the container naturally. */}
-          <div data-testid="live-editor-notices" className="mb-4 min-h-[56px]">
+          {/* Reserve exactly one normal notice (40px), then consistently leave
+              16px to the video. Additional notices use a 12px internal gap. */}
+          <div data-testid="live-editor-notices" className="mb-4 flex min-h-10 flex-col gap-3">
             {validationAttempted && invalidShape && (
               <EditorNotice variant="warning">{t(invalidWarningKey, { name: invalidShape.label })}</EditorNotice>
             )}
