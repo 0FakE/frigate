@@ -91,8 +91,7 @@ export default function Camera({ camera }) {
   }
 
   const optionContent = showSettings ? (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
       <Switch
         checked={options['bbox']}
         id="bbox"
@@ -129,16 +128,6 @@ export default function Camera({ camera }) {
         label="Regions"
         labelPosition="after"
       />
-      </div>
-      <div className="border-t border-slate-300 pt-4 dark:border-slate-600">
-        <button
-          type="button"
-          className="inline-flex w-auto items-center rounded bg-slate-700 px-3 py-2 text-sm font-medium text-white hover:bg-slate-600"
-          onClick={handleToggleEditor}
-        >
-          {editLivePolygons ? 'Editor schließen' : 'Zonen & Masken bearbeiten'}
-        </button>
-      </div>
     </div>
   ) : null;
 
@@ -208,12 +197,25 @@ export default function Camera({ camera }) {
           </div>
         )}
 
-        <Button onClick={handleToggleSettings} type="text">
-          <span className="w-5 h-5">
-            <SettingsIcon />
-          </span>{' '}
-          <span>{showSettings ? 'Hide' : 'Show'} Options</span>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button onClick={handleToggleSettings} type="text">
+            <span className="w-5 h-5">
+              <SettingsIcon />
+            </span>{' '}
+            <span>{showSettings ? 'Hide' : 'Show'} Options</span>
+          </Button>
+          <button
+            type="button"
+            className="inline-flex w-auto items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold uppercase text-slate-700 transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-800"
+            onClick={handleToggleEditor}
+          >
+            <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
+              <path d="m12 2 9 7-3.5 11h-11L3 9Z" />
+              <path d="M3 9 12 14l9-5M12 14v7" />
+            </svg>
+            {editLivePolygons ? 'Editor schließen' : 'Zonen & Masken bearbeiten'}
+          </button>
+        </div>
         {showSettings ? <Card header="Options" elevated={false} content={optionContent} /> : null}
       </Fragment>
     );
@@ -238,7 +240,7 @@ export default function Camera({ camera }) {
         </select>
       </div>
 
-      <ButtonsTabbed viewModes={['live', 'debug']} currentViewMode={viewMode} setViewMode={handleChangeViewMode} />
+      <ButtonsTabbed viewModes={['live', 'debug']} currentViewMode={viewMode} setViewMode={handleChangeViewMode} variant="camera" />
 
       {player}
 
