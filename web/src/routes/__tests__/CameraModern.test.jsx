@@ -88,8 +88,8 @@ describe('modern camera page keeps its original actions', () => {
     expect(screen.getByRole('button', { name: 'Live' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByText('JSMpeg Livebild')).toBeInTheDocument();
     const previewSection = screen.getByRole('region', { name: 'Kameravorschau' });
-    expect(previewSection).toHaveClass('camera-modern-stage', 'mb-4');
-    expect(previewSection).not.toHaveClass('mb-8');
+    expect(previewSection).toHaveClass('camera-modern-stage', 'mb-8');
+    expect(previewSection).not.toHaveClass('mb-4');
     const liveFrame = screen.getByTestId('modern-live-preview');
     expect(liveFrame).toHaveClass('camera-modern-video-frame', 'w-full', 'overflow-hidden');
     expect(liveFrame).not.toHaveClass('rounded-2xl', 'rounded-lg', 'rounded-xl');
