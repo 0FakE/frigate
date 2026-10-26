@@ -205,7 +205,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(panel).toHaveClass('xl:order-last', 'xl:w-[360px]');
     expect(screen.queryByRole('heading', { name: 'Bearbeitungsmenü' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Bearbeitungsmenü/ })).not.toBeInTheDocument();
-    expect(container.querySelector('#live-polygon-tools')).toHaveClass('space-y-3');
+    expect(container.querySelector('#live-polygon-tools')).toHaveClass('space-y-2');
     expect(container.querySelector('#live-polygon-tools')).not.toHaveClass('hidden');
     expect(screen.getByRole('heading', { name: 'Neuen Bereich erstellen' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Vorhandene Bereiche (2)' })).toBeInTheDocument();
