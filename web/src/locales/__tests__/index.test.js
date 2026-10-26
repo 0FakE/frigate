@@ -124,6 +124,8 @@ describe('nested German camera editor translations', () => {
       .toBe('Erkennung: 640 × 360');
     expect(t('cameras.debug.editor.label.vertex_count', { count: 3 }))
       .toBe('Eckpunkte: 3');
+    expect(t('cameras.debug.editor.label.no_selection'))
+      .toBe('Wähle einen Bereich zum Bearbeiten aus.');
     expect(t('cameras.page.preview_loading')).toBe('Kamera Vorschau wird geladen…');
     expect(t('cameras.page.view_events')).toBe('cameras.page.view_events');
   });
