@@ -11,8 +11,8 @@ vi.mock('../../context', () => ({
   usePersistence: vi.fn((_key, initial) => [initial, vi.fn(), true]),
 }));
 vi.mock('../../components/AutoUpdatingCameraImage', () => ({
-  default: ({ className, showFps, onFirstFrame }) => (
-    <div className={className} data-show-fps={String(showFps)}>
+  default: ({ className, showFps, onFirstFrame, matchContainer }) => (
+    <div className={className} data-show-fps={String(showFps)} data-match-container={String(matchContainer)}>
       Debug Kamerabild
       <button type="button" onClick={onFirstFrame}>JPEG Bild empfangen</button>
     </div>
@@ -78,9 +78,18 @@ describe('modern camera page keeps its original actions', () => {
     render(<Camera camera="test_camera" />);
     expect(screen.getByTestId('modern-camera-header')).toHaveTextContent('test camera');
     expect(screen.getByText('Erkennung: 640 × 360')).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: 'Videoquelle' })).toHaveValue('jsmpeg');
+    const selector = screen.getByRole('combobox', { name: 'Videoquelle' });
+    expect(selector).toHaveValue('jsmpeg');
+    expect(selector).toHaveClass('h-10', 'rounded-lg');
+    expect(selector.closest('label')).toHaveClass('p-1', 'pl-3', 'rounded-lg');
+    expect(selector.closest('label')).not.toHaveClass('py-1.5');
+    const tabs = screen.getByRole('navigation', { name: 'Kameraansicht' });
+    expect(tabs.firstElementChild).toHaveClass('p-1');
     expect(screen.getByRole('button', { name: 'Live' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByText('JSMpeg Livebild')).toBeInTheDocument();
+    const previewSection = screen.getByRole('region', { name: 'Kameravorschau' });
+    expect(previewSection).toHaveClass('camera-modern-stage', 'mb-4');
+    expect(previewSection).not.toHaveClass('mb-8');
     const liveFrame = screen.getByTestId('modern-live-preview');
     expect(liveFrame).toHaveClass('camera-modern-video-frame', 'w-full', 'overflow-hidden');
     expect(liveFrame).not.toHaveClass('rounded-2xl', 'rounded-lg', 'rounded-xl');
@@ -104,7 +113,9 @@ describe('modern camera page keeps its original actions', () => {
       expect(style.maxHeight).toBe('175px');
       expect(img.parentElement).toHaveClass('flex-col');
       expect(img.parentElement).not.toHaveClass('w-[360px]', 'w-[400px]');
-      expect(img.previousElementSibling).toHaveClass('text-sm');
+      expect(img.previousElementSibling).toHaveClass('text-sm', 'text-center', 'uppercase');
+      expect(img.parentElement).toHaveClass('transition-colors', 'hover:border-blue-500/70', 'hover:bg-slate-800');
+      expect(img.parentElement).not.toHaveClass('hover:-translate-y-0.5', 'transition-all');
       expect(img.previousElementSibling).toHaveTextContent(/Person|Auto/);
     });
     expect(screen.queryByText('Ereignisse anzeigen')).not.toBeInTheDocument();
@@ -112,6 +123,18 @@ describe('modern camera page keeps its original actions', () => {
     expect(screen.getByRole('link', { name: /Person/ })).toHaveAttribute('href', '/events?cameras=test_camera&labels=person');
     expect(screen.getByRole('link', { name: /Auto/ })).toHaveAttribute('href', '/events?cameras=test_camera&labels=car');
     expect(screen.getByText('ONVIF Kamera-Steuerung')).toBeInTheDocument();
+  });
+
+  test('object cards emphasize border and background without moving when hovered', () => {
+    render(<Camera camera="test_camera" />);
+    const card = screen.getByRole('link', { name: /Person/ });
+    expect(card).toHaveClass('transition-colors', 'hover:border-blue-500/70', 'hover:bg-slate-800');
+    expect(card).not.toHaveClass('hover:-translate-y-0.5', 'transition-all');
+    const title = card.querySelector('span');
+    expect(title).toHaveClass('text-center', 'uppercase');
+    expect(title).toHaveTextContent('Person'); // CSS uppercase preserves locale data.
+    expect(card.querySelector('img')).toHaveAttribute('width', '175');
+    expect(card.querySelector('img')).toHaveAttribute('height', '175');
   });
 
   test('object thumbnails remain exactly 175 CSS pixels even with a 15px root font size', () => {
@@ -139,6 +162,7 @@ describe('modern camera page keeps its original actions', () => {
     expect(preview).toHaveClass('camera-modern-debug-preview', 'camera-modern-video-frame', 'w-full', 'max-w-full');
     expect(preview).not.toHaveClass('rounded-2xl', 'rounded-lg', 'rounded-xl');
     expect(preview.querySelector('[data-show-fps]')).toHaveAttribute('data-show-fps', 'false');
+    expect(preview.querySelector('[data-match-container]')).toHaveAttribute('data-match-container', 'true');
     expect(screen.queryByRole('combobox', { name: 'Videoquelle' })).not.toBeInTheDocument();
     expect(screen.queryByTestId('modern-live-preview')).not.toBeInTheDocument();
     expect(preview).not.toHaveClass('inline-block');
@@ -189,6 +213,7 @@ describe('modern camera page keeps its original actions', () => {
     expect(frame.style.width).toBe('1280px');
     expect(frame.style.maxWidth).toBe('100%');
     expect(frame.querySelector('[data-show-fps]')).toHaveClass('w-full');
+    expect(frame.querySelector('[data-match-container]')).toHaveAttribute('data-match-container', 'true');
     expect(screen.getByText('Erkennung: 1280 × 720')).toBeInTheDocument();
 
     // The ordinary Live tab still uses its unmodified stream player.
