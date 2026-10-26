@@ -410,7 +410,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
               </h3>
               <div className="grid grid-cols-2 gap-2">
                 <button type="button"
-                  className={toolButtonClass + ' h-10 min-w-0 border-blue-500/50 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20'}
+                  className={toolButtonClass + ' h-10 min-w-0 border-green-500 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20'}
                   onClick={addZone} disabled={busy}>
                   <svg aria-hidden="true" className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="4 2">
                     <rect x="4" y="4" width="16" height="16" rx="2" />
@@ -418,7 +418,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                   {t('cameras.debug.editor.button.zone')}
                 </button>
                 <button type="button"
-                  className={toolButtonClass + ' h-10 min-w-0 border-slate-600 bg-slate-800/70 text-slate-200 hover:bg-slate-700'}
+                  className={toolButtonClass + ' h-10 min-w-0 border-red-500 bg-slate-800/70 text-slate-200 hover:bg-slate-700'}
                   onClick={addMotionMask} disabled={busy}>
                   <svg aria-hidden="true" className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                     <path d="m3 3 18 18M10.6 5.4A10.6 10.6 0 0 1 12 5c5 0 9 7 9 7a16.6 16.6 0 0 1-3 3.5M6.2 6.2A17.7 17.7 0 0 0 3 12s4 7 9 7c1.4 0 2.8-.5 4-1.3" />
@@ -438,7 +438,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                     <option key={item} value={item}>{item}</option>
                   ))}
                 </select>
-                <button type="button" className={secondaryButtonClass + ' h-10 w-full min-w-0'}
+                <button type="button" className={toolButtonClass + ' h-10 w-full min-w-0 border-blue-500 bg-slate-800/90 text-slate-100 hover:border-blue-400 hover:bg-slate-700'}
                   onClick={addObjectMask} disabled={busy}>
                   <svg aria-hidden="true" className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M4 5h16l-6 7v6l-4 2v-8Z" />
@@ -518,7 +518,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                   </div>
                 </div>
               ) : (
-                <p className="mb-2 text-sm leading-5 text-slate-400">{t('cameras.debug.editor.label.no_selection')}</p>
+                <p className="mb-3 text-sm leading-5 text-slate-400">{t('cameras.debug.editor.label.no_selection')}</p>
               )}
               <div className="grid grid-cols-2 gap-2">
                 <button type="button" className={secondaryButtonClass + ' w-full'} onClick={() => setSelected(null)} disabled={!selected || busy}>

@@ -325,7 +325,8 @@ export default function Camera({ camera }) {
               <span className="relative inline-flex shrink-0 items-center">
                 <select
                   aria-label={t('cameras.page.stream_source')}
-                  className="h-10 min-w-[8rem] cursor-pointer appearance-none rounded-lg border border-slate-700 bg-slate-800 py-0 pl-3 pr-10 text-sm font-semibold text-slate-100 focus-visible:ring-2 focus-visible:ring-blue-400"
+                  className={'h-10 cursor-pointer appearance-none rounded-lg border border-slate-700 bg-slate-800 py-0 pl-3 pr-8 text-sm font-semibold text-slate-100 focus-visible:ring-2 focus-visible:ring-blue-400 ' +
+                    (viewSource === 'mse' ? 'w-[4.75rem]' : 'w-[6.5rem]')}
                   value={viewSource}
                   onChange={(e) => handleChangeSource(e.target.value)}
                 >

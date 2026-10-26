@@ -237,6 +237,9 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(zone).toHaveClass('h-10');
     expect(mask).toHaveClass('h-10');
     expect(filter).toHaveClass('h-10');
+    expect(zone).toHaveClass('border-green-500');
+    expect(mask).toHaveClass('border-red-500');
+    expect(filter).toHaveClass('border-blue-500');
     expect(objectClass).toHaveClass('h-10', 'w-full', 'min-w-0');
     expect(zone.parentElement).toHaveClass('grid', 'grid-cols-2', 'gap-2');
     expect(filter.parentElement).toHaveClass('grid', 'grid-cols-2', 'gap-2');
@@ -248,6 +251,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(screen.getByRole('heading', { name: 'Neuen Bereich erstellen' })).toHaveClass('mb-2');
     expect(screen.getByRole('heading', { name: 'Vorhandene Bereiche' })).toHaveClass('mb-2');
     expect(screen.getByRole('heading', { name: 'Ausgewählter Bereich' })).toHaveClass('mb-2');
+    expect(screen.getByText('Wähle einen Bereich zum Bearbeiten aus.')).toHaveClass('mb-3');
 
     fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
     expect(screen.getByText('Eckpunkte: 3')).toBeInTheDocument();

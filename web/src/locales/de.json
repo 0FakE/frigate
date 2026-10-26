@@ -80,11 +80,11 @@
         "options_hide": "Hide Options",
         "options_title": "Anzeigeoptionen",
         "options_aria": "Optionen für die Kameravorschau",
-        "bounding_box": "Objektrahmen",
+        "bounding_box": "Objekte",
         "timestamp": "Zeitstempel",
-        "zones": "Zonen",
-        "motion_masks": "Bewegungsmasken",
-        "motion_boxes": "Bewegungsrahmen",
+        "zones": "Zonen & Bereiche",
+        "motion_masks": "Masken",
+        "motion_boxes": "Bewegungen",
         "regions": "Erkennungsbereiche"
       }
     },

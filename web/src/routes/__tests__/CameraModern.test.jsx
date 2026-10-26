@@ -84,7 +84,9 @@ describe('modern camera page keeps its original actions', () => {
     expect(screen.getByText('Auflösung: 640 × 360')).toBeInTheDocument();
     const selector = screen.getByRole('combobox', { name: 'Videoquelle' });
     expect(selector).toHaveValue('jsmpeg');
-    expect(selector).toHaveClass('h-10', 'rounded-lg');
+    expect(selector).toHaveClass('h-10', 'rounded-lg', 'w-[6.5rem]', 'pr-8');
+    expect(selector).not.toHaveClass('min-w-[8rem]', 'pr-10');
+    expect(selector.parentElement.querySelector('svg')).toHaveClass('pointer-events-none', 'right-3');
     expect(selector.closest('label')).toHaveClass('p-1', 'pl-3', 'rounded-lg');
     expect(selector.closest('label')).not.toHaveClass('py-1.5');
     const tabs = screen.getByRole('navigation', { name: 'Kameraansicht' });
@@ -186,8 +188,10 @@ describe('modern camera page keeps its original actions', () => {
     expect(optionsPanel).toHaveClass('w-fit', 'max-w-full');
     expect(optionsPanel.querySelector('.flex-col')).toHaveClass('w-max', 'gap-3');
     expect(optionsPanel.querySelectorAll('input[type="checkbox"]')).toHaveLength(6);
-    expect(screen.getByText('Objektrahmen')).toBeInTheDocument();
-    expect(screen.getByText('Bewegungsmasken')).toBeInTheDocument();
+    expect(screen.getByText('Objekte')).toBeInTheDocument();
+    expect(screen.getByText('Zonen & Bereiche')).toBeInTheDocument();
+    expect(screen.getByText('Masken')).toBeInTheDocument();
+    expect(screen.getByText('Bewegungen')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Zonen & Masken Editor' }));
     const editor = screen.getByTestId('camera-editor');
