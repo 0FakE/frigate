@@ -139,7 +139,7 @@ describe('LiveZoneEditor vertex interactions', () => {
   test('shows the status immediately when selecting an unchanged area without marking data dirty', async () => {
     const { svg, onDirtyChange } = await openEditor();
     const area = screen.getByRole('button', { name: 'area_a' });
-    const save = screen.getByRole('button', { name: 'Speichern' });
+    const save = screen.getByRole('button', { name: 'Änderungen speichern' });
 
     expect(save).toBeDisabled();
     expect(screen.queryByText('Nicht gespeicherte Änderungen')).not.toBeInTheDocument();
@@ -158,7 +158,7 @@ describe('LiveZoneEditor vertex interactions', () => {
 
   test('deselection keeps unsaved changes and does not require Save', async () => {
     const { svg } = await openEditor();
-    const save = screen.getByRole('button', { name: 'Speichern' });
+    const save = screen.getByRole('button', { name: 'Änderungen speichern' });
     fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
     fireEvent.click(svg, { button: 0, clientX: 35, clientY: 90 });
     expect(save).not.toBeDisabled();
@@ -181,7 +181,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(svg.querySelectorAll('ellipse')).toHaveLength(4);
     expect(screen.getByRole('button', { name: 'Bereich löschen' })).not.toBeDisabled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Änderungen speichern' }));
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Die Änderungen wurden gespeichert.'));
 
     expect(areaA).toHaveAttribute('aria-pressed', 'false');
@@ -202,11 +202,11 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(areaA).toHaveClass('text-sm');
   });
 
-  test('keeps the grouped tools visible on mobile in a fixed 330px desktop sidebar', async () => {
+  test('keeps the grouped tools visible on mobile in a modern 360px desktop sidebar', async () => {
     const { container } = await openEditor();
     const panel = screen.getByRole('complementary', { name: 'Werkzeuge und Bereiche' });
 
-    expect(panel).toHaveClass('xl:order-last', 'xl:w-[330px]');
+    expect(panel).toHaveClass('xl:order-last', 'xl:w-[360px]');
     expect(screen.getByRole('heading', { name: 'Bearbeitungsmenü' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Bearbeitungsmenü/ })).not.toBeInTheDocument();
     expect(container.querySelector('#live-polygon-tools')).toHaveClass('space-y-3');
@@ -221,6 +221,43 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(container.querySelector('.xl\\:order-first')).not.toBeNull();
   });
 
+  test('modern editor keeps all three creation actions, selection actions and save commands', async () => {
+    const { container } = await openEditor();
+    const tools = container.querySelector('#live-polygon-tools');
+    const panel = screen.getByRole('complementary', { name: 'Werkzeuge und Bereiche' });
+
+    expect(panel).toHaveClass('xl:w-[360px]');
+    expect(tools).toHaveClass('space-y-3');
+    expect(screen.getByRole('button', { name: '+ Zone' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: '+ Maske' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: '+ Objektfilter' })).toBeEnabled();
+    expect(screen.getByRole('combobox', { name: 'Objektklasse' })).toHaveClass('w-[145px]');
+    expect(screen.getByRole('button', { name: 'Änderungen speichern' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Änderungen verwerfen' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Editor schließen' })).toBeEnabled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
+    expect(screen.getByText('Eckpunkte: 3')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Bereich löschen' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Bearbeitung beenden' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Änderungen speichern' })).toBeDisabled();
+  });
+
+  test('optional camera toolbar and options panel render under the video without blocking polygon input', async () => {
+    const { container, svg } = await openEditor({
+      toolbar: <button type="button">Show Options</button>,
+      optionsPanel: <div>Anzeigeoptionen</div>,
+    });
+    const video = screen.getByTestId('live-editor-viewport');
+    const controls = screen.getByRole('button', { name: 'Show Options' });
+    expect(video.compareDocumentPosition(controls) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByText('Anzeigeoptionen')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
+    fireEvent.click(svg, { button: 0, clientX: 110, clientY: 100 });
+    expect(screen.getByRole('button', { name: 'Änderungen speichern' })).toBeEnabled();
+    expect(container.querySelectorAll('svg polygon')).toHaveLength(2);
+  });
+
   test('shows an accessible bold white 16px dirty notice and a matching green save confirmation', async () => {
     const { svg } = await openEditor();
     expect(screen.queryByText('Nicht gespeicherte Änderungen')).not.toBeInTheDocument();
@@ -233,7 +270,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(warning.firstElementChild).not.toHaveClass('text-lg');
     expect(warning.querySelector('svg[stroke="currentColor"]')).not.toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Änderungen speichern' }));
     await waitFor(() => expect(axios.put).toHaveBeenCalledTimes(1));
 
     const saved = screen.getByRole('status');
@@ -259,9 +296,9 @@ describe('LiveZoneEditor vertex interactions', () => {
     fireEvent.click(screen.getByRole('button', { name: '+ Zone' }));
     expect(window.alert).toHaveBeenCalledTimes(1);
     expect(screen.getByText('Nicht gespeicherte Änderungen')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Speichern' })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Änderungen speichern' })).not.toBeDisabled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Änderungen speichern' }));
     expect(window.alert).toHaveBeenCalledWith(
       'Die Zone „valid_zone“ kann nicht gespeichert werden. Bitte lege mindestens drei Eckpunkte fest, die nicht auf einer Linie liegen.'
     );
@@ -284,7 +321,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '+ Zone' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Änderungen speichern' }));
     expect(window.alert).toHaveBeenNthCalledWith(2, 'Ungültige Zone: Testzone.');
     expect(screen.getByText('Nicht gespeicherte Änderungen')).toBeInTheDocument();
     expect(axios.put).not.toHaveBeenCalled();
@@ -313,7 +350,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     const { svg } = await openEditor();
     fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
     fireEvent.click(svg, { button: 0, clientX: 35, clientY: 90 });
-    fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Änderungen speichern' }));
     await waitFor(() => expect(window.alert).toHaveBeenCalledWith(
       'Die Änderungen konnten nicht gespeichert werden. Speichern fehlgeschlagen.'
     ));
@@ -356,7 +393,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(screen.getByText('Nicht gespeicherte Änderungen')).toBeInTheDocument();
     expect(screen.queryByText('Zum Zeichnen ins Videobild klicken')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Änderungen speichern' }));
     expect(window.alert).toHaveBeenCalledWith(expect.stringContaining(expected));
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(axios.put).not.toHaveBeenCalled();
