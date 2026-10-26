@@ -110,6 +110,22 @@
   border-radius: 0;
 }
 
+/* A real border is included in the 16:9 sizing calculation and steals 1px
+   from the available Live video width on either side. Draw the same fine
+   frame *outside* the image instead, so canvas/video and viewport are flush.
+   Debug and the polygon editor keep their established border geometry. */
+.camera-modern-stage .camera-modern-live-preview {
+  border: 0;
+  outline: 1px solid rgba(71, 85, 105, 0.75);
+  outline-offset: 0;
+}
+
+.camera-modern-live-preview [data-testid="camera-preview-overlay"] {
+  /* Opaque: JSMpeg can render a gray decoder canvas in the center and dark
+     letterbox strips above/below. A translucent loader shows both shades. */
+  background-color: #0f172a;
+}
+
 .camera-modern-page .jsmpeg:not(.live-editor-jsmpeg) canvas {
   max-width: 100%;
   height: auto;
