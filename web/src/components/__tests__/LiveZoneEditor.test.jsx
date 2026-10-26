@@ -2,6 +2,7 @@ import { h } from 'preact';
 import axios from 'axios';
 import { fireEvent, render, screen, waitFor } from '@testing-library/preact';
 import LiveZoneEditor from '../LiveZoneEditor';
+import { setLocaleMessages } from '../../locales';
 
 vi.mock('axios', () => ({
   default: {
@@ -22,6 +23,7 @@ const cameraData = () => ({
 
 describe('LiveZoneEditor vertex interactions', () => {
   beforeEach(() => {
+    setLocaleMessages(null);
     axios.get.mockReset().mockResolvedValue({ data: cameraData() });
     axios.put.mockReset().mockResolvedValue({ data: { revision: 'revision-2' } });
     vi.spyOn(window, 'alert').mockImplementation(() => {});
@@ -35,7 +37,10 @@ describe('LiveZoneEditor vertex interactions', () => {
     }));
   });
 
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => {
+    setLocaleMessages(null);
+    vi.restoreAllMocks();
+  });
 
   async function openEditor(props = {}) {
     const onDirtyChange = vi.fn();
@@ -264,6 +269,25 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(axios.put).not.toHaveBeenCalled();
     expect(svg.querySelectorAll('ellipse')).toHaveLength(0);
+  });
+
+  test('native editor alerts use editable host modal error and warning keys', async () => {
+    setLocaleMessages({ cameras: { debug: { editor: { modal: {
+      error: { invalid_zone_name: 'Bitte anderen Namen wählen.' },
+      warning: { invalid_zone: 'Ungültige Zone: {name}.' },
+    } } } } });
+    await openEditor();
+    vi.spyOn(window, 'prompt').mockReturnValueOnce('not valid').mockReturnValueOnce('Testzone');
+
+    fireEvent.click(screen.getByRole('button', { name: '+ Zone' }));
+    expect(window.alert).toHaveBeenNthCalledWith(1, 'Bitte anderen Namen wählen.');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '+ Zone' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
+    expect(window.alert).toHaveBeenNthCalledWith(2, 'Ungültige Zone: Testzone.');
+    expect(screen.getByText('Nicht gespeicherte Änderungen')).toBeInTheDocument();
+    expect(axios.put).not.toHaveBeenCalled();
   });
 
   test('shows only the short names of existing zones, motion masks and object masks', async () => {
