@@ -342,7 +342,7 @@ export default function Camera({ camera }) {
       </header>
 
       <main>
-        <section aria-label={t('cameras.page.camera_preview')} className="camera-modern-stage mb-4">
+        <section aria-label={t('cameras.page.camera_preview')} className="camera-modern-stage mb-8">
           {viewMode === 'live' ? (
             <div ref={livePreviewRef} data-testid="modern-live-preview"
               className="camera-modern-video-frame camera-modern-live-preview relative w-full max-w-full overflow-hidden"
