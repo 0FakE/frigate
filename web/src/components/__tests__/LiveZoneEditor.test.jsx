@@ -65,24 +65,22 @@ describe('LiveZoneEditor vertex interactions', () => {
   test('overlapping shapes do not intercept clicks intended for the selected zone', async () => {
     const { svg, onDirtyChange } = await openEditor();
     const areaA = screen.getByRole('button', { name: 'area_a' });
-    const remove = screen.getByRole('button', { name: 'Bereich löschen' });
-
-    expect(remove).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Bereich löschen' })).toBeDisabled();
     expect(svg.querySelectorAll('polygon')).toHaveLength(2);
     expect([...svg.querySelectorAll('polygon')].every((p) => p.parentElement.style.pointerEvents === 'none')).toBe(true);
 
     fireEvent.click(areaA);
-    expect(remove).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Bereich löschen' })).not.toBeDisabled();
     expect(svg.querySelectorAll('ellipse')).toHaveLength(3);
 
     // This image position is inside area B but must still extend area A.
     fireEvent.click(svg, { button: 0, clientX: 110, clientY: 100 });
     expect(svg.querySelectorAll('ellipse')).toHaveLength(4);
-    expect(remove).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Bereich löschen' })).not.toBeDisabled();
     await waitFor(() => expect(onDirtyChange).toHaveBeenCalledWith(true));
 
     fireEvent.click(areaA); // clicking the active selector toggles it off
-    expect(remove).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Bereich löschen' })).toBeDisabled();
     expect(svg.querySelectorAll('ellipse')).toHaveLength(0);
     fireEvent.click(svg, { button: 0, clientX: 180, clientY: 120 });
     fireEvent.click(areaA);
@@ -139,20 +137,18 @@ describe('LiveZoneEditor vertex interactions', () => {
   test('shows the status immediately when selecting an unchanged area without marking data dirty', async () => {
     const { svg, onDirtyChange } = await openEditor();
     const area = screen.getByRole('button', { name: 'area_a' });
-    const save = screen.getByRole('button', { name: 'Änderungen speichern' });
-
-    expect(save).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Änderungen speichern' })).toBeDisabled();
     expect(screen.queryByText('Nicht gespeicherte Änderungen')).not.toBeInTheDocument();
 
     fireEvent.click(area);
     expect(area).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByText('Nicht gespeicherte Änderungen')).toBeInTheDocument();
-    expect(save).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Änderungen speichern' })).toBeDisabled();
     expect(onDirtyChange).not.toHaveBeenCalledWith(true);
 
     fireEvent.click(svg, { button: 0, clientX: 35, clientY: 90 });
     expect(screen.getByText('Nicht gespeicherte Änderungen')).toBeInTheDocument();
-    expect(save).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Änderungen speichern' })).not.toBeDisabled();
     await waitFor(() => expect(onDirtyChange).toHaveBeenCalledWith(true));
   });
 
