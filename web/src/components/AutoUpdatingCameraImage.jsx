@@ -4,7 +4,7 @@ import { useCallback, useState } from 'preact/hooks';
 
 const MIN_LOAD_TIMEOUT_MS = 200;
 
-export default function AutoUpdatingCameraImage({ camera, searchParams = '', showFps = true, className, onFirstFrame }) {
+export default function AutoUpdatingCameraImage({ camera, searchParams = '', showFps = true, className, onFirstFrame, matchContainer = false }) {
   const [key, setKey] = useState(Date.now());
   const [fps, setFps] = useState(0);
 
@@ -23,7 +23,7 @@ export default function AutoUpdatingCameraImage({ camera, searchParams = '', sho
 
   return (
     <div className={className}>
-      <CameraImage camera={camera} onload={handleLoad} searchParams={`cache=${key}&${searchParams}`} />
+      <CameraImage camera={camera} onload={handleLoad} searchParams={`cache=${key}&${searchParams}`} matchContainer={matchContainer} />
       {showFps ? <span className="text-xs">Displaying at {fps}fps</span> : null}
     </div>
   );
