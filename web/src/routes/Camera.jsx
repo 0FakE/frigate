@@ -156,37 +156,37 @@ export default function Camera({ camera }) {
   }
 
   const optionContent = showSettings ? (
-    <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-      <Switch
+    <div className="flex w-max max-w-full flex-col gap-3">
+      <Switch className="!w-auto"
         checked={options['bbox']}
         id="bbox"
         onChange={handleSetOption}
         label={t('cameras.debug.controls.bounding_box')}
         labelPosition="after"
       />
-      <Switch
+      <Switch className="!w-auto"
         checked={options['timestamp']}
         id="timestamp"
         onChange={handleSetOption}
         label={t('cameras.debug.controls.timestamp')}
         labelPosition="after"
       />
-      <Switch checked={options['zones']} id="zones" onChange={handleSetOption} label={t('cameras.debug.controls.zones')} labelPosition="after" />
-      <Switch
+      <Switch className="!w-auto" checked={options['zones']} id="zones" onChange={handleSetOption} label={t('cameras.debug.controls.zones')} labelPosition="after" />
+      <Switch className="!w-auto"
         checked={options['mask']}
         id="mask"
         onChange={handleSetOption}
         label={t('cameras.debug.controls.motion_masks')}
         labelPosition="after"
       />
-      <Switch
+      <Switch className="!w-auto"
         checked={options['motion']}
         id="motion"
         onChange={handleSetOption}
         label={t('cameras.debug.controls.motion_boxes')}
         labelPosition="after"
       />
-      <Switch
+      <Switch className="!w-auto"
         checked={options['regions']}
         id="regions"
         onChange={handleSetOption}
@@ -227,7 +227,7 @@ export default function Camera({ camera }) {
   );
   const debugOptions = showSettings ? (
     <section id="camera-debug-options" aria-label={t('cameras.debug.controls.options_aria')}
-      className="rounded-2xl border border-slate-700/80 bg-slate-900/80 p-4 shadow-lg shadow-black/10">
+      className="inline-block w-fit max-w-full rounded-2xl border border-slate-700/80 bg-slate-900/80 p-4 shadow-lg shadow-black/10">
       <h3 className="mb-4 text-sm font-bold text-white">{t('cameras.debug.controls.options_title')}</h3>
       {optionContent}
     </section>
@@ -308,12 +308,11 @@ export default function Camera({ camera }) {
           <a href="/" aria-label={t('cameras.page.back_to_cameras')}
             className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-700/90 bg-slate-800/90 text-slate-200 shadow-lg shadow-black/10 transition-colors hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
             <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="m15 18-6-6 6-6M9 12h12" />
+              <path d="M19 12H5m7-7-7 7 7 7" />
             </svg>
           </a>
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{t('cameras.page.subtitle')}</p>
-            <h1 className="truncate text-2xl font-bold tracking-tight text-white sm:text-3xl">{camera.replaceAll('_', ' ')}</h1>
+            <h1 className="truncate text-2xl font-bold uppercase tracking-tight text-white sm:text-3xl">{camera.replaceAll('_', ' ')}</h1>
             <p className="mt-1 text-xs text-slate-400">
               {t('cameras.page.detect_resolution', { width: cameraConfig.detect.width, height: cameraConfig.detect.height })}
             </p>

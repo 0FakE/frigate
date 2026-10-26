@@ -448,7 +448,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
               </div>
             </section>
 
-            <section aria-label={t('cameras.debug.editor.header.existing_areas', { count: shapes.length })} className={panelCardClass}>
+            <section aria-label={t('cameras.debug.editor.header.existing_areas')} className={panelCardClass}>
               <h3 className={headingClass}>
                 <span aria-hidden="true" className={headingIconClass}>
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -456,7 +456,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                     <path d="M10 10v10M16 6v10" />
                   </svg>
                 </span>
-                {t('cameras.debug.editor.header.existing_areas', { count: shapes.length })}
+                {t('cameras.debug.editor.header.existing_areas')}
               </h3>
               <div className="max-h-[420px] space-y-2 overflow-y-auto pr-1">
                 {areaGroups.map((group) => {
@@ -465,7 +465,8 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                     <div key={group.key} className="space-y-1.5">
                       <h4 className="flex items-center gap-2 rounded-lg bg-slate-950/50 px-2 py-1.5 text-sm font-semibold text-slate-200">
                         <span aria-hidden="true" className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: group.color }} />
-                        {t(group.titleKey, { count: groupShapes.length })}
+                        <span className="min-w-0 flex-1">{t(group.titleKey)}</span>
+                        <span className="ml-auto inline-flex min-w-[2rem] shrink-0 items-center justify-center rounded-md border border-slate-700/70 bg-slate-800/70 px-2 py-0.5 text-xs font-medium tabular-nums text-slate-400">{groupShapes.length}</span>
                       </h4>
                       {groupShapes.length ? (
                         <div className="space-y-0.5">

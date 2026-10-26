@@ -11,7 +11,7 @@ describe('nested German camera editor translations', () => {
     expect(t('cameras.debug.editor.button.object_filter')).toBe('Objektfilter');
     expect(t('cameras.debug.editor.header.new_area')).toBe('Neuen Bereich erstellen');
     expect(t('cameras.debug.editor.header.mobile_menu')).toBe('cameras.debug.editor.header.mobile_menu');
-    expect(t('cameras.debug.editor.header.covered_areas', { count: 0 })).toBe('Abgedeckte Bereiche (0)');
+    expect(t('cameras.debug.editor.header.covered_areas', { count: 0 })).toBe('Abgedeckte Bereiche');
     expect(t('cameras.debug.editor.modal.error.invalid_zone_name')).toBe(
       'Der eingegebene Zonenname ist ungültig. Bitte verwende ausschließlich Buchstaben, Zahlen und Unterstriche.'
     );
@@ -29,10 +29,10 @@ describe('nested German camera editor translations', () => {
 
   test('interpolates placeholders from editable host entries and rejects invalid override values', () => {
     setLocaleMessages({ cameras: { debug: { editor: {
-      header: { existing_areas: 'Bearbeitete Bereiche ({count})' },
+      header: { existing_areas: 'Bearbeitete Bereiche' },
       button: { open: ['not a string'] },
     } } } });
-    expect(t('cameras.debug.editor.header.existing_areas', { count: 12 })).toBe('Bearbeitete Bereiche (12)');
+    expect(t('cameras.debug.editor.header.existing_areas')).toBe('Bearbeitete Bereiche');
     expect(t('cameras.debug.editor.button.open')).toBe('Zonen & Masken Editor');
   });
 
@@ -90,7 +90,6 @@ describe('nested German camera editor translations', () => {
 
   test('modern camera interface and editor labels all have localized defaults', () => {
     const keys = [
-      'cameras.page.subtitle',
       'cameras.page.detect_resolution',
       'cameras.page.stream_source',
       'cameras.page.camera_preview',
@@ -121,7 +120,8 @@ describe('nested German camera editor translations', () => {
     ];
     keys.forEach((path) => expect(t(path)).not.toBe(path));
     expect(t('cameras.page.detect_resolution', { width: 640, height: 360 }))
-      .toBe('Erkennung: 640 × 360');
+      .toBe('Auflösung: 640 × 360');
+    expect(t('cameras.page.subtitle')).toBe('cameras.page.subtitle');
     expect(t('cameras.debug.editor.label.vertex_count', { count: 3 }))
       .toBe('Eckpunkte: 3');
     expect(t('cameras.debug.editor.label.no_selection'))
@@ -131,7 +131,7 @@ describe('nested German camera editor translations', () => {
   });
 
   test('interpolates area names and counts without HTML in the locale', () => {
-    expect(t('cameras.debug.editor.header.existing_areas', { count: 4 })).toBe('Vorhandene Bereiche (4)');
+    expect(t('cameras.debug.editor.header.existing_areas')).toBe('Vorhandene Bereiche');
     expect(t('cameras.debug.editor.modal.warning.invalid_object_filter', { name: 'person 1' }))
       .toContain('Der Objektfilter „person 1“ kann nicht gespeichert werden.');
   });

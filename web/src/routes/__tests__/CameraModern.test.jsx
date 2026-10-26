@@ -77,7 +77,11 @@ describe('modern camera page keeps its original actions', () => {
   test('shows translated header, stream selector, tracked objects and ONVIF panel in Live', () => {
     render(<Camera camera="test_camera" />);
     expect(screen.getByTestId('modern-camera-header')).toHaveTextContent('test camera');
-    expect(screen.getByText('Erkennung: 640 × 360')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveClass('uppercase');
+    expect(screen.queryByText('Kameravorschau und Ereignisse')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Zur Kameraübersicht' }).querySelector('path'))
+      .toHaveAttribute('d', 'M19 12H5m7-7-7 7 7 7');
+    expect(screen.getByText('Auflösung: 640 × 360')).toBeInTheDocument();
     const selector = screen.getByRole('combobox', { name: 'Videoquelle' });
     expect(selector).toHaveValue('jsmpeg');
     expect(selector).toHaveClass('h-10', 'rounded-lg');
@@ -171,12 +175,17 @@ describe('modern camera page keeps its original actions', () => {
     expect(preview.querySelector('[data-show-fps]')).toHaveClass('w-full');
     expect(screen.getByText('Debug Kamerabild')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Show Options' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Erkannte Objekte' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Zonen & Masken Editor' })).toBeInTheDocument();
-    expect(screen.getByTestId('camera-debug-controls')).toHaveClass('pt-4', 'pb-0');
-    expect(screen.getByTestId('camera-debug-controls')).not.toHaveClass('py-4');
+    expect(screen.getByTestId('camera-debug-controls')).toHaveClass('py-4');
+    expect(screen.getByTestId('camera-debug-controls')).not.toHaveClass('pb-0');
 
     fireEvent.click(screen.getByRole('button', { name: 'Show Options' }));
     expect(screen.getByText('Anzeigeoptionen')).toBeInTheDocument();
+    const optionsPanel = document.getElementById('camera-debug-options');
+    expect(optionsPanel).toHaveClass('w-fit', 'max-w-full');
+    expect(optionsPanel.querySelector('.flex-col')).toHaveClass('w-max', 'gap-3');
+    expect(optionsPanel.querySelectorAll('input[type="checkbox"]')).toHaveLength(6);
     expect(screen.getByText('Objektrahmen')).toBeInTheDocument();
     expect(screen.getByText('Bewegungsmasken')).toBeInTheDocument();
 
@@ -185,7 +194,7 @@ describe('modern camera page keeps its original actions', () => {
     expect(editor).toHaveTextContent('JSMpeg Livebild');
     expect(editor).toHaveTextContent('Anzeigeoptionen');
     expect(editor).toHaveTextContent('Editor schließen');
-    expect(screen.getByTestId('camera-debug-controls')).toHaveClass('pt-4', 'pb-0');
+    expect(screen.getByTestId('camera-debug-controls')).toHaveClass('py-4');
     expect(screen.queryByRole('combobox', { name: 'Videoquelle' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Debug' }));
     // The actual stream-source selector stays in Live, not the Debug toolbar.
@@ -218,7 +227,7 @@ describe('modern camera page keeps its original actions', () => {
     expect(frame.style.maxWidth).toBe('100%');
     expect(frame.querySelector('[data-show-fps]')).toHaveClass('w-full');
     expect(frame.querySelector('[data-match-container]')).toHaveAttribute('data-match-container', 'true');
-    expect(screen.getByText('Erkennung: 1280 × 720')).toBeInTheDocument();
+    expect(screen.getByText('Auflösung: 1280 × 720')).toBeInTheDocument();
 
     // The ordinary Live tab still uses its unmodified stream player.
     fireEvent.click(screen.getByRole('button', { name: 'Live' }));

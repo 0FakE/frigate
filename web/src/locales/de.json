@@ -26,11 +26,11 @@
         },
         "header": {
           "new_area": "Neuen Bereich erstellen",
-          "existing_areas": "Vorhandene Bereiche ({count})",
+          "existing_areas": "Vorhandene Bereiche",
           "selected_area": "Ausgewählter Bereich",
-          "zones": "Zonen ({count})",
-          "covered_areas": "Abgedeckte Bereiche ({count})",
-          "object_filters": "Objektfilter ({count})"
+          "zones": "Zonen",
+          "covered_areas": "Abgedeckte Bereiche",
+          "object_filters": "Objektfilter"
         },
         "label": {
           "sidebar": "Werkzeuge und Bereiche",
@@ -89,8 +89,7 @@
       }
     },
     "page": {
-      "subtitle": "Kameravorschau und Ereignisse",
-      "detect_resolution": "Erkennung: {width} × {height}",
+      "detect_resolution": "Auflösung: {width} × {height}",
       "stream_source": "Videoquelle",
       "camera_preview": "Kameravorschau",
       "tracked_objects": "Erkannte Objekte",
