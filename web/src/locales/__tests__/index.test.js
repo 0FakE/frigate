@@ -71,6 +71,22 @@ describe('nested German camera editor translations', () => {
       .toContain('Die Zone „Garten“ kann nicht gespeichert werden.');
   });
 
+  test('every native browser alert has a bundled translation in the new modal namespace', () => {
+    const errors = [
+      'invalid_zone_name', 'duplicate_zone_name', 'invalid_object_name',
+      'load_failed', 'save_failed', 'unknown_details',
+    ];
+    const warnings = ['invalid_zone', 'invalid_covered_area', 'invalid_object_filter'];
+    errors.forEach((key) => {
+      const path = `cameras.debug.editor.modal.error.${key}`;
+      expect(t(path, { details: 'Testfehler.' })).not.toBe(path);
+    });
+    warnings.forEach((key) => {
+      const path = `cameras.debug.editor.modal.warning.${key}`;
+      expect(t(path, { name: 'Testzone' })).toContain('Testzone');
+    });
+  });
+
   test('interpolates area names and counts without HTML in the locale', () => {
     expect(t('cameras.debug.editor.header.existing_areas', { count: 4 })).toBe('Vorhandene Bereiche (4)');
     expect(t('cameras.debug.editor.modal.warning.invalid_object_filter', { name: 'person 1' }))
