@@ -471,39 +471,41 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(screen.getByRole('heading', { name: 'Vorhandene Bereiche (2)' })).toBeInTheDocument();
   });
 
-  test('hovering a polygon reveals its name inside the image without selecting or editing it', async () => {
+  test('only hovering a list entry shows its more opaque label inside the video', async () => {
     const { svg } = await openEditor();
-    expect(screen.queryByTestId('live-editor-hover-label')).not.toBeInTheDocument();
+    const areaA = screen.getByRole('button', { name: 'area_a' });
+    const areaB = screen.getByRole('button', { name: 'area_b' });
 
     fireEvent.mouseMove(svg, { clientX: 90, clientY: 50 });
+    expect(screen.queryByTestId('live-editor-hover-label')).not.toBeInTheDocument();
+
+    fireEvent.mouseEnter(areaA);
     const label = screen.getByTestId('live-editor-hover-label');
     expect(label).toHaveTextContent('area_a');
-    expect(label).toHaveClass('pointer-events-none');
+    expect(label).toHaveClass('pointer-events-none', 'bg-slate-950/95');
     expect(label).toHaveAttribute('aria-hidden', 'true');
     expect(label.style.left).toMatch(/%$/);
     expect(label.style.top).toMatch(/%$/);
-    expect(screen.getByRole('button', { name: 'area_a' })).toHaveAttribute('aria-pressed', 'false');
+    expect(areaA).toHaveAttribute('aria-pressed', 'false');
     expect(screen.queryByTestId('live-editor-notices')).not.toBeInTheDocument();
 
-    fireEvent.mouseMove(svg, { clientX: 180, clientY: 95 });
-    expect(screen.getByTestId('live-editor-hover-label')).toHaveTextContent('area_b');
-
-    fireEvent.mouseMove(svg, { clientX: 330, clientY: 250 });
+    fireEvent.mouseLeave(areaA);
     expect(screen.queryByTestId('live-editor-hover-label')).not.toBeInTheDocument();
-    fireEvent.mouseMove(svg, { clientX: 90, clientY: 50 });
-    fireEvent.mouseLeave(svg);
+    fireEvent.mouseEnter(areaB);
+    expect(screen.getByTestId('live-editor-hover-label')).toHaveTextContent('area_b');
+    fireEvent.mouseLeave(areaB);
     expect(screen.queryByTestId('live-editor-hover-label')).not.toBeInTheDocument();
     expect(svg.querySelectorAll('polygon')).toHaveLength(2);
   });
 
-  test('hover labels also support covered areas and object filters, without appearing before video frames', async () => {
+  test('list hovers label masks and object filters only after the first camera frame', async () => {
     axios.get.mockResolvedValue({ data: {
       ...cameraData(),
       motion_masks: [[[20, 20], [40, 20], [40, 40]]],
       object_masks: { person: [[[30, 30], [80, 30], [80, 80]]] },
     } });
     const { svg, rerender } = await openEditor({ streamReady: false });
-    fireEvent.mouseMove(svg, { clientX: 35, clientY: 25 });
+    fireEvent.mouseEnter(screen.getByRole('button', { name: 'Maske 1' }));
     expect(screen.queryByTestId('live-editor-hover-label')).not.toBeInTheDocument();
 
     rerender(
@@ -512,13 +514,25 @@ describe('LiveZoneEditor vertex interactions', () => {
         <div>Live stream</div>
       </LiveZoneEditor>
     );
-    const activeSvg = screen.getByTestId('live-editor-viewport').querySelector('svg');
-    fireEvent.mouseMove(activeSvg, { clientX: 35, clientY: 25 });
     expect(screen.getByTestId('live-editor-hover-label')).toHaveTextContent('Maske 1');
-    fireEvent.mouseMove(activeSvg, { clientX: 70, clientY: 45 });
+    fireEvent.mouseLeave(screen.getByRole('button', { name: 'Maske 1' }));
+    fireEvent.mouseEnter(screen.getByRole('button', { name: 'person 1' }));
     expect(screen.getByTestId('live-editor-hover-label')).toHaveTextContent('person 1');
-    fireEvent.mouseLeave(activeSvg);
+
+    // Neither moving over nor leaving the video should create hover labels.
+    fireEvent.mouseLeave(screen.getByRole('button', { name: 'person 1' }));
+    fireEvent.mouseMove(svg, { clientX: 70, clientY: 45 });
     expect(screen.queryByTestId('live-editor-hover-label')).not.toBeInTheDocument();
+  });
+
+  test('hovering an unselected area does not change the selected editable polygon', async () => {
+    await openEditor();
+    fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
+    expect(screen.getByRole('button', { name: 'area_a' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.mouseEnter(screen.getByRole('button', { name: 'area_b' }));
+    expect(screen.getByTestId('live-editor-hover-label')).toHaveTextContent('area_b');
+    expect(screen.getByRole('button', { name: 'area_a' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'area_b' })).toHaveAttribute('aria-pressed', 'false');
   });
 
   test('vertices are smaller but have a larger hit target; dragging cannot add vertices', async () => {
