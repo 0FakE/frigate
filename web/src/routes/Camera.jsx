@@ -240,9 +240,9 @@ export default function Camera({ camera }) {
                 inline-block shrink-to-fit wrapper makes the parent collapse
                 before the first measurement, leaving a tiny debug image. */}
             <div data-testid="modern-debug-preview"
-              className="camera-modern-debug-preview w-full max-w-full overflow-hidden rounded-2xl border border-slate-700/90 bg-slate-950 shadow-xl shadow-black/20"
+              className="camera-modern-video-frame camera-modern-debug-preview w-full max-w-full overflow-hidden"
               style={{ width: cameraConfig.detect.width + 'px', maxWidth: '100%' }}>
-              <AutoUpdatingCameraImage camera={camera} searchParams={searchParams} className="w-full" />
+              <AutoUpdatingCameraImage camera={camera} searchParams={searchParams} className="w-full" showFps={false} />
             </div>
             {debugControls}
             {debugOptions}
@@ -271,28 +271,41 @@ export default function Camera({ camera }) {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <label className="flex items-center gap-2 rounded-xl border border-slate-700/80 bg-slate-900/75 px-3 py-1.5 text-xs font-semibold text-slate-400">
-            <span>{t('cameras.page.stream_source')}</span>
-            <select
-              aria-label={t('cameras.page.stream_source')}
-              className="cursor-pointer rounded-lg border border-slate-700 bg-slate-800 px-2 py-1.5 text-sm font-semibold text-slate-100 focus-visible:ring-2 focus-visible:ring-blue-400"
-              value={viewSource}
-              onChange={(e) => setViewSource(e.target.value)}
-            >
-              {sourceValues.map((item) => (
-                <option key={item} value={item}>
-                  {t('cameras.page.stream_source_' + item)}
-                </option>
-              ))}
-            </select>
-          </label>
+          {viewMode === 'live' && (
+            <label className="flex items-center gap-2 rounded-xl border border-slate-700/80 bg-slate-900/75 px-3 py-1.5 text-xs font-semibold text-slate-400">
+              <span>{t('cameras.page.stream_source')}</span>
+              <select
+                aria-label={t('cameras.page.stream_source')}
+                className="cursor-pointer rounded-lg border border-slate-700 bg-slate-800 px-2 py-1.5 text-sm font-semibold text-slate-100 focus-visible:ring-2 focus-visible:ring-blue-400"
+                value={viewSource}
+                onChange={(e) => setViewSource(e.target.value)}
+              >
+                {sourceValues.map((item) => (
+                  <option key={item} value={item}>
+                    {t('cameras.page.stream_source_' + item)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <ButtonsTabbed viewModes={['live', 'debug']} currentViewMode={viewMode} setViewMode={handleChangeViewMode} variant="camera" />
         </div>
       </header>
 
       <main>
         <section aria-label={t('cameras.page.camera_preview')} className="camera-modern-stage mb-8">
-          {player}
+          {viewMode === 'live' ? (
+            <div data-testid="modern-live-preview"
+              className="camera-modern-video-frame w-full max-w-full overflow-hidden"
+              style={{
+                width: (restreamEnabled && (viewSource === 'mse' || viewSource === 'webrtc'))
+                  ? '64rem'
+                  : jsmpegWidth + 'px',
+                maxWidth: '100%',
+              }}>
+              {player}
+            </div>
+          ) : player}
         </section>
 
         {cameraConfig?.onvif?.host && (
