@@ -4,11 +4,13 @@ import { useCallback, useState } from 'preact/hooks';
 
 const MIN_LOAD_TIMEOUT_MS = 200;
 
-export default function AutoUpdatingCameraImage({ camera, searchParams = '', showFps = true, className }) {
+export default function AutoUpdatingCameraImage({ camera, searchParams = '', showFps = true, className, onFirstFrame }) {
   const [key, setKey] = useState(Date.now());
   const [fps, setFps] = useState(0);
 
   const handleLoad = useCallback(() => {
+    // CameraImage only calls onload after drawing a real JPEG to its canvas.
+    onFirstFrame?.();
     const loadTime = Date.now() - key;
     setFps((1000 / Math.max(loadTime, MIN_LOAD_TIMEOUT_MS)).toFixed(1));
     setTimeout(
@@ -17,7 +19,7 @@ export default function AutoUpdatingCameraImage({ camera, searchParams = '', sho
       },
       loadTime > MIN_LOAD_TIMEOUT_MS ? 1 : MIN_LOAD_TIMEOUT_MS
     );
-  }, [key, setFps]);
+  }, [key, setFps, onFirstFrame]);
 
   return (
     <div className={className}>
