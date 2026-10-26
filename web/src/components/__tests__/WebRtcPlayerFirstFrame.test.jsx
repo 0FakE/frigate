@@ -1,5 +1,5 @@
 import { h } from 'preact';
-import { act, fireEvent, render, screen } from '@testing-library/preact';
+import { act, fireEvent, render } from '@testing-library/preact';
 import WebRtcPlayer from '../WebRtcPlayer';
 
 class FakeWebSocket {
