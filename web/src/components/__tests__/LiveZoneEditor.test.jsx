@@ -193,7 +193,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(zoneHeading).toHaveClass('text-sm');
     expect(zoneHeading.lastElementChild).toHaveClass('ml-auto', 'tabular-nums', 'bg-slate-800/70');
     expect(zoneHeading.lastElementChild).toHaveTextContent('2');
-    expect(screen.getByRole('heading', { name: 'Abgedeckte Bereiche 0' })).toHaveClass('text-sm');
+    expect(screen.getByRole('heading', { name: 'Masken 0' })).toHaveClass('text-sm');
     expect(screen.getByRole('heading', { name: 'Objektfilter 0' })).toHaveClass('text-sm');
     const areaA = screen.getByRole('button', { name: 'area_a' });
     expect(areaA).toHaveClass('text-sm');
@@ -216,7 +216,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(screen.getByRole('heading', { name: 'Vorhandene Bereiche' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Ausgewählter Bereich' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Zonen 2' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Abgedeckte Bereiche 0' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Masken 0' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Objektfilter 0' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'area_a' })).toHaveAttribute('aria-pressed', 'false');
     expect(container.querySelector('.xl\\:order-first')).not.toBeNull();
@@ -272,7 +272,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
     const edit = screen.getByRole('button', { name: 'Zone umbenennen' });
     expect(edit).toHaveAttribute('title', 'Zone umbenennen');
-    expect(edit).toHaveClass('h-5', 'w-5', 'text-white');
+    expect(edit).toHaveClass('ml-1', 'h-5', 'w-5', 'text-white');
     expect(edit).not.toHaveClass('h-7', 'w-7', 'text-blue-300');
     expect(edit.querySelector('svg')).toHaveClass('h-5', 'w-5');
     expect(edit.querySelectorAll('svg path')).toHaveLength(2);
@@ -405,7 +405,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(screen.getByRole('button', { name: 'person 1' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Zone: area_a' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Objektmaske: person 1' })).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Abgedeckte Bereiche 1' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Masken 1' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Objektfilter 1' })).toBeInTheDocument();
   });
 

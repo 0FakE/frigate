@@ -11,7 +11,7 @@ describe('nested German camera editor translations', () => {
     expect(t('cameras.debug.editor.button.object_filter')).toBe('Objektfilter');
     expect(t('cameras.debug.editor.header.new_area')).toBe('Neuen Bereich erstellen');
     expect(t('cameras.debug.editor.header.mobile_menu')).toBe('cameras.debug.editor.header.mobile_menu');
-    expect(t('cameras.debug.editor.header.covered_areas', { count: 0 })).toBe('Abgedeckte Bereiche');
+    expect(t('cameras.debug.editor.header.covered_areas', { count: 0 })).toBe('Masken');
     expect(t('cameras.debug.editor.modal.error.invalid_zone_name')).toBe(
       'Der eingegebene Zonenname ist ungültig. Bitte verwende ausschließlich Buchstaben, Zahlen und Unterstriche.'
     );
@@ -124,7 +124,7 @@ describe('nested German camera editor translations', () => {
     expect(t('cameras.page.subtitle')).toBe('cameras.page.subtitle');
     expect(t('cameras.debug.controls.zones')).toBe('Zonen');
     expect(t('cameras.debug.controls.bounding_box')).toBe('Objekte');
-    expect(t('cameras.debug.controls.motion_masks')).toBe('abgedeckte Bereiche');
+    expect(t('cameras.debug.controls.motion_masks')).toBe('Masken');
     expect(t('cameras.debug.controls.motion_boxes')).toBe('Bewegungsbereiche');
     expect(t('cameras.debug.editor.label.vertex_count', { count: 3 }))
       .toBe('Eckpunkte: 3');

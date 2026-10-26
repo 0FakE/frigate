@@ -195,7 +195,7 @@ describe('modern camera page keeps its original actions', () => {
     expect(optionsPanel.querySelectorAll('input[type="checkbox"]')).toHaveLength(6);
     expect(screen.getByText('Objekte')).toBeInTheDocument();
     expect(screen.getByText('Zonen')).toBeInTheDocument();
-    expect(screen.getByText('abgedeckte Bereiche')).toBeInTheDocument();
+    expect(screen.getByText('Masken')).toBeInTheDocument();
     expect(screen.getByText('Bewegungsbereiche')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Zonen & Masken Editor' }));

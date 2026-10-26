@@ -597,7 +597,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                       <span className="min-w-0 truncate text-sm font-semibold text-white">{selectedShape.label}</span>
                       {selectedShape.id.startsWith('zone:') && (
                         <button type="button"
-                          className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-white hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                          className="ml-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-white hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
                           title={t('cameras.debug.editor.button.rename_zone')}
                           aria-label={t('cameras.debug.editor.button.rename_zone')}
                           onClick={startZoneRename} disabled={busy}>

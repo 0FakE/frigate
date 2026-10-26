@@ -32,7 +32,7 @@
           "existing_areas": "Vorhandene Bereiche",
           "selected_area": "Ausgewählter Bereich",
           "zones": "Zonen",
-          "covered_areas": "Abgedeckte Bereiche",
+          "covered_areas": "Masken",
           "object_filters": "Objektfilter"
         },
         "label": {
@@ -88,7 +88,7 @@
         "bounding_box": "Objekte",
         "timestamp": "Zeitstempel",
         "zones": "Zonen",
-        "motion_masks": "abgedeckte Bereiche",
+        "motion_masks": "Masken",
         "motion_boxes": "Bewegungsbereiche",
         "regions": "Erkennungsbereiche"
       }
