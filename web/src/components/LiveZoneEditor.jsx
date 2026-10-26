@@ -42,6 +42,60 @@ function segmentDistance(p, a, b) {
   return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy);
 }
 
+// Hit-test mouse positions in original camera coordinates. Polygons remain
+// pointer-transparent so ordinary edit clicks still reach the SVG.
+function insidePolygon(point, vertices) {
+  if (vertices.length < 3) return false;
+  let inside = false;
+  for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+    const a = vertices[j], b = vertices[i];
+    if (segmentDistance(point, a, b) < 1e-6) return true;
+    if ((a[1] > point[1]) !== (b[1] > point[1]) &&
+      point[0] < (b[0] - a[0]) * (point[1] - a[1]) / (b[1] - a[1]) + a[0]) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+// The shoelace centroid is visual center for ordinary convex zones. For
+// concave shapes, find a safe interior point instead of labeling empty space.
+function polygonLabelPoint(vertices) {
+  if (vertices.length < 3) return null;
+  let twiceArea = 0, cx = 0, cy = 0;
+  vertices.forEach(([x, y], i) => {
+    const [nextX, nextY] = vertices[(i + 1) % vertices.length];
+    const cross = x * nextY - nextX * y;
+    twiceArea += cross;
+    cx += (x + nextX) * cross;
+    cy += (y + nextY) * cross;
+  });
+  if (Math.abs(twiceArea) > 1e-8) {
+    const centroid = [cx / (3 * twiceArea), cy / (3 * twiceArea)];
+    if (insidePolygon(centroid, vertices)) return centroid;
+  }
+  const xs = vertices.map((p) => p[0]), ys = vertices.map((p) => p[1]);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  let best = null, clearance = -1;
+  for (let row = 0; row < 16; row++) {
+    for (let col = 0; col < 16; col++) {
+      const point = [
+        minX + (col + 0.5) * (maxX - minX) / 16,
+        minY + (row + 0.5) * (maxY - minY) / 16,
+      ];
+      if (!insidePolygon(point, vertices)) continue;
+      const distance = Math.min(...vertices.map((vertex, i) =>
+        segmentDistance(point, vertex, vertices[(i + 1) % vertices.length])));
+      if (distance > clearance) {
+        best = point;
+        clearance = distance;
+      }
+    }
+  }
+  return best || vertices[0];
+}
+
 // Keep the icon and every part of a message the same color.
 function EditorNotice({ variant, children }) {
   const styles = {
@@ -66,7 +120,7 @@ function EditorNotice({ variant, children }) {
   );
 }
 
-export default function LiveZoneEditor({ camera, width, height, displayWidth, trackedObjects = [], onClose, onDirtyChange, streamReady = true, toolbar = null, optionsPanel = null, children }) {
+export default function LiveZoneEditor({ camera, width, height, displayWidth, trackedObjects = [], onDirtyChange, streamReady = true, toolbar = null, optionsPanel = null, children }) {
   const svgRef = useRef(null);
   const dragRef = useRef(null);
   const suppressNextClickRef = useRef(false);
@@ -78,6 +132,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   const [revision, setRevision] = useState(null);
   const [savedSnapshot, setSavedSnapshot] = useState('');
   const [selected, setSelected] = useState(null);
+  const [hovered, setHovered] = useState(null);
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(true);
   const [objectLabel, setObjectLabel] = useState(trackedObjects[0] || 'person');
@@ -91,6 +146,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
       setSavedSnapshot(JSON.stringify(loaded));
       setRevision(response.data.revision);
       setSelected(null);
+      setHovered(null);
       setStatus('');
     } catch (e) {
       window.alert(t('cameras.debug.editor.modal.error.load_failed', { details: readableDetail(e) }));
@@ -169,16 +225,30 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     event.preventDefault();
     suppressNextClickRef.current = true;
     dragRef.current = { id, index, pointerId: event.pointerId };
+    setHovered(null);
     if (typeof svgRef.current.setPointerCapture === 'function' && event.pointerId != null) {
       svgRef.current.setPointerCapture(event.pointerId);
     }
   };
   const moveDrag = (event) => {
-    if (!dragRef.current) return;
-    const { id, index } = dragRef.current;
+    if (dragRef.current) {
+      const { id, index } = dragRef.current;
+      const point = eventPoint(event);
+      setData((current) => editShape(current, id, (points) => points.map((p, i) => i === index ? point : p)));
+      setHovered(null);
+      setStatus('');
+      return;
+    }
+    if (!streamReady || (event.pointerType && event.pointerType !== 'mouse')) {
+      setHovered(null);
+      return;
+    }
     const point = eventPoint(event);
-    setData((current) => editShape(current, id, (points) => points.map((p, i) => i === index ? point : p)));
-    setStatus('');
+    // Draw order determines hover precedence when polygons overlap.
+    const hoveredShape = [...shapes].reverse().find(
+      (shape) => insidePolygon(point, shape.points)
+    );
+    setHovered((current) => current === hoveredShape?.id ? current : hoveredShape?.id || null);
   };
   const endDrag = (event) => {
     if (dragRef.current && dragRef.current.pointerId === event.pointerId) {
@@ -189,6 +259,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   const handleCanvasPointerDown = (event) => {
     // A fresh click on the background must work even if a prior drag was cancelled.
     if (event.target === svgRef.current) suppressNextClickRef.current = false;
+    setHovered(null);
   };
 
   const addZone = () => {
@@ -243,6 +314,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
       return next;
     });
     setSelected(null);
+    setHovered(null);
     setStatus('');
   };
 
@@ -263,6 +335,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
       setRevision(response.data.revision);
       setSavedSnapshot(JSON.stringify(data));
       setSelected(null);
+      setHovered(null);
       setStatus('saved');
       // Refresh the raw YAML separately; it is different from the runtime /config endpoint.
       try {
@@ -277,10 +350,6 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     } finally {
       setBusy(false);
     }
-  };
-
-  const handleClose = () => {
-    if (!isDirty || window.confirm(t('cameras.debug.editor.prompt.discard_unsaved'))) onClose();
   };
 
   // Radius is expressed in source video coordinates; keep hit targets in screen pixels.
@@ -302,6 +371,9 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   const toolButtonClass = 'inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border px-2 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-not-allowed disabled:opacity-40';
   const secondaryButtonClass = toolButtonClass + ' border-slate-700 bg-slate-800/90 text-slate-100 hover:border-slate-500 hover:bg-slate-700';
   const selectedShape = shapes.find((shape) => shape.id === selected);
+  const hoveredShape = streamReady && !dragRef.current
+    ? shapes.find((shape) => shape.id === hovered) : null;
+  const hoveredPosition = hoveredShape ? polygonLabelPoint(hoveredShape.points) : null;
   const panelCardClass = 'rounded-lg border border-slate-700/80 bg-slate-800/90 p-3 shadow-xl shadow-black/10';
   const headingClass = 'mb-2 flex items-center gap-2 text-sm font-bold text-white';
   const headingIconClass = 'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/15 text-blue-400';
@@ -488,6 +560,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
           onPointerDown={handleCanvasPointerDown}
           onClick={addPoint}
           onPointerMove={moveDrag}
+          onPointerLeave={() => setHovered(null)}
           onPointerUp={endDrag}
           onPointerCancel={endDrag}>
           {streamReady && shapes.map((shape) => (
@@ -532,6 +605,14 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
             </g>
           ))}
         </svg>
+        {hoveredShape && hoveredPosition && (
+          <div data-testid="live-editor-hover-label" aria-hidden="true"
+            className="pointer-events-none absolute z-30 max-w-[60%] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-slate-600/70 bg-slate-950/85 px-2 py-1 text-center text-sm font-semibold text-white shadow-md"
+            style={{ left: hoveredPosition[0] / width * 100 + '%', top: hoveredPosition[1] / height * 100 + '%' }}>
+            <span className="mr-2 inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: hoveredShape.color }} />
+            <span className="break-all">{hoveredShape.label}</span>
+          </div>
+        )}
           </div>
           {toolbar}
           {optionsPanel}
