@@ -47,20 +47,15 @@ function EditorNotice({ variant, children }) {
   const styles = {
     unsaved: 'font-bold text-white',
     success: 'text-green-400',
-    warning: 'text-yellow-300',
-    error: 'text-red-400',
   };
-  const alert = variant === 'error' || variant === 'warning';
 
   return (
-    <div role={alert ? 'alert' : 'status'}>
+    <div role="status">
       <span className={'inline-flex max-w-full items-start gap-2 rounded-md bg-slate-700 px-3 py-2 text-base ' + styles[variant]}>
         <svg aria-hidden="true" className="mt-0.5 h-[22px] w-[22px] shrink-0" viewBox="0 0 24 24"
           fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           {variant === 'success' ? (
             <><circle cx="12" cy="12" r="10" /><path d="m8 12 3 3 5-6" /></>
-          ) : variant === 'error' ? (
-            <><circle cx="12" cy="12" r="10" /><path d="m9 9 6 6M15 9l-6 6" /></>
           ) : (
             <><path d="m10.29 3.86-8.12 14a2 2 0 0 0 1.71 3h16.24a2 2 0 0 0 1.71-3l-8.12-14a2 2 0 0 0-3.42 0Z" /><path d="M12 9v4M12 17h.01" /></>
           )}
@@ -83,15 +78,12 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   const [revision, setRevision] = useState(null);
   const [savedSnapshot, setSavedSnapshot] = useState('');
   const [selected, setSelected] = useState(null);
-  const [error, setError] = useState('');
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(true);
   const [objectLabel, setObjectLabel] = useState(trackedObjects[0] || 'person');
-  const [validationAttempted, setValidationAttempted] = useState(false);
 
   const load = useCallback(async () => {
     setBusy(true);
-    setError('');
     try {
       const response = await axios.get('cameras/' + encodeURIComponent(camera) + '/polygons');
       const loaded = { zones: response.data.zones, motion_masks: response.data.motion_masks, object_masks: response.data.object_masks };
@@ -101,20 +93,13 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
       setSelected(null);
       setStatus('');
     } catch (e) {
-      setError(t('cameras.debug.editor.error.load_failed', { details: readableDetail(e) }));
+      window.alert(t('cameras.debug.editor.error.load_failed', { details: readableDetail(e) }));
     } finally {
       setBusy(false);
     }
   }, [camera]);
 
   useEffect(() => { load(); }, [load]);
-
-  useEffect(() => {
-    // A draft is not an invalid user action until Save is attempted.
-    // Do not clear errors here: pending effects must not hide a freshly
-    // reported invalid or duplicate name.
-    setValidationAttempted(false);
-  }, [data]);
 
   const shapes = shapesFrom(data);
   const isDirty = Boolean(revision) && JSON.stringify(data) !== savedSnapshot;
@@ -210,17 +195,16 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     const name = window.prompt(t('cameras.debug.editor.prompt.zone_name'));
     if (!name) return;
     if (!/^[A-Za-z0-9_]+$/.test(name)) {
-      setError(t('cameras.debug.editor.error.invalid_zone_name'));
+      window.alert(t('cameras.debug.editor.error.invalid_zone_name'));
       return;
     }
     if (Object.prototype.hasOwnProperty.call(data.zones, name)) {
-      setError(t('cameras.debug.editor.error.duplicate_zone_name'));
+      window.alert(t('cameras.debug.editor.error.duplicate_zone_name'));
       return;
     }
     setData((current) => ({ ...current, zones: { ...current.zones, [name]: [] } }));
     setSelected('zone:' + name);
     setStatus('');
-    setError('');
   };
 
   const addMotionMask = () => {
@@ -228,13 +212,12 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     setData((current) => ({ ...current, motion_masks: [...current.motion_masks, []] }));
     setSelected('motion:' + index);
     setStatus('');
-    setError('');
   };
 
   const addObjectMask = () => {
     const name = objectLabel.trim();
     if (!/^[A-Za-z0-9_]+$/.test(name)) {
-      setError(t('cameras.debug.editor.error.invalid_object_name'));
+      window.alert(t('cameras.debug.editor.error.invalid_object_name'));
       return;
     }
     const index = (data.object_masks[name] || []).length;
@@ -244,7 +227,6 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     }));
     setSelected('object:' + name + ':' + index);
     setStatus('');
-    setError('');
   };
 
   const removeSelected = () => {
@@ -272,12 +254,10 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
 
   const save = async () => {
     if (invalidShape) {
-      setValidationAttempted(true);
+      window.alert(t(invalidWarningKey, { name: invalidShape.label }));
       return;
     }
-    setValidationAttempted(false);
     setBusy(true);
-    setError('');
     try {
       const response = await axios.put('cameras/' + encodeURIComponent(camera) + '/polygons', { revision, ...data });
       setRevision(response.data.revision);
@@ -293,7 +273,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
         await mutate('config/raw');
       }
     } catch (e) {
-      setError(t('cameras.debug.editor.error.save_failed', { details: readableDetail(e) }));
+      window.alert(t('cameras.debug.editor.error.save_failed', { details: readableDetail(e) }));
     } finally {
       setBusy(false);
     }
@@ -406,15 +386,10 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
         </aside>
 
         <div className="order-last w-full min-w-0 flex-1 xl:order-first">
-          {/* Only visible notices occupy space. Every gap, including the final
-              gap to the video, is 16px; an empty editor has no notice margin. */}
-          {(Boolean(validationAttempted && invalidShape) || Boolean(error) ||
-            (status === 'saved' && !isDirty) || isDirty || Boolean(selected)) && (
+          {/* Only success and unsaved status appear inline. Errors and validation
+              warnings use native browser alerts and do not take up layout space. */}
+          {((status === 'saved' && !isDirty) || isDirty || Boolean(selected)) && (
             <div data-testid="live-editor-notices" className="mb-4 flex flex-col gap-4">
-              {validationAttempted && invalidShape && (
-                <EditorNotice variant="warning">{t(invalidWarningKey, { name: invalidShape.label })}</EditorNotice>
-              )}
-              {error && <EditorNotice variant="error">{error}</EditorNotice>}
               {status === 'saved' && !isDirty && (
                 <EditorNotice variant="success">
                   {t('cameras.debug.editor.status.saved')}{' '}
