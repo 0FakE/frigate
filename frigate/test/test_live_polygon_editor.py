@@ -64,6 +64,7 @@ class TestLivePolygonEditor(unittest.TestCase):
         )
         payload = read_polygons(raw, "driveway")
         payload["zones"]["entry"] = payload["zones"].pop("front")
+        payload["zone_objects"]["entry"] = payload["zone_objects"].pop("front")
         payload["zone_renames"] = {"front": "entry"}
         updated = update_polygons(raw, "driveway", payload, 640, 360)
         self.assertIn("inertia: 4 # preserve inertia", updated)
@@ -78,7 +79,7 @@ class TestLivePolygonEditor(unittest.TestCase):
         raw = BASE.replace(
             "        inertia: 4 # preserve inertia",
             "        inertia: 4 # preserve inertia\n        objects: [person, cat]",
-        ).replace("    motion:\n", "    objects:\n      track: [person, cat, dog]\n    motion:\n", 1)
+        ).replace("    objects:\n      filters:", "    objects:\n      track: [person, cat, dog]\n      filters:", 1)
         data = read_polygons(raw, "driveway")
         self.assertEqual(data["zone_objects"]["front"], ["person", "cat"])
         data["zone_objects"]["front"] = ["cat", "dog"]
@@ -108,7 +109,7 @@ class TestLivePolygonEditor(unittest.TestCase):
         self.assertIn("inertia: 4 # preserve inertia", updated)
 
     def test_reject_invalid_and_untracked_zone_objects(self):
-        raw = BASE.replace("    motion:\n", "    objects:\n      track: [person, cat]\n    motion:\n", 1)
+        raw = BASE.replace("    objects:\n      filters:", "    objects:\n      track: [person, cat]\n      filters:", 1)
         payload = read_polygons(raw, "driveway")
         for bad_value in ([], ["dog"], ["person", "person"], [42], "person"):
             payload["zone_objects"]["front"] = bad_value
@@ -131,6 +132,7 @@ class TestLivePolygonEditor(unittest.TestCase):
     def test_reject_unsafe_zone_rename_payload(self):
         payload = read_polygons(BASE, "driveway")
         payload["zones"] = {"entry": payload["zones"]["front"]}
+        payload["zone_objects"] = {"entry": None}
         payload["zone_renames"] = {"not_existing": "entry"}
         with self.assertRaisesRegex(ValueError, "Original zone"):
             update_polygons(BASE, "driveway", payload, 640, 360)
@@ -139,6 +141,7 @@ class TestLivePolygonEditor(unittest.TestCase):
             update_polygons(BASE, "driveway", payload, 640, 360)
         payload["zone_renames"] = {"front": "entry"}
         payload["zones"]["front"] = payload["zones"]["entry"]
+        payload["zone_objects"]["front"] = None
         with self.assertRaisesRegex(ValueError, "does not match"):
             update_polygons(BASE, "driveway", payload, 640, 360)
 
@@ -156,6 +159,7 @@ class TestLivePolygonEditor(unittest.TestCase):
     def test_delete_and_add_zone(self):
         data = read_polygons(BASE, "driveway")
         data["zones"] = {"new_zone": [[10, 10], [40, 10], [40, 40]]}
+        data["zone_objects"] = {"new_zone": None}
         changed = update_polygons(BASE, "driveway", data, 640, 360)
         self.assertEqual(list(read_polygons(changed, "driveway")["zones"]), ["new_zone"])
 

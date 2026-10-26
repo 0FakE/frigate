@@ -421,7 +421,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     const [type, key, subkey] = selected.split(':');
     if (type === 'zone') {
       setZoneRenames((current) => Object.fromEntries(
-        Object.entries(current).filter(([original, name]) => name !== key)
+        Object.entries(current).filter(([_original, name]) => name !== key)
       ));
     }
     cancelZoneRename();
