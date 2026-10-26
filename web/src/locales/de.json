@@ -18,7 +18,11 @@
           "end_editing": "Bearbeitung beenden",
           "delete_area": "Bereich löschen",
           "discard": "Verwerfen",
-          "save": "Speichern"
+          "save": "Speichern",
+          "discard_changes": "Änderungen verwerfen",
+          "save_changes": "Änderungen speichern",
+          "remove_short": "Löschen",
+          "finish_short": "Abwählen"
         },
         "header": {
           "mobile_menu": "Bearbeitungsmenü",
@@ -35,7 +39,12 @@
           "object_class": "Objektklasse",
           "mask_name": "Maske {number}",
           "object_filter_name": "{name} {number}",
-          "vertex": "Eckpunkt {number} von {name}"
+          "vertex": "Eckpunkt {number} von {name}",
+          "selected_name": "Bereich",
+          "vertex_count": "Eckpunkte: {count}",
+          "no_selection": "Wähle einen Bereich aus, um seine Punkte zu bearbeiten.",
+          "object_filter_select": "Objektklasse für Filter",
+          "status_badge": "Bearbeitung aktiv"
         },
         "prompt": {
           "zone_name": "Zonenname (Buchstaben, Zahlen, Unterstriche):",
@@ -61,7 +70,66 @@
             "invalid_covered_area": "Der abgedeckte Bereich „{name}“ kann nicht gespeichert werden. Bitte lege mindestens drei Eckpunkte fest, die nicht auf einer Linie liegen.",
             "invalid_object_filter": "Der Objektfilter „{name}“ kann nicht gespeichert werden. Bitte lege mindestens drei Eckpunkte fest, die nicht auf einer Linie liegen."
           }
+        },
+        "help": {
+          "create": "Wähle eine Bereichsart aus und zeichne anschließend im Kamerabild.",
+          "area_list": "Wähle einen Bereich aus, um seine Eckpunkte zu bearbeiten."
         }
+      },
+      "controls": {
+        "options_show": "Show Options",
+        "options_hide": "Hide Options",
+        "options_title": "Anzeigeoptionen",
+        "options_aria": "Optionen für die Kameravorschau",
+        "bounding_box": "Objektrahmen",
+        "timestamp": "Zeitstempel",
+        "zones": "Zonen",
+        "motion_masks": "Bewegungsmasken",
+        "motion_boxes": "Bewegungsrahmen",
+        "regions": "Erkennungsbereiche"
+      }
+    },
+    "page": {
+      "subtitle": "Kameravorschau und Ereignisse",
+      "detect_resolution": "Erkennung: {width} × {height}",
+      "stream_source": "Videoquelle",
+      "camera_preview": "Kameravorschau",
+      "tracked_objects": "Erkannte Objekte",
+      "tracked_objects_empty": "Für diese Kamera sind keine Objektklassen verfügbar.",
+      "control_panel": "Kamerasteuerung",
+      "view_events": "Ereignisse anzeigen",
+      "object_thumbnail": "Letztes Vorschaubild: {name}",
+      "stream_source_jsmpeg": "JSMpeg",
+      "stream_source_mse": "MSE",
+      "stream_source_webrtc": "WebRTC",
+      "mse_unsupported": "MSE wird von diesem Browser nicht unterstützt. Bitte verwende JSMpeg oder WebRTC.",
+      "back_to_cameras": "Zur Kameraübersicht",
+      "streaming": "Videowiedergabe"
+    },
+    "objects": {
+      "class": {
+        "person": "Person",
+        "bicycle": "Fahrrad",
+        "car": "Auto",
+        "motorcycle": "Motorrad",
+        "airplane": "Flugzeug",
+        "bus": "Bus",
+        "train": "Zug",
+        "truck": "Lastwagen",
+        "boat": "Boot",
+        "bird": "Vogel",
+        "cat": "Katze",
+        "dog": "Hund",
+        "horse": "Pferd",
+        "sheep": "Schaf",
+        "cow": "Kuh",
+        "bear": "Bär",
+        "backpack": "Rucksack",
+        "handbag": "Handtasche",
+        "suitcase": "Koffer",
+        "umbrella": "Regenschirm",
+        "cell_phone": "Mobiltelefon",
+        "package": "Paket"
       }
     }
   },
