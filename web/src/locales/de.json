@@ -25,7 +25,8 @@
           "finish_short": "Abwählen",
           "rename_zone": "Zone umbenennen",
           "rename_apply": "Übernehmen",
-          "rename_cancel": "Abbrechen"
+          "rename_cancel": "Abbrechen",
+          "edit_zone_objects": "Objekte in dieser Zone bearbeiten"
         },
         "header": {
           "new_area": "Neuen Bereich erstellen",
@@ -33,7 +34,8 @@
           "selected_area": "Ausgewählter Bereich",
           "zones": "Zonen",
           "covered_areas": "Masken",
-          "object_filters": "Objektfilter"
+          "object_filters": "Objektfilter",
+          "zone_objects": "Objekte in dieser Zone"
         },
         "label": {
           "sidebar": "Werkzeuge und Bereiche",
@@ -47,7 +49,9 @@
           "no_selection": "Wähle einen Bereich zum Bearbeiten aus.",
           "object_filter_select": "Objektklasse für Filter",
           "status_badge": "Bearbeitung aktiv",
-          "zone_new_name": "Neuer Zonenname"
+          "zone_new_name": "Neuer Name der Zone",
+          "zone_objects_all": "Alle erfassten Objekte",
+          "zone_objects_selected": "Nur ausgewählte Objekte"
         },
         "prompt": {
           "zone_name": "Zonenname (Buchstaben, Zahlen, Unterstriche):",
@@ -67,7 +71,8 @@
             "load_failed": "Die vorhandenen Bereiche konnten nicht geladen werden. {details}",
             "save_failed": "Die Änderungen konnten nicht gespeichert werden. {details}",
             "unknown_details": "Ein unbekannter Fehler ist aufgetreten.",
-            "empty_zone_name": "Bitte gib einen Zonennamen ein."
+            "empty_zone_name": "Bitte gib einen Zonennamen ein.",
+            "empty_zone_objects": "Bitte wähle mindestens eine Objektklasse aus oder aktiviere „Alle erfassten Objekte“."
           },
           "warning": {
             "invalid_zone": "Die Zone „{name}“ kann nicht gespeichert werden. Bitte lege mindestens drei Eckpunkte fest, die nicht auf einer Linie liegen.",

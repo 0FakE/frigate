@@ -278,7 +278,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(edit.querySelectorAll('svg path')).toHaveLength(2);
     expect(edit.parentElement.nextElementSibling).toHaveTextContent('Eckpunkte: 3');
     fireEvent.click(edit);
-    const input = screen.getByRole('textbox', { name: 'Neuer Zonenname' });
+    const input = screen.getByRole('textbox', { name: 'Neuer Name der Zone' });
     fireEvent.input(input, { target: { value: 'area_b' } });
     fireEvent.click(screen.getByRole('button', { name: 'Übernehmen' }));
     expect(screen.getByRole('alert')).toHaveTextContent('existiert bereits');
@@ -287,7 +287,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Buchstaben');
     fireEvent.input(input, { target: { value: 'entry_new' } });
     fireEvent.click(screen.getByRole('button', { name: 'Übernehmen' }));
-    expect(screen.queryByRole('textbox', { name: 'Neuer Zonenname' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: 'Neuer Name der Zone' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'entry_new' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'area_a' })).not.toBeInTheDocument();
     await waitFor(() => expect(onDirtyChange).toHaveBeenCalledWith(true));
@@ -297,11 +297,78 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(axios.put.mock.calls[0][1].zones.entry_new).toHaveLength(3);
   });
 
+
+  test('opens settings icon inline, restricts objects and sends zone_objects on save', async () => {
+    const { onDirtyChange } = await openEditor({ trackedObjects: ['Person', 'Katze', 'Hund'] });
+    expect(screen.queryByRole('button', { name: 'Objekte in dieser Zone bearbeiten' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
+    const settings = screen.getByRole('button', { name: 'Objekte in dieser Zone bearbeiten' });
+    expect(settings).toHaveAttribute('title', 'Objekte in dieser Zone bearbeiten');
+    expect(settings).toHaveAttribute('aria-expanded', 'false');
+    expect(settings.querySelector('svg')).toHaveClass('h-5', 'w-5');
+    expect(settings.parentElement).toBe(screen.getByRole('button', { name: 'Zone umbenennen' }).parentElement);
+    fireEvent.click(settings);
+    expect(settings).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText('Objekte in dieser Zone')).toBeInTheDocument();
+    expect(screen.getByLabelText('Alle erfassten Objekte')).toBeChecked();
+    expect(screen.getByRole('button', { name: 'Änderungen speichern' })).toBeDisabled();
+    fireEvent.click(screen.getByLabelText('Nur ausgewählte Objekte'));
+    fireEvent.click(screen.getByRole('button', { name: 'Übernehmen' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('mindestens eine Objektklasse');
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Person' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Katze' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Übernehmen' }));
+    expect(settings).toHaveAttribute('aria-expanded', 'false');
+    await waitFor(() => expect(onDirtyChange).toHaveBeenCalledWith(true));
+    fireEvent.click(screen.getByRole('button', { name: 'Änderungen speichern' }));
+    await waitFor(() => expect(axios.put).toHaveBeenCalledTimes(1));
+    expect(axios.put.mock.calls[0][1].zone_objects).toEqual({
+      area_a: ['Person', 'Katze'],
+      area_b: null,
+    });
+  });
+
+  test('shows existing zone objects and cancel, reset to all, and rename preserve selection', async () => {
+    axios.get.mockResolvedValue({ data: {
+      ...cameraData(),
+      zone_objects: { area_a: ['Person', 'Katze'], area_b: null },
+    } });
+    await openEditor({ trackedObjects: ['Person', 'Katze', 'Hund'] });
+    fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Objekte in dieser Zone bearbeiten' }));
+    expect(screen.getByLabelText('Nur ausgewählte Objekte')).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Person' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Katze' })).toBeChecked();
+    fireEvent.click(screen.getByLabelText('Alle erfassten Objekte'));
+    fireEvent.click(screen.getByRole('button', { name: 'Abbrechen' }));
+    expect(screen.getByRole('button', { name: 'Änderungen speichern' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Objekte in dieser Zone bearbeiten' }));
+    expect(screen.getByRole('checkbox', { name: 'Person' })).toBeChecked();
+    fireEvent.click(screen.getByLabelText('Alle erfassten Objekte'));
+    fireEvent.click(screen.getByRole('button', { name: 'Übernehmen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Zone umbenennen' }));
+    fireEvent.input(screen.getByRole('textbox', { name: 'Neuer Name der Zone' }), { target: { value: 'area_new' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Übernehmen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Änderungen speichern' }));
+    await waitFor(() => expect(axios.put).toHaveBeenCalledTimes(1));
+    expect(axios.put.mock.calls[0][1].zone_renames).toEqual({ area_a: 'area_new' });
+    expect(axios.put.mock.calls[0][1].zone_objects).toEqual({ area_new: null, area_b: null });
+  });
+
+  test('the zone object settings panel closes when another shape is selected', async () => {
+    await openEditor({ trackedObjects: ['Person'] });
+    fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Objekte in dieser Zone bearbeiten' }));
+    expect(screen.getByText('Objekte in dieser Zone')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'area_b' }));
+    expect(screen.queryByText('Objekte in dieser Zone')).not.toBeInTheDocument();
+  });
+
   test('canceling a zone rename leaves data unchanged', async () => {
     await openEditor();
     fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
     fireEvent.click(screen.getByRole('button', { name: 'Zone umbenennen' }));
-    fireEvent.input(screen.getByRole('textbox', { name: 'Neuer Zonenname' }), { target: { value: 'not_saved' } });
+    fireEvent.input(screen.getByRole('textbox', { name: 'Neuer Name der Zone' }), { target: { value: 'not_saved' } });
     fireEvent.click(screen.getByRole('button', { name: 'Abbrechen' }));
     expect(screen.getByRole('button', { name: 'area_a' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Änderungen speichern' })).toBeDisabled();

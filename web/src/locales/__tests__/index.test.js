@@ -132,7 +132,10 @@ describe('nested German camera editor translations', () => {
       .toBe('Wähle einen Bereich zum Bearbeiten aus.');
     expect(t('cameras.page.preview_loading')).toBe('Kamera Vorschau wird geladen…');
     expect(t('cameras.debug.editor.button.rename_zone')).toBe('Zone umbenennen');
-    expect(t('cameras.debug.editor.label.zone_new_name')).toBe('Neuer Zonenname');
+    expect(t('cameras.debug.editor.label.zone_new_name')).toBe('Neuer Name der Zone');
+    expect(t('cameras.debug.editor.button.edit_zone_objects')).toBe('Objekte in dieser Zone bearbeiten');
+    expect(t('cameras.debug.editor.label.zone_objects_all')).toBe('Alle erfassten Objekte');
+    expect(t('cameras.debug.editor.label.zone_objects_selected')).toBe('Nur ausgewählte Objekte');
     expect(t('cameras.page.view_events')).toBe('cameras.page.view_events');
   });
 

@@ -4,7 +4,7 @@ import axios from 'axios';
 import { mutate } from 'swr';
 import { t } from '../locales';
 
-const empty = () => ({ zones: {}, motion_masks: [], object_masks: {} });
+const empty = () => ({ zones: {}, zone_objects: {}, motion_masks: [], object_masks: {} });
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
 function shapesFrom(data) {
@@ -137,6 +137,9 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   const [renamingZone, setRenamingZone] = useState(false);
   const [renameDraft, setRenameDraft] = useState('');
   const [renameError, setRenameError] = useState('');
+  const [editingZoneObjects, setEditingZoneObjects] = useState(false);
+  const [zoneObjectsDraft, setZoneObjectsDraft] = useState(null);
+  const [zoneObjectsError, setZoneObjectsError] = useState('');
   const [hovered, setHovered] = useState(null);
   const [hoverLabelWidth, setHoverLabelWidth] = useState(0);
   const [status, setStatus] = useState('');
@@ -147,7 +150,15 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     setBusy(true);
     try {
       const response = await axios.get('cameras/' + encodeURIComponent(camera) + '/polygons');
-      const loaded = { zones: response.data.zones, motion_masks: response.data.motion_masks, object_masks: response.data.object_masks };
+      const loaded = {
+        zones: response.data.zones,
+        zone_objects: Object.fromEntries(Object.keys(response.data.zones).map((name) => {
+          const selection = response.data.zone_objects?.[name];
+          return [name, Array.isArray(selection) && selection.length ? selection : null];
+        })),
+        motion_masks: response.data.motion_masks,
+        object_masks: response.data.object_masks,
+      };
       setData(loaded);
       setSavedSnapshot(JSON.stringify(loaded));
       setRevision(response.data.revision);
@@ -156,6 +167,9 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
       setRenamingZone(false);
       setRenameDraft('');
       setRenameError('');
+      setEditingZoneObjects(false);
+      setZoneObjectsDraft(null);
+      setZoneObjectsError('');
       setHovered(null);
       setStatus('');
     } catch (e) {
@@ -266,8 +280,43 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     setRenameError('');
   };
 
+  const cancelZoneObjectEdit = () => {
+    setEditingZoneObjects(false);
+    setZoneObjectsDraft(null);
+    setZoneObjectsError('');
+  };
+
+  const startZoneObjectEdit = () => {
+    if (!selected?.startsWith('zone:') || busy) return;
+    cancelZoneRename();
+    const current = data.zone_objects[selected.slice(5)];
+    setZoneObjectsDraft(current ? [...current] : null);
+    setZoneObjectsError('');
+    setEditingZoneObjects(true);
+  };
+
+  const applyZoneObjects = (event) => {
+    event.preventDefault();
+    if (!selected?.startsWith('zone:')) return;
+    if (zoneObjectsDraft !== null && !zoneObjectsDraft.length) {
+      setZoneObjectsError(t('cameras.debug.editor.modal.error.empty_zone_objects'));
+      return;
+    }
+    const name = selected.slice(5);
+    setData((current) => ({
+      ...current,
+      zone_objects: {
+        ...current.zone_objects,
+        [name]: zoneObjectsDraft === null ? null : [...zoneObjectsDraft],
+      },
+    }));
+    cancelZoneObjectEdit();
+    setStatus('');
+  };
+
   const startZoneRename = () => {
     if (!selected?.startsWith('zone:') || busy) return;
+    cancelZoneObjectEdit();
     setRenameDraft(selected.slice(5));
     setRenameError('');
     setRenamingZone(true);
@@ -295,6 +344,9 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
         ...current,
         zones: Object.fromEntries(Object.entries(current.zones).map(
           ([name, points]) => [name === oldName ? newName : name, points]
+        )),
+        zone_objects: Object.fromEntries(Object.entries(current.zone_objects).map(
+          ([name, labels]) => [name === oldName ? newName : name, labels]
         )),
       }));
       // A rename of an existing YAML zone must preserve its entire configuration.
@@ -327,9 +379,14 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
       window.alert(t('cameras.debug.editor.modal.error.duplicate_zone_name'));
       return;
     }
-    setData((current) => ({ ...current, zones: { ...current.zones, [name]: [] } }));
+    setData((current) => ({
+      ...current,
+      zones: { ...current.zones, [name]: [] },
+      zone_objects: { ...current.zone_objects, [name]: null },
+    }));
     setSelected('zone:' + name);
     cancelZoneRename();
+    cancelZoneObjectEdit();
     setStatus('');
   };
 
@@ -338,6 +395,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     setData((current) => ({ ...current, motion_masks: [...current.motion_masks, []] }));
     setSelected('motion:' + index);
     cancelZoneRename();
+    cancelZoneObjectEdit();
     setStatus('');
   };
 
@@ -354,6 +412,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     }));
     setSelected('object:' + name + ':' + index);
     cancelZoneRename();
+    cancelZoneObjectEdit();
     setStatus('');
   };
 
@@ -366,9 +425,13 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
       ));
     }
     cancelZoneRename();
+    cancelZoneObjectEdit();
     setData((current) => {
       const next = clone(current);
-      if (type === 'zone') delete next.zones[key];
+      if (type === 'zone') {
+        delete next.zones[key];
+        delete next.zone_objects[key];
+      }
       else if (type === 'motion') next.motion_masks.splice(Number(key), 1);
       else if (type === 'object') {
         next.object_masks[key].splice(Number(subkey), 1);
@@ -401,6 +464,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
       setSavedSnapshot(JSON.stringify(data));
       setZoneRenames({});
       cancelZoneRename();
+      cancelZoneObjectEdit();
       setSelected(null);
       setHovered(null);
       setStatus('saved');
@@ -554,6 +618,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                               title={shape.label}
                               onClick={() => {
                                 cancelZoneRename();
+                                cancelZoneObjectEdit();
                                 setSelected((current) => current === shape.id ? null : shape.id);
                               }}
                               onMouseEnter={() => setHovered(shape.id)}
@@ -608,9 +673,77 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                           </svg>
                         </button>
                       )}
+                      {selectedShape.id.startsWith('zone:') && (
+                        <button type="button"
+                          className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-white hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                          title={t('cameras.debug.editor.button.edit_zone_objects')}
+                          aria-label={t('cameras.debug.editor.button.edit_zone_objects')}
+                          aria-expanded={editingZoneObjects}
+                          aria-controls="zone-objects-editor"
+                          onClick={editingZoneObjects ? cancelZoneObjectEdit : startZoneObjectEdit} disabled={busy}>
+                          <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M4 7h9m4 0h3M4 17h3m4 0h9" />
+                            <circle cx="15" cy="7" r="2" />
+                            <circle cx="9" cy="17" r="2" />
+                          </svg>
+                        </button>
+                      )}
                     </span>
                     <span className="shrink-0 text-xs text-slate-400">{t('cameras.debug.editor.label.vertex_count', { count: selectedShape.points.length })}</span>
                   </div>
+                  {editingZoneObjects && selectedShape.id.startsWith('zone:') && (
+                    <form id="zone-objects-editor" onSubmit={applyZoneObjects} className="mt-3 space-y-3 border-t border-slate-700 pt-3">
+                      <h4 className="text-sm font-semibold text-slate-100">
+                        {t('cameras.debug.editor.header.zone_objects')}
+                      </h4>
+                      <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-200">
+                        <input type="radio" name="zone-object-mode" checked={zoneObjectsDraft === null}
+                          onChange={() => { setZoneObjectsDraft(null); setZoneObjectsError(''); }}
+                          className="border-slate-500 bg-slate-900 text-blue-600 focus:ring-blue-400" />
+                        {t('cameras.debug.editor.label.zone_objects_all')}
+                      </label>
+                      <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-200">
+                        <input type="radio" name="zone-object-mode" checked={zoneObjectsDraft !== null}
+                          disabled={trackedObjects.length === 0 && zoneObjectsDraft === null}
+                          onChange={() => { setZoneObjectsDraft([]); setZoneObjectsError(''); }}
+                          className="border-slate-500 bg-slate-900 text-blue-600 focus:ring-blue-400" />
+                        {t('cameras.debug.editor.label.zone_objects_selected')}
+                      </label>
+                      {zoneObjectsDraft !== null && (
+                        <div className="space-y-2 rounded-lg border border-slate-700 bg-slate-900/80 p-3">
+                          {[...new Set([...trackedObjects, ...zoneObjectsDraft])].map((label) => (
+                            <label key={label} className="flex cursor-pointer items-center gap-2 text-sm text-slate-200">
+                              <input type="checkbox" checked={zoneObjectsDraft.includes(label)}
+                                onChange={(event) => {
+                                  const checked = event.currentTarget.checked;
+                                  setZoneObjectsDraft((current) => checked
+                                    ? [...current, label]
+                                    : current.filter((item) => item !== label));
+                                  setZoneObjectsError('');
+                                }}
+                                className="rounded border-slate-500 bg-slate-900 text-blue-600 focus:ring-blue-400" />
+                              {label}
+                            </label>
+                          ))}
+                          {trackedObjects.length === 0 && (
+                            <p className="text-xs text-slate-400">{t('cameras.page.tracked_objects_empty')}</p>
+                          )}
+                        </div>
+                      )}
+                      {zoneObjectsError && (
+                        <p role="alert" className="text-xs text-red-300">{zoneObjectsError}</p>
+                      )}
+                      <div className="flex justify-end gap-2">
+                        <button type="button" className={secondaryButtonClass} onClick={cancelZoneObjectEdit}>
+                          {t('cameras.debug.editor.button.rename_cancel')}
+                        </button>
+                        <button type="submit" className={toolButtonClass + ' border-blue-500 bg-blue-600 text-white hover:bg-blue-500'}>
+                          {t('cameras.debug.editor.button.rename_apply')}
+                        </button>
+                      </div>
+                    </form>
+                  )}
                   {renamingZone && selectedShape.id.startsWith('zone:') && (
                     <form onSubmit={applyZoneRename} className="mt-3 space-y-2 border-t border-slate-700 pt-3">
                       <label htmlFor="zone-rename-input" className="block text-xs font-semibold text-slate-300">
@@ -647,7 +780,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                 <p className="mb-3 whitespace-pre-line text-sm leading-5 text-slate-400">{t('cameras.debug.editor.label.no_selection')}</p>
               )}
               <div className="grid grid-cols-2 gap-2">
-                <button type="button" className={secondaryButtonClass + ' w-full'} onClick={() => { cancelZoneRename(); setSelected(null); }} disabled={!selected || busy}>
+                <button type="button" className={secondaryButtonClass + ' w-full'} onClick={() => { cancelZoneRename(); cancelZoneObjectEdit(); setSelected(null); }} disabled={!selected || busy}>
                   {t('cameras.debug.editor.button.end_editing')}
                 </button>
                 <button type="button"

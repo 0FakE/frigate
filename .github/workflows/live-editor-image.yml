@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/modern-camera-ui
+      - feature/zone-objects-ui-build
     paths:
       - 'docker/live-editor/**'
       - 'web/**'
@@ -40,6 +41,6 @@ jobs:
           file: docker/live-editor/Dockerfile
           push: true
           platforms: linux/amd64
-          tags: ghcr.io/0fake/frigate:0.13.2-modern-camera-ui-dev
+          tags: ${{ github.ref_name == 'feature/zone-objects-ui-build' && 'ghcr.io/0fake/frigate:0.13.2-zone-objects-ui-dev' || 'ghcr.io/0fake/frigate:0.13.2-modern-camera-ui-dev' }}
           cache-from: type=gha,scope=modern-camera-ui
-          cache-to: type=gha,mode=max,scope=live-editor
+          cache-to: type=gha,mode=max,scope=live-editor-zone-objects

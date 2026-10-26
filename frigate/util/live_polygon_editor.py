@@ -74,6 +74,10 @@ def read_polygons(raw: str, camera: str) -> dict:
     return {
         "revision": revision(raw),
         "zones": {name: parse_polygon(zone.get("coordinates", "")) for name, zone in (cfg.get("zones") or {}).items()},
+        "zone_objects": {
+            name: list(zone.get("objects") or []) or None
+            for name, zone in (cfg.get("zones") or {}).items()
+        },
         "motion_masks": parse_masks((cfg.get("motion") or {}).get("mask")),
         "object_masks": {
             name: parse_masks(filt.get("mask"))
@@ -132,6 +136,19 @@ def update_polygons(raw: str, camera: str, payload: dict, width: int, height: in
         if not isinstance(name, str) or not _NAME.fullmatch(name):
             raise ValueError("Zone names must contain only letters, numbers, underscores")
         checked_zones[name] = _validate_polygon(points, width, height)
+    # This field is optional for backwards compatibility with geometry-only clients.
+    zone_objects = payload.get("zone_objects")
+    if zone_objects is not None:
+        if not isinstance(zone_objects, dict) or set(zone_objects) != set(checked_zones):
+            raise ValueError("Zone object selections must match the submitted zones")
+        for labels in zone_objects.values():
+            if labels is not None and (
+                not isinstance(labels, list)
+                or not 0 < len(labels) <= MAX_SHAPES
+                or any(not isinstance(label, str) or not _NAME.fullmatch(label) for label in labels)
+                or len(set(labels)) != len(labels)
+            ):
+                raise ValueError("Invalid zone object selection")
     renames = payload.get("zone_renames", {})
     if not isinstance(renames, dict) or any(
         not isinstance(old, str) or not isinstance(new, str)
@@ -155,6 +172,21 @@ def update_polygons(raw: str, camera: str, payload: dict, width: int, height: in
     yaml = _yaml()
     data = yaml.load(raw)
     cfg = _camera(data, camera)
+    if zone_objects is not None:
+        camera_objects = cfg.get("objects") or {}
+        global_objects = data.get("objects") or {}
+        tracked = (
+            camera_objects.get("track")
+            if "track" in camera_objects
+            else global_objects.get("track")
+        )
+        if tracked is not None:
+            if not isinstance(tracked, list):
+                raise ValueError("Invalid camera object tracking configuration")
+            allowed = set(tracked)
+            for labels in zone_objects.values():
+                if labels and any(label not in allowed for label in labels):
+                    raise ValueError("Zone objects must be tracked by this camera")
     zone_cfg = cfg.get("zones")
     if renames:
         if zone_cfg is None:
@@ -198,7 +230,14 @@ def update_polygons(raw: str, camera: str, payload: dict, width: int, height: in
             if name not in checked_zones:
                 del zone_cfg[name]
         for name, coordinates in checked_zones.items():
-            zone_cfg.setdefault(name, {})["coordinates"] = coordinates
+            zone = zone_cfg.setdefault(name, {})
+            zone["coordinates"] = coordinates
+            if zone_objects is not None:
+                selected_objects = zone_objects[name]
+                if selected_objects:
+                    zone["objects"] = selected_objects
+                else:
+                    zone.pop("objects", None)
 
     motion_cfg = cfg.get("motion")
     if checked_motions:

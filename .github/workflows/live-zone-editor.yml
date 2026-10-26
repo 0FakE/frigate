@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/modern-camera-ui
+      - feature/zone-objects-ui-build
     paths:
       - 'web/**'
       - 'frigate/util/live_polygon_editor.py'

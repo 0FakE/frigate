@@ -73,6 +73,61 @@ class TestLivePolygonEditor(unittest.TestCase):
         self.assertEqual(list(read_polygons(updated, "driveway")["zones"]), ["entry"])
         self.assertIn("host: mosquitto # preserve this comment", updated)
 
+
+    def test_zone_object_selections_round_trip_and_clear_without_losing_metadata(self):
+        raw = BASE.replace(
+            "        inertia: 4 # preserve inertia",
+            "        inertia: 4 # preserve inertia\n        objects: [person, cat]",
+        ).replace("    motion:\n", "    objects:\n      track: [person, cat, dog]\n    motion:\n", 1)
+        data = read_polygons(raw, "driveway")
+        self.assertEqual(data["zone_objects"]["front"], ["person", "cat"])
+        data["zone_objects"]["front"] = ["cat", "dog"]
+        updated = update_polygons(raw, "driveway", data, 640, 360)
+        self.assertEqual(read_polygons(updated, "driveway")["zone_objects"]["front"], ["cat", "dog"])
+        self.assertIn("inertia: 4 # preserve inertia", updated)
+        self.assertIn("host: mosquitto # preserve this comment", updated)
+
+        cleared = read_polygons(updated, "driveway")
+        cleared["zone_objects"]["front"] = None
+        final = update_polygons(updated, "driveway", cleared, 640, 360)
+        self.assertIsNone(read_polygons(final, "driveway")["zone_objects"]["front"])
+        self.assertNotIn("        objects: [cat, dog]", final)
+
+    def test_renaming_zone_preserves_edited_object_selections(self):
+        raw = BASE.replace(
+            "        inertia: 4 # preserve inertia",
+            "        inertia: 4 # preserve inertia\n        objects: [person]",
+        )
+        payload = read_polygons(raw, "driveway")
+        payload["zones"]["entry"] = payload["zones"].pop("front")
+        payload["zone_objects"]["entry"] = ["person"]
+        del payload["zone_objects"]["front"]
+        payload["zone_renames"] = {"front": "entry"}
+        updated = update_polygons(raw, "driveway", payload, 640, 360)
+        self.assertEqual(read_polygons(updated, "driveway")["zone_objects"]["entry"], ["person"])
+        self.assertIn("inertia: 4 # preserve inertia", updated)
+
+    def test_reject_invalid_and_untracked_zone_objects(self):
+        raw = BASE.replace("    motion:\n", "    objects:\n      track: [person, cat]\n    motion:\n", 1)
+        payload = read_polygons(raw, "driveway")
+        for bad_value in ([], ["dog"], ["person", "person"], [42], "person"):
+            payload["zone_objects"]["front"] = bad_value
+            with self.assertRaisesRegex(ValueError, "zone object|Zone object|Zone objects"):
+                update_polygons(raw, "driveway", payload, 640, 360)
+        payload["zone_objects"] = {"missing": ["person"]}
+        with self.assertRaisesRegex(ValueError, "must match"):
+            update_polygons(raw, "driveway", payload, 640, 360)
+
+    def test_geometry_only_legacy_payload_keeps_zone_objects(self):
+        raw = BASE.replace(
+            "        inertia: 4 # preserve inertia",
+            "        inertia: 4 # preserve inertia\n        objects: [person]",
+        )
+        payload = read_polygons(raw, "driveway")
+        del payload["zone_objects"]
+        updated = update_polygons(raw, "driveway", payload, 640, 360)
+        self.assertEqual(read_polygons(updated, "driveway")["zone_objects"]["front"], ["person"])
+
     def test_reject_unsafe_zone_rename_payload(self):
         payload = read_polygons(BASE, "driveway")
         payload["zones"] = {"entry": payload["zones"]["front"]}
