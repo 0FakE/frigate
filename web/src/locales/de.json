@@ -87,11 +87,6 @@
         "motion_masks": "Bewegungsmasken",
         "motion_boxes": "Bewegungsrahmen",
         "regions": "Erkennungsbereiche"
-      },
-      "preview": {
-        "status": {
-          "fps": "Anzeige mit {fps} FPS"
-        }
       }
     },
     "page": {
