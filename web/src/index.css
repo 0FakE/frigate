@@ -77,3 +77,43 @@
     display: none;
   }
 }
+
+/* Modern camera route only. Other Frigate routes retain their original UI. */
+.camera-modern-page {
+  background:
+    radial-gradient(ellipse 65% 50% at 50% -15%, rgba(36, 81, 143, 0.15), transparent),
+    linear-gradient(180deg, #0e1727 0%, #0b1220 62%, #0c1424 100%);
+}
+
+.camera-modern-stage .live-polygon-preview {
+  border: 1px solid rgba(71, 85, 105, 0.75);
+  border-radius: 1rem;
+  box-shadow: 0 12px 35px rgba(2, 6, 23, 0.3);
+}
+
+.camera-modern-stage .live-polygon-preview .live-editor-jsmpeg {
+  border-radius: inherit;
+}
+
+.camera-modern-page .jsmpeg:not(.live-editor-jsmpeg) canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+.camera-modern-stage video-stream,
+.camera-modern-stage video,
+.camera-modern-stage img {
+  max-width: 100%;
+}
+
+.camera-modern-page :is(button, a, select):focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+
+@media (max-width: 767px) {
+  .camera-modern-page {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
