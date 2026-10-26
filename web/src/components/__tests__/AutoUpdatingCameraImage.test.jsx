@@ -36,6 +36,15 @@ describe('AutoUpdatingCameraImage', () => {
     expect(screen.queryByText('Displaying at 0fps')).not.toBeInTheDocument();
   });
 
+  test('reports the first successfully drawn image to the camera preview', () => {
+    const onFirstFrame = vi.fn();
+    render(<AutoUpdatingCameraImage camera="garage" showFps={false} onFirstFrame={onFirstFrame} />);
+    expect(onFirstFrame).not.toHaveBeenCalled();
+    mockOnload();
+    expect(onFirstFrame).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('Displaying at 0fps')).not.toBeInTheDocument();
+  });
+
   test('on load, sets a new cache key to search params', async () => {
     dateNowSpy.mockReturnValueOnce(100).mockReturnValueOnce(200).mockReturnValueOnce(300);
     render(<AutoUpdatingCameraImage camera="front" searchParams="foo" />);
