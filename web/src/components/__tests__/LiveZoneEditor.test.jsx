@@ -57,7 +57,7 @@ describe('LiveZoneEditor vertex interactions', () => {
         <div>Live stream</div>
       </LiveZoneEditor>
     );
-    await waitFor(() => expect(screen.getByRole('button', { name: '+ Zone' })).not.toBeDisabled());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Zone' })).not.toBeDisabled());
     const svg = view.container.querySelector('[data-testid="live-editor-viewport"] > svg');
     return { ...view, svg, onDirtyChange };
   }
@@ -120,7 +120,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(noticeSlot.querySelectorAll('[role="status"]')).toHaveLength(1);
 
     vi.spyOn(window, 'prompt').mockReturnValueOnce('area_a');
-    fireEvent.click(screen.getByRole('button', { name: '+ Zone' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Zone' }));
 
     expect(window.alert).toHaveBeenCalledWith(
       'Eine Zone mit diesem Namen ist bereits vorhanden. Bitte wähle einen anderen Zonennamen.'
@@ -198,7 +198,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(areaA).toHaveClass('text-sm');
   });
 
-  test('keeps the grouped tools visible on mobile in a modern 360px desktop sidebar', async () => {
+  test('keeps compact grouped tools visible on mobile and in the 360px desktop sidebar', async () => {
     const { container } = await openEditor();
     const panel = screen.getByRole('complementary', { name: 'Werkzeuge und Bereiche' });
 
@@ -223,14 +223,28 @@ describe('LiveZoneEditor vertex interactions', () => {
     const panel = screen.getByRole('complementary', { name: 'Werkzeuge und Bereiche' });
 
     expect(panel).toHaveClass('xl:w-[360px]');
-    expect(tools).toHaveClass('space-y-3');
-    expect(screen.getByRole('button', { name: '+ Zone' })).toBeEnabled();
-    expect(screen.getByRole('button', { name: '+ Maske' })).toBeEnabled();
-    expect(screen.getByRole('button', { name: '+ Objektfilter' })).toBeEnabled();
-    expect(screen.getByRole('combobox', { name: 'Objektklasse' })).toHaveClass('w-[145px]');
+    expect(tools).toHaveClass('space-y-2');
+    const zone = screen.getByRole('button', { name: 'Zone' });
+    const mask = screen.getByRole('button', { name: 'Maske' });
+    const filter = screen.getByRole('button', { name: 'Objektfilter' });
+    const objectClass = screen.getByRole('combobox', { name: 'Objektklasse' });
+    expect(zone).toBeEnabled();
+    expect(mask).toBeEnabled();
+    expect(filter).toBeEnabled();
+    expect(zone).toHaveClass('h-10');
+    expect(mask).toHaveClass('h-10');
+    expect(filter).toHaveClass('h-10');
+    expect(objectClass).toHaveClass('h-10', 'w-full', 'min-w-0');
+    expect(zone.parentElement).toHaveClass('grid', 'grid-cols-2', 'gap-2');
+    expect(filter.parentElement).toHaveClass('grid', 'grid-cols-2', 'gap-2');
+    expect(objectClass.parentElement).toBe(filter.parentElement);
     expect(screen.getByRole('button', { name: 'Änderungen speichern' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Änderungen verwerfen' })).toBeEnabled();
-    expect(screen.getByRole('button', { name: 'Editor schließen' })).toBeEnabled();
+    expect(screen.queryByRole('button', { name: 'Editor schließen' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Bearbeitungsmenü')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Neuen Bereich erstellen' })).toHaveClass('mb-2');
+    expect(screen.getByRole('heading', { name: 'Vorhandene Bereiche (2)' })).toHaveClass('mb-2');
+    expect(screen.getByRole('heading', { name: 'Ausgewählter Bereich' })).toHaveClass('mb-2');
 
     fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
     expect(screen.getByText('Eckpunkte: 3')).toBeInTheDocument();
@@ -283,13 +297,13 @@ describe('LiveZoneEditor vertex interactions', () => {
     const { svg } = await openEditor();
     vi.spyOn(window, 'prompt').mockReturnValueOnce('invalid name').mockReturnValueOnce('valid_zone');
 
-    fireEvent.click(screen.getByRole('button', { name: '+ Zone' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Zone' }));
     expect(window.alert).toHaveBeenCalledWith(
       'Der eingegebene Zonenname ist ungültig. Bitte verwende ausschließlich Buchstaben, Zahlen und Unterstriche.'
     );
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: '+ Zone' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Zone' }));
     expect(window.alert).toHaveBeenCalledTimes(1);
     expect(screen.getByText('Nicht gespeicherte Änderungen')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Änderungen speichern' })).not.toBeDisabled();
@@ -312,11 +326,11 @@ describe('LiveZoneEditor vertex interactions', () => {
     await openEditor();
     vi.spyOn(window, 'prompt').mockReturnValueOnce('not valid').mockReturnValueOnce('Testzone');
 
-    fireEvent.click(screen.getByRole('button', { name: '+ Zone' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Zone' }));
     expect(window.alert).toHaveBeenNthCalledWith(1, 'Bitte anderen Namen wählen.');
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: '+ Zone' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Zone' }));
     fireEvent.click(screen.getByRole('button', { name: 'Änderungen speichern' }));
     expect(window.alert).toHaveBeenNthCalledWith(2, 'Ungültige Zone: Testzone.');
     expect(screen.getByText('Nicht gespeicherte Änderungen')).toBeInTheDocument();
@@ -374,15 +388,15 @@ describe('LiveZoneEditor vertex interactions', () => {
   test('duplicate zone names have their own complete error sentence', async () => {
     await openEditor();
     vi.spyOn(window, 'prompt').mockReturnValue('area_a');
-    fireEvent.click(screen.getByRole('button', { name: '+ Zone' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Zone' }));
     expect(window.alert).toHaveBeenCalledWith('Eine Zone mit diesem Namen ist bereits vorhanden. Bitte wähle einen anderen Zonennamen.');
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(axios.put).not.toHaveBeenCalled();
   });
 
   test.each([
-    ['mask', '+ Maske', 'Der abgedeckte Bereich „Maske 1“ kann nicht gespeichert werden.'],
-    ['object', '+ Objektfilter', 'Der Objektfilter „person 1“ kann nicht gespeichert werden.'],
+    ['mask', 'Maske', 'Der abgedeckte Bereich „Maske 1“ kann nicht gespeichert werden.'],
+    ['object', 'Objektfilter', 'Der Objektfilter „person 1“ kann nicht gespeichert werden.'],
   ])('new %s starts without premature warnings and validates only on Save', async (_, buttonName, expected) => {
     await openEditor();
     fireEvent.click(screen.getByRole('button', { name: buttonName }));
@@ -448,13 +462,63 @@ describe('LiveZoneEditor vertex interactions', () => {
 
   test('compact object-class select and no selection checkmark', async () => {
     await openEditor();
-    expect(screen.getByRole('combobox', { name: 'Objektklasse' })).toHaveClass('w-[145px]');
-    expect(screen.getByRole('combobox', { name: 'Objektklasse' })).not.toHaveClass('flex-1');
+    expect(screen.getByRole('combobox', { name: 'Objektklasse' })).toHaveClass('w-full', 'min-w-0', 'h-10');
+    expect(screen.getByRole('combobox', { name: 'Objektklasse' })).not.toHaveClass('w-[145px]', 'flex-1');
     const area = screen.getByRole('button', { name: 'area_a' });
     fireEvent.click(area);
     expect(area).toHaveAttribute('aria-pressed', 'true');
     expect(area.textContent).toBe('area_a');
     expect(screen.getByRole('heading', { name: 'Vorhandene Bereiche (2)' })).toBeInTheDocument();
+  });
+
+  test('hovering a polygon reveals its name inside the image without selecting or editing it', async () => {
+    const { svg } = await openEditor();
+    expect(screen.queryByTestId('live-editor-hover-label')).not.toBeInTheDocument();
+
+    fireEvent.pointerMove(svg, { clientX: 90, clientY: 50, pointerType: 'mouse' });
+    const label = screen.getByTestId('live-editor-hover-label');
+    expect(label).toHaveTextContent('area_a');
+    expect(label).toHaveClass('pointer-events-none');
+    expect(label).toHaveAttribute('aria-hidden', 'true');
+    expect(label.style.left).toMatch(/%$/);
+    expect(label.style.top).toMatch(/%$/);
+    expect(screen.getByRole('button', { name: 'area_a' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.queryByTestId('live-editor-notices')).not.toBeInTheDocument();
+
+    fireEvent.pointerMove(svg, { clientX: 180, clientY: 95, pointerType: 'mouse' });
+    expect(screen.getByTestId('live-editor-hover-label')).toHaveTextContent('area_b');
+
+    fireEvent.pointerMove(svg, { clientX: 330, clientY: 250, pointerType: 'mouse' });
+    expect(screen.queryByTestId('live-editor-hover-label')).not.toBeInTheDocument();
+    fireEvent.pointerMove(svg, { clientX: 90, clientY: 50, pointerType: 'mouse' });
+    fireEvent.pointerLeave(svg);
+    expect(screen.queryByTestId('live-editor-hover-label')).not.toBeInTheDocument();
+    expect(svg.querySelectorAll('polygon')).toHaveLength(2);
+  });
+
+  test('hover labels also support covered areas and object filters, without appearing before video frames', async () => {
+    axios.get.mockResolvedValue({ data: {
+      ...cameraData(),
+      motion_masks: [[[20, 20], [40, 20], [40, 40]]],
+      object_masks: { person: [[[30, 30], [80, 30], [80, 80]]] },
+    } });
+    const { svg, rerender } = await openEditor({ streamReady: false });
+    fireEvent.pointerMove(svg, { clientX: 35, clientY: 25, pointerType: 'mouse' });
+    expect(screen.queryByTestId('live-editor-hover-label')).not.toBeInTheDocument();
+
+    rerender(
+      <LiveZoneEditor camera="test_camera" width={640} height={360} displayWidth={640}
+        streamReady={true} onDirtyChange={vi.fn()}>
+        <div>Live stream</div>
+      </LiveZoneEditor>
+    );
+    const activeSvg = screen.getByTestId('live-editor-viewport').querySelector('svg');
+    fireEvent.pointerMove(activeSvg, { clientX: 35, clientY: 25, pointerType: 'mouse' });
+    expect(screen.getByTestId('live-editor-hover-label')).toHaveTextContent('Maske 1');
+    fireEvent.pointerMove(activeSvg, { clientX: 70, clientY: 45, pointerType: 'mouse' });
+    expect(screen.getByTestId('live-editor-hover-label')).toHaveTextContent('person 1');
+    fireEvent.pointerMove(activeSvg, { clientX: 70, clientY: 45, pointerType: 'touch' });
+    expect(screen.queryByTestId('live-editor-hover-label')).not.toBeInTheDocument();
   });
 
   test('vertices are smaller but have a larger hit target; dragging cannot add vertices', async () => {
