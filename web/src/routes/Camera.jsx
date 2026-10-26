@@ -5,7 +5,7 @@ import JSMpegPlayer from '../components/JSMpegPlayer';
 import Switch from '../components/Switch';
 import ButtonsTabbed from '../components/ButtonsTabbed';
 import { usePersistence } from '../context';
-import { useCallback, useMemo, useState } from 'preact/hooks';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useApiHost } from '../api';
 import useSWR from 'swr';
 import WebRtcPlayer from '../components/WebRtcPlayer';
@@ -26,7 +26,15 @@ export default function Camera({ camera }) {
   const [editLivePolygons, setEditLivePolygons] = useState(false);
   const [editorDirty, setEditorDirty] = useState(false);
   const [editorStreamReady, setEditorStreamReady] = useState(false);
+  const [liveReadyKey, setLiveReadyKey] = useState(null);
+  const [debugReady, setDebugReady] = useState(false);
+  const [previewError, setPreviewError] = useState(null);
+  const livePreviewRef = useRef(null);
   const handleFirstEditorFrame = useCallback(() => setEditorStreamReady(true), []);
+  const handleFirstDebugFrame = useCallback(() => {
+    setDebugReady(true);
+    setPreviewError(null);
+  }, []);
 
   const cameraConfig = config?.cameras[camera];
   const restreamEnabled =
@@ -39,6 +47,57 @@ export default function Camera({ camera }) {
     getDefaultLiveMode(config, cameraConfig, restreamEnabled)
   );
   const sourceValues = restreamEnabled ? ['mse', 'webrtc', 'jsmpeg'] : ['jsmpeg'];
+  const liveSourceKey = camera + ':' + (restreamEnabled ? viewSource : 'jsmpeg');
+  const liveReady = liveReadyKey === liveSourceKey;
+  const handleFirstLiveFrame = useCallback(() => {
+    setLiveReadyKey(liveSourceKey);
+    setPreviewError(null);
+  }, [liveSourceKey]);
+  const handleChangeSource = useCallback((source) => {
+    setLiveReadyKey(null);
+    setPreviewError(null);
+    setViewSource(source);
+  }, [setViewSource]);
+
+  // A browser video reports loadeddata only after its first frame has decoded.
+  // Capture the event at the fixed-size viewport: this covers the <video>
+  // inside the go2rtc MSE custom element and the native WebRTC player alike.
+  useEffect(() => {
+    if (viewMode !== 'live') return;
+    const frame = livePreviewRef.current;
+    if (!frame) return;
+    const firstFrame = (event) => {
+      const video = event.target;
+      if (video?.tagName === 'VIDEO' && video.readyState >= 2 && video.videoWidth > 0) {
+        handleFirstLiveFrame();
+      }
+    };
+    const failed = (event) => {
+      if (event.target?.tagName === 'VIDEO') setPreviewError(liveSourceKey);
+    };
+    frame.addEventListener('loadeddata', firstFrame, true);
+    frame.addEventListener('playing', firstFrame, true);
+    frame.addEventListener('error', failed, true);
+    const existingVideo = frame.querySelector('video');
+    if (existingVideo?.readyState >= 2 && existingVideo.videoWidth > 0) {
+      handleFirstLiveFrame();
+    }
+    return () => {
+      frame.removeEventListener('loadeddata', firstFrame, true);
+      frame.removeEventListener('playing', firstFrame, true);
+      frame.removeEventListener('error', failed, true);
+    };
+  }, [viewMode, liveSourceKey, handleFirstLiveFrame]);
+
+  // Report a failed stream rather than showing an indefinite loading state.
+  useEffect(() => {
+    const liveLoading = viewMode === 'live' && !liveReady;
+    const debugLoading = viewMode === 'debug' && !editLivePolygons && !debugReady;
+    if (!liveLoading && !debugLoading) return;
+    const currentKey = liveLoading ? liveSourceKey : 'debug:' + camera;
+    const timeout = setTimeout(() => setPreviewError(currentKey), 20000);
+    return () => clearTimeout(timeout);
+  }, [viewMode, editLivePolygons, liveReady, debugReady, liveSourceKey, camera]);
   const [options, setOptions] = usePersistence(`${camera}-feed`, emptyObject);
 
   const handleSetOption = useCallback(
@@ -71,6 +130,9 @@ export default function Camera({ camera }) {
       setEditLivePolygons(false);
       setEditorDirty(false);
       setEditorStreamReady(false);
+      setLiveReadyKey(null);
+      setDebugReady(false);
+      setPreviewError(null);
       setViewMode(nextMode);
     },
     [viewMode, editLivePolygons, editorDirty]
@@ -81,6 +143,8 @@ export default function Camera({ camera }) {
     setEditLivePolygons((current) => !current);
     setEditorDirty(false);
     setEditorStreamReady(false);
+    setDebugReady(false);
+    setPreviewError(null);
   }, [editLivePolygons, editorDirty]);
 
   if (!cameraConfig || !sourceIsLoaded) {
@@ -273,7 +337,7 @@ export default function Camera({ camera }) {
                 aria-label={t('cameras.page.stream_source')}
                 className="cursor-pointer rounded-lg border border-slate-700 bg-slate-800 px-2 py-1.5 text-sm font-semibold text-slate-100 focus-visible:ring-2 focus-visible:ring-blue-400"
                 value={viewSource}
-                onChange={(e) => setViewSource(e.target.value)}
+                onChange={(e) => handleChangeSource(e.target.value)}
               >
                 {sourceValues.map((item) => (
                   <option key={item} value={item}>
