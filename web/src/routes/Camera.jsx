@@ -235,9 +235,14 @@ export default function Camera({ camera }) {
               fillContainer onFirstFrame={handleFirstEditorFrame} />
           </LiveZoneEditor>
         ) : (
-          <div className="max-w-full">
-            <div className="inline-block max-w-full overflow-hidden rounded-2xl border border-slate-700/90 bg-slate-950 shadow-xl shadow-black/20">
-              <AutoUpdatingCameraImage camera={camera} searchParams={searchParams} />
+          <div className="w-full min-w-0">
+            {/* CameraImage measures its parent with ResizeObserver. An
+                inline-block shrink-to-fit wrapper makes the parent collapse
+                before the first measurement, leaving a tiny debug image. */}
+            <div data-testid="modern-debug-preview"
+              className="camera-modern-debug-preview w-full max-w-full overflow-hidden rounded-2xl border border-slate-700/90 bg-slate-950 shadow-xl shadow-black/20"
+              style={{ width: cameraConfig.detect.width + 'px', maxWidth: '100%' }}>
+              <AutoUpdatingCameraImage camera={camera} searchParams={searchParams} className="w-full" />
             </div>
             {debugControls}
             {debugOptions}
