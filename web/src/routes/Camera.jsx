@@ -223,11 +223,6 @@ export default function Camera({ camera }) {
             height={cameraConfig.detect.height}
             displayWidth={jsmpegWidth}
             trackedObjects={cameraConfig.objects?.track || []}
-            onClose={() => {
-              setEditLivePolygons(false);
-              setEditorDirty(false);
-              setEditorStreamReady(false);
-            }}
             onDirtyChange={setEditorDirty}
             streamReady={editorStreamReady}
           >
