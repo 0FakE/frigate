@@ -32,7 +32,7 @@ function editShape(data, id, fn) {
 
 function readableDetail(error) {
   const raw = String(error.response?.data?.message || error.message || '').trim();
-  const detail = raw || t('cameras.debug.editor.error.unknown_details');
+  const detail = raw || t('cameras.debug.editor.modal.error.unknown_details');
   return /[.!?]$/.test(detail) ? detail : detail + '.';
 }
 
@@ -93,7 +93,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
       setSelected(null);
       setStatus('');
     } catch (e) {
-      window.alert(t('cameras.debug.editor.error.load_failed', { details: readableDetail(e) }));
+      window.alert(t('cameras.debug.editor.modal.error.load_failed', { details: readableDetail(e) }));
     } finally {
       setBusy(false);
     }
@@ -195,11 +195,11 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     const name = window.prompt(t('cameras.debug.editor.prompt.zone_name'));
     if (!name) return;
     if (!/^[A-Za-z0-9_]+$/.test(name)) {
-      window.alert(t('cameras.debug.editor.error.invalid_zone_name'));
+      window.alert(t('cameras.debug.editor.modal.error.invalid_zone_name'));
       return;
     }
     if (Object.prototype.hasOwnProperty.call(data.zones, name)) {
-      window.alert(t('cameras.debug.editor.error.duplicate_zone_name'));
+      window.alert(t('cameras.debug.editor.modal.error.duplicate_zone_name'));
       return;
     }
     setData((current) => ({ ...current, zones: { ...current.zones, [name]: [] } }));
@@ -217,7 +217,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   const addObjectMask = () => {
     const name = objectLabel.trim();
     if (!/^[A-Za-z0-9_]+$/.test(name)) {
-      window.alert(t('cameras.debug.editor.error.invalid_object_name'));
+      window.alert(t('cameras.debug.editor.modal.error.invalid_object_name'));
       return;
     }
     const index = (data.object_masks[name] || []).length;
@@ -273,7 +273,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
         await mutate('config/raw');
       }
     } catch (e) {
-      window.alert(t('cameras.debug.editor.error.save_failed', { details: readableDetail(e) }));
+      window.alert(t('cameras.debug.editor.modal.error.save_failed', { details: readableDetail(e) }));
     } finally {
       setBusy(false);
     }
@@ -294,10 +294,10 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     { key: 'object:', titleKey: 'cameras.debug.editor.header.object_filters', color: '#3b82f6' },
   ];
   const invalidWarningKey = invalidShape?.id.startsWith('zone:')
-    ? 'cameras.debug.editor.warning.invalid_zone'
+    ? 'cameras.debug.editor.modal.warning.invalid_zone'
     : invalidShape?.id.startsWith('motion:')
-      ? 'cameras.debug.editor.warning.invalid_covered_area'
-      : 'cameras.debug.editor.warning.invalid_object_filter';
+      ? 'cameras.debug.editor.modal.warning.invalid_covered_area'
+      : 'cameras.debug.editor.modal.warning.invalid_object_filter';
 
   const toolButtonClass = 'inline-flex w-auto items-center justify-center rounded-md border px-2.5 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40';
   const secondaryButtonClass = toolButtonClass + ' border-slate-300 bg-white text-slate-800 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-700';
