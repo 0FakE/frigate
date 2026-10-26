@@ -52,15 +52,15 @@ class TestLivePolygonEditor(unittest.TestCase):
     def test_rename_preserves_zone_metadata_and_required_zone_references(self):
         raw = BASE.replace(
             "        inertia: 4 # preserve inertia",
-            "        inertia: 4 # preserve inertia\\n"
+            "        inertia: 4 # preserve inertia\n"
             "        objects: [person]",
         ).replace(
-            "    objects:\\n      filters:",
-            "    onvif:\\n      autotracking:\\n        required_zones: [front]\\n"
-            "    objects:\\n      filters:",
+            "    objects:\n      filters:",
+            "    onvif:\n      autotracking:\n        required_zones: [front]\n"
+            "    objects:\n      filters:",
         ).replace(
             "          min_score: 0.6",
-            "          required_zones: [front]\\n          min_score: 0.6",
+            "          required_zones: [front]\n          min_score: 0.6",
         )
         payload = read_polygons(raw, "driveway")
         payload["zones"]["entry"] = payload["zones"].pop("front")
