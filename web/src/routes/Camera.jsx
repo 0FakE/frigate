@@ -199,7 +199,7 @@ export default function Camera({ camera }) {
   // The same debug controls are rendered beside the video in both editor
   // and ordinary Debug modes; they remain connected to the existing handlers.
   const debugControls = (
-    <div className="flex flex-wrap items-center gap-3 py-4" data-testid="camera-debug-controls">
+    <div className="flex flex-wrap items-center gap-3 pt-4 pb-0" data-testid="camera-debug-controls">
       <button type="button" onClick={handleToggleSettings}
         aria-expanded={showSettings} aria-controls="camera-debug-options"
         className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/90 px-4 text-sm font-semibold text-slate-100 shadow-sm transition-colors hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
