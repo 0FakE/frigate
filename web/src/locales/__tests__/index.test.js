@@ -96,7 +96,8 @@ describe('nested German camera editor translations', () => {
       'cameras.page.camera_preview',
       'cameras.page.tracked_objects',
       'cameras.page.control_panel',
-      'cameras.page.view_events',
+      'cameras.page.preview_loading',
+      'cameras.page.preview_error',
       'cameras.page.back_to_cameras',
       'cameras.page.stream_source_jsmpeg',
       'cameras.page.stream_source_mse',
@@ -123,6 +124,8 @@ describe('nested German camera editor translations', () => {
       .toBe('Erkennung: 640 × 360');
     expect(t('cameras.debug.editor.label.vertex_count', { count: 3 }))
       .toBe('Eckpunkte: 3');
+    expect(t('cameras.page.preview_loading')).toBe('Kamera Vorschau wird geladen…');
+    expect(t('cameras.page.view_events')).toBe('cameras.page.view_events');
   });
 
   test('interpolates area names and counts without HTML in the locale', () => {
