@@ -485,9 +485,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(label).toHaveClass('pointer-events-none', 'bg-slate-950/95');
     expect(label).toHaveAttribute('aria-hidden', 'true');
     expect(label.style.left).toMatch(/px$/);
-    expect(label.style.width).toBe('max-content');
-    expect(label.style.maxWidth).toBe('calc(100% - 16px)');
-    expect(label.style.overflowWrap).toBe('anywhere');
+    expect(label).toHaveClass('w-max', 'max-w-[calc(100%-16px)]', 'break-words');
     expect(label).toHaveClass('text-xs');
     expect(label).not.toHaveClass('text-sm', 'max-w-[60%]');
     expect(label.querySelector('span:last-child')).not.toHaveClass('break-all');
@@ -510,9 +508,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     fireEvent.mouseEnter(area);
     const label = screen.getByTestId('live-editor-hover-label');
     expect(label).toHaveClass('text-xs');
-    expect(label.style.width).toBe('max-content');
-    expect(label.style.maxWidth).toBe('calc(100% - 16px)');
-    expect(label.style.overflowWrap).toBe('anywhere');
+    expect(label).toHaveClass('w-max', 'max-w-[calc(100%-16px)]', 'break-words');
 
     // Simulate measured tooltip width near the right video edge. Its center
     // must move left instead of overflowing the camera video element.
@@ -525,7 +521,8 @@ describe('LiveZoneEditor vertex interactions', () => {
         <div>Live stream</div>
       </LiveZoneEditor>
     );
-    expect(screen.getByTestId('live-editor-hover-label')).toHaveStyle({ maxWidth: 'calc(100% - 16px)' });
+    expect(screen.getByTestId('live-editor-hover-label'))
+      .toHaveClass('w-max', 'max-w-[calc(100%-16px)]');
   });
 
   test('list hovers label masks and object filters only after the first camera frame', async () => {
