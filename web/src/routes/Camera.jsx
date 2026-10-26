@@ -254,7 +254,7 @@ export default function Camera({ camera }) {
         />
       );
     } else if (viewSource === 'webrtc' && restreamEnabled) {
-      player = <WebRtcPlayer camera={cameraConfig.live.stream_name} />;
+      player = <WebRtcPlayer camera={cameraConfig.live.stream_name} onFirstFrame={handleFirstLiveFrame} />;
     } else {
       player = (
         <JSMpegPlayer camera={camera} width={jsmpegWidth} height={cameraConfig.live.height}
@@ -378,11 +378,11 @@ export default function Camera({ camera }) {
               const label = t(classKey) === classKey ? objectType : t(classKey);
               return (
                 <a key={objectType} href={`/events?cameras=${camera}&labels=${encodeURIComponent(objectType)}`}
-                  className="group inline-flex max-w-full min-w-0 items-center gap-4 overflow-hidden rounded-lg border border-slate-700/90 bg-slate-900/90 pr-5 shadow-lg shadow-black/10 transition-all hover:-translate-y-0.5 hover:border-blue-500/70 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
-                  <img className="h-[120px] w-[120px] shrink-0 object-cover grayscale" loading="lazy"
+                  className="group inline-flex max-w-full min-w-0 flex-col items-stretch overflow-hidden rounded-lg border border-slate-700/90 bg-slate-900/90 shadow-lg shadow-black/10 transition-all hover:-translate-y-0.5 hover:border-blue-500/70 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
+                  <span className="min-w-0 px-3 py-2 text-sm font-semibold text-slate-100">{label}</span>
+                  <img className="h-40 w-40 shrink-0 object-cover grayscale" loading="lazy"
                     alt={t('cameras.page.object_thumbnail', { name: label })}
                     src={`${apiHost}api/${camera}/${encodeURIComponent(objectType)}/thumbnail.jpg`} />
-                  <span className="min-w-0 truncate text-sm font-semibold text-slate-100">{label}</span>
                 </a>
               );
             })}
