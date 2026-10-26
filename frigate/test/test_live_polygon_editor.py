@@ -49,6 +49,44 @@ class TestLivePolygonEditor(unittest.TestCase):
         self.assertIn("coordinates: 25,20,80,20,80,90", changed)
         self.assertEqual(read_polygons(changed, "driveway")["motion_masks"], [])
 
+    def test_rename_preserves_zone_metadata_and_required_zone_references(self):
+        raw = BASE.replace(
+            "        inertia: 4 # preserve inertia",
+            "        inertia: 4 # preserve inertia\\n"
+            "        objects: [person]",
+        ).replace(
+            "    objects:\\n      filters:",
+            "    onvif:\\n      autotracking:\\n        required_zones: [front]\\n"
+            "    objects:\\n      filters:",
+        ).replace(
+            "          min_score: 0.6",
+            "          required_zones: [front]\\n          min_score: 0.6",
+        )
+        payload = read_polygons(raw, "driveway")
+        payload["zones"]["entry"] = payload["zones"].pop("front")
+        payload["zone_renames"] = {"front": "entry"}
+        updated = update_polygons(raw, "driveway", payload, 640, 360)
+        self.assertIn("inertia: 4 # preserve inertia", updated)
+        self.assertIn("objects: [person]", updated)
+        self.assertEqual(updated.count("required_zones: [entry]"), 2)
+        self.assertNotIn("required_zones: [front]", updated)
+        self.assertEqual(list(read_polygons(updated, "driveway")["zones"]), ["entry"])
+        self.assertIn("host: mosquitto # preserve this comment", updated)
+
+    def test_reject_unsafe_zone_rename_payload(self):
+        payload = read_polygons(BASE, "driveway")
+        payload["zones"] = {"entry": payload["zones"]["front"]}
+        payload["zone_renames"] = {"not_existing": "entry"}
+        with self.assertRaisesRegex(ValueError, "Original zone"):
+            update_polygons(BASE, "driveway", payload, 640, 360)
+        payload["zone_renames"] = {"front": "bad name"}
+        with self.assertRaisesRegex(ValueError, "Invalid zone rename"):
+            update_polygons(BASE, "driveway", payload, 640, 360)
+        payload["zone_renames"] = {"front": "entry"}
+        payload["zones"]["front"] = payload["zones"]["entry"]
+        with self.assertRaisesRegex(ValueError, "does not match"):
+            update_polygons(BASE, "driveway", payload, 640, 360)
+
     def test_refuse_outdated_revision(self):
         data = read_polygons(BASE, "driveway")
         with self.assertRaises(RuntimeError):

@@ -122,15 +122,17 @@ describe('nested German camera editor translations', () => {
     expect(t('cameras.page.detect_resolution', { width: 640, height: 360 }))
       .toBe('Auflösung: 640 × 360');
     expect(t('cameras.page.subtitle')).toBe('cameras.page.subtitle');
-    expect(t('cameras.debug.controls.zones')).toBe('Zonen & Bereiche');
+    expect(t('cameras.debug.controls.zones')).toBe('Zonen');
     expect(t('cameras.debug.controls.bounding_box')).toBe('Objekte');
-    expect(t('cameras.debug.controls.motion_masks')).toBe('Masken');
-    expect(t('cameras.debug.controls.motion_boxes')).toBe('Bewegungen');
+    expect(t('cameras.debug.controls.motion_masks')).toBe('abgedeckte Bereiche');
+    expect(t('cameras.debug.controls.motion_boxes')).toBe('Bewegungsbereiche');
     expect(t('cameras.debug.editor.label.vertex_count', { count: 3 }))
       .toBe('Eckpunkte: 3');
     expect(t('cameras.debug.editor.label.no_selection'))
       .toBe('Wähle einen Bereich zum Bearbeiten aus.');
     expect(t('cameras.page.preview_loading')).toBe('Kamera Vorschau wird geladen…');
+    expect(t('cameras.debug.editor.button.rename_zone')).toBe('Zone umbenennen');
+    expect(t('cameras.debug.editor.label.zone_new_name')).toBe('Neuer Zonenname');
     expect(t('cameras.page.view_events')).toBe('cameras.page.view_events');
   });
 

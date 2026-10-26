@@ -197,8 +197,10 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(screen.getByRole('heading', { name: 'Objektfilter 0' })).toHaveClass('text-sm');
     const areaA = screen.getByRole('button', { name: 'area_a' });
     expect(areaA).toHaveClass('text-sm');
+    expect(areaA).not.toHaveClass('ring-1', 'ring-blue-500/30');
     fireEvent.click(areaA);
     expect(areaA).toHaveClass('text-sm');
+    expect(areaA).not.toHaveClass('ring-1', 'ring-blue-500/30');
   });
 
   test('keeps compact grouped tools visible on mobile and in the 360px desktop sidebar', async () => {
@@ -237,9 +239,9 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(zone).toHaveClass('h-10');
     expect(mask).toHaveClass('h-10');
     expect(filter).toHaveClass('h-10');
-    expect(zone).toHaveClass('border-green-500');
-    expect(mask).toHaveClass('border-red-500');
-    expect(filter).toHaveClass('border-blue-500');
+    expect(zone).toHaveClass('border-green-500', 'bg-slate-800/90', 'text-green-500');
+    expect(mask).toHaveClass('border-red-500', 'bg-slate-800/90', 'text-red-500');
+    expect(filter).toHaveClass('border-blue-500', 'bg-slate-800/90', 'text-blue-500');
     expect(objectClass).toHaveClass('h-10', 'w-full', 'min-w-0');
     expect(zone.parentElement).toHaveClass('grid', 'grid-cols-2', 'gap-2');
     expect(filter.parentElement).toHaveClass('grid', 'grid-cols-2', 'gap-2');
@@ -251,12 +253,49 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(screen.getByRole('heading', { name: 'Neuen Bereich erstellen' })).toHaveClass('mb-2');
     expect(screen.getByRole('heading', { name: 'Vorhandene Bereiche' })).toHaveClass('mb-2');
     expect(screen.getByRole('heading', { name: 'Ausgewählter Bereich' })).toHaveClass('mb-2');
-    expect(screen.getByText('Wähle einen Bereich zum Bearbeiten aus.')).toHaveClass('mb-3');
+    expect(screen.getByText('Wähle einen Bereich zum Bearbeiten aus.')).toHaveClass('mb-3', 'whitespace-pre-line');
 
     fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
     expect(screen.getByText('Eckpunkte: 3')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Bereich löschen' })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'Bearbeitung beenden' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Änderungen speichern' })).toBeDisabled();
+  });
+
+  test('renames a zone inline with validation, tooltip and correct save mapping', async () => {
+    const { onDirtyChange } = await openEditor();
+    expect(screen.queryByRole('button', { name: 'Zone umbenennen' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
+    const edit = screen.getByRole('button', { name: 'Zone umbenennen' });
+    expect(edit).toHaveAttribute('title', 'Zone umbenennen');
+    expect(edit.parentElement.nextElementSibling).toHaveTextContent('Eckpunkte: 3');
+    fireEvent.click(edit);
+    const input = screen.getByRole('textbox', { name: 'Neuer Zonenname' });
+    fireEvent.input(input, { target: { value: 'area_b' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Übernehmen' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('existiert bereits');
+    fireEvent.input(input, { target: { value: 'bad name' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Übernehmen' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Buchstaben');
+    fireEvent.input(input, { target: { value: 'entry_new' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Übernehmen' }));
+    expect(screen.queryByRole('textbox', { name: 'Neuer Zonenname' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'entry_new' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'area_a' })).not.toBeInTheDocument();
+    await waitFor(() => expect(onDirtyChange).toHaveBeenCalledWith(true));
+    fireEvent.click(screen.getByRole('button', { name: 'Änderungen speichern' }));
+    await waitFor(() => expect(axios.put).toHaveBeenCalledTimes(1));
+    expect(axios.put.mock.calls[0][1].zone_renames).toEqual({ area_a: 'entry_new' });
+    expect(axios.put.mock.calls[0][1].zones.entry_new).toHaveLength(3);
+  });
+
+  test('canceling a zone rename leaves data unchanged', async () => {
+    await openEditor();
+    fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Zone umbenennen' }));
+    fireEvent.input(screen.getByRole('textbox', { name: 'Neuer Zonenname' }), { target: { value: 'not_saved' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Abbrechen' }));
+    expect(screen.getByRole('button', { name: 'area_a' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Änderungen speichern' })).toBeDisabled();
   });
 
