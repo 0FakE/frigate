@@ -12,9 +12,9 @@
         "button": {
           "open": "Zonen & Masken Editor",
           "close": "Editor schließen",
-          "zone": "+ Zone",
-          "mask": "+ Maske",
-          "object_filter": "+ Objektfilter",
+          "zone": "Zone",
+          "mask": "Maske",
+          "object_filter": "Objektfilter",
           "end_editing": "Bearbeitung beenden",
           "delete_area": "Bereich löschen",
           "discard": "Verwerfen",
@@ -25,7 +25,6 @@
           "finish_short": "Abwählen"
         },
         "header": {
-          "mobile_menu": "Bearbeitungsmenü",
           "new_area": "Neuen Bereich erstellen",
           "existing_areas": "Vorhandene Bereiche ({count})",
           "selected_area": "Ausgewählter Bereich",
