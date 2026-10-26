@@ -41,7 +41,7 @@
           "vertex": "Eckpunkt {number} von {name}",
           "selected_name": "Bereich",
           "vertex_count": "Eckpunkte: {count}",
-          "no_selection": "Wähle einen Bereich aus, um seine Punkte zu bearbeiten.",
+          "no_selection": "Wähle einen Bereich zum Bearbeiten aus.",
           "object_filter_select": "Objektklasse für Filter",
           "status_badge": "Bearbeitung aktiv"
         },
