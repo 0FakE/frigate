@@ -92,7 +92,16 @@ describe('modern camera page keeps its original actions', () => {
     const thumbnails = trackedSection.querySelectorAll('img');
     expect(thumbnails).toHaveLength(2);
     thumbnails.forEach((img) => {
-      expect(img).toHaveClass('h-40', 'w-40', 'object-cover');
+      expect(img).toHaveClass('shrink-0', 'object-cover');
+      expect(img).toHaveAttribute('width', '175');
+      expect(img).toHaveAttribute('height', '175');
+      const style = window.getComputedStyle(img);
+      expect(style.width).toBe('175px');
+      expect(style.height).toBe('175px');
+      expect(style.minWidth).toBe('175px');
+      expect(style.maxWidth).toBe('175px');
+      expect(style.minHeight).toBe('175px');
+      expect(style.maxHeight).toBe('175px');
       expect(img.parentElement).toHaveClass('flex-col');
       expect(img.parentElement).not.toHaveClass('w-[360px]', 'w-[400px]');
       expect(img.previousElementSibling).toHaveClass('text-sm');
@@ -103,6 +112,24 @@ describe('modern camera page keeps its original actions', () => {
     expect(screen.getByRole('link', { name: /Person/ })).toHaveAttribute('href', '/events?cameras=test_camera&labels=person');
     expect(screen.getByRole('link', { name: /Auto/ })).toHaveAttribute('href', '/events?cameras=test_camera&labels=car');
     expect(screen.getByText('ONVIF Kamera-Steuerung')).toBeInTheDocument();
+  });
+
+  test('object thumbnails remain exactly 175 CSS pixels even with a 15px root font size', () => {
+    const originalRootFontSize = document.documentElement.style.fontSize;
+    document.documentElement.style.fontSize = '15px';
+    try {
+      render(<Camera camera="test_camera" />);
+      const section = screen.getByRole('region', { name: 'Erkannte Objekte' });
+      for (const img of section.querySelectorAll('img')) {
+        expect(img).toHaveAttribute('width', '175');
+        expect(img).toHaveAttribute('height', '175');
+        expect(window.getComputedStyle(img).width).toBe('175px');
+        expect(window.getComputedStyle(img).height).toBe('175px');
+        expect(img).not.toHaveClass('w-40', 'h-40');
+      }
+    } finally {
+      document.documentElement.style.fontSize = originalRootFontSize;
+    }
   });
 
   test('retains Debug option toggles, editor entry and a toolbar under the stream', () => {
