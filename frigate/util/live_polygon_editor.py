@@ -132,6 +132,19 @@ def update_polygons(raw: str, camera: str, payload: dict, width: int, height: in
         if not isinstance(name, str) or not _NAME.fullmatch(name):
             raise ValueError("Zone names must contain only letters, numbers, underscores")
         checked_zones[name] = _validate_polygon(points, width, height)
+    renames = payload.get("zone_renames", {})
+    if not isinstance(renames, dict) or any(
+        not isinstance(old, str) or not isinstance(new, str)
+        or not _NAME.fullmatch(old) or not _NAME.fullmatch(new)
+        or old == new
+        for old, new in renames.items()
+    ):
+        raise ValueError("Invalid zone rename mapping")
+    if len(set(renames.values())) != len(renames):
+        raise ValueError("Duplicate zone rename destination")
+    if any(old in checked_zones or new not in checked_zones for old, new in renames.items()):
+        raise ValueError("Zone rename does not match submitted zone data")
+
     checked_motions = _validate_mask_group(motions, width, height)
     checked_objects = {}
     for name, masks in objects.items():
@@ -143,6 +156,42 @@ def update_polygons(raw: str, camera: str, payload: dict, width: int, height: in
     data = yaml.load(raw)
     cfg = _camera(data, camera)
     zone_cfg = cfg.get("zones")
+    if renames:
+        if zone_cfg is None:
+            raise ValueError("No existing zones to rename")
+        if any(old not in zone_cfg for old in renames):
+            raise ValueError("Original zone no longer exists")
+        if any(new in zone_cfg and new not in renames for new in renames.values()):
+            raise ValueError("Renamed zone conflicts with an existing zone")
+        # Move each original YAML zone mapping (including its comments and
+        # non-geometric settings), rather than deleting it and creating a new one.
+        moved = {}
+        positions = {name: i for i, name in enumerate(zone_cfg)}
+        for old in renames:
+            comment = zone_cfg.ca.items.pop(old, None)
+            moved[old] = (zone_cfg.pop(old), comment)
+        for old, new in sorted(renames.items(), key=lambda item: positions[item[0]]):
+            value, comment = moved[old]
+            zone_cfg.insert(positions[old], new, value)
+            if comment is not None:
+                zone_cfg.ca.items[new] = comment
+
+        # Rewrite references in this camera only; other cameras are untouched.
+        def update_required_zones(node):
+            if isinstance(node, dict):
+                for key, value in node.items():
+                    if key == "required_zones" and isinstance(value, list):
+                        for i, name in enumerate(value):
+                            if isinstance(name, str) and name in renames:
+                                value[i] = renames[name]
+                    else:
+                        update_required_zones(value)
+            elif isinstance(node, list):
+                for value in node:
+                    update_required_zones(value)
+
+        update_required_zones(cfg)
+
     if checked_zones or zone_cfg is not None:
         zone_cfg = cfg.setdefault("zones", {})
         for name in list(zone_cfg):

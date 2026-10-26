@@ -114,7 +114,7 @@ function EditorNotice({ variant, children }) {
             <><path d="m10.29 3.86-8.12 14a2 2 0 0 0 1.71 3h16.24a2 2 0 0 0 1.71-3l-8.12-14a2 2 0 0 0-3.42 0Z" /><path d="M12 9v4M12 17h.01" /></>
           )}
         </svg>
-        <span className="min-w-0 whitespace-pre-wrap break-words">{children}</span>
+        <span className="min-w-0 whitespace-pre-line break-words">{children}</span>
       </span>
     </div>
   );
@@ -133,6 +133,10 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   const [revision, setRevision] = useState(null);
   const [savedSnapshot, setSavedSnapshot] = useState('');
   const [selected, setSelected] = useState(null);
+  const [zoneRenames, setZoneRenames] = useState({});
+  const [renamingZone, setRenamingZone] = useState(false);
+  const [renameDraft, setRenameDraft] = useState('');
+  const [renameError, setRenameError] = useState('');
   const [hovered, setHovered] = useState(null);
   const [hoverLabelWidth, setHoverLabelWidth] = useState(0);
   const [status, setStatus] = useState('');
@@ -148,6 +152,10 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
       setSavedSnapshot(JSON.stringify(loaded));
       setRevision(response.data.revision);
       setSelected(null);
+      setZoneRenames({});
+      setRenamingZone(false);
+      setRenameDraft('');
+      setRenameError('');
       setHovered(null);
       setStatus('');
     } catch (e) {
@@ -252,6 +260,62 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     setHovered(null);
   };
 
+  const cancelZoneRename = () => {
+    setRenamingZone(false);
+    setRenameDraft('');
+    setRenameError('');
+  };
+
+  const startZoneRename = () => {
+    if (!selected?.startsWith('zone:') || busy) return;
+    setRenameDraft(selected.slice(5));
+    setRenameError('');
+    setRenamingZone(true);
+  };
+
+  const applyZoneRename = (event) => {
+    event.preventDefault();
+    if (!selected?.startsWith('zone:')) return;
+    const oldName = selected.slice(5);
+    const newName = renameDraft.trim();
+    if (!newName) {
+      setRenameError(t('cameras.debug.editor.modal.error.empty_zone_name'));
+      return;
+    }
+    if (!/^[A-Za-z0-9_]+$/.test(newName)) {
+      setRenameError(t('cameras.debug.editor.modal.error.invalid_zone_name'));
+      return;
+    }
+    if (newName !== oldName && Object.prototype.hasOwnProperty.call(data.zones, newName)) {
+      setRenameError(t('cameras.debug.editor.modal.error.duplicate_zone_name'));
+      return;
+    }
+    if (newName !== oldName) {
+      setData((current) => ({
+        ...current,
+        zones: Object.fromEntries(Object.entries(current.zones).map(
+          ([name, points]) => [name === oldName ? newName : name, points]
+        )),
+      }));
+      // A rename of an existing YAML zone must preserve its entire configuration.
+      const originallySaved = JSON.parse(savedSnapshot || '{}').zones || {};
+      setZoneRenames((current) => {
+        const updated = { ...current };
+        const original = Object.keys(updated).find((name) => updated[name] === oldName) ||
+          (Object.prototype.hasOwnProperty.call(originallySaved, oldName) ? oldName : null);
+        if (original) {
+          if (newName === original) delete updated[original];
+          else updated[original] = newName;
+        }
+        return updated;
+      });
+      setSelected('zone:' + newName);
+      setHovered(null);
+      setStatus('');
+    }
+    cancelZoneRename();
+  };
+
   const addZone = () => {
     const name = window.prompt(t('cameras.debug.editor.prompt.zone_name'));
     if (!name) return;
@@ -265,6 +329,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     }
     setData((current) => ({ ...current, zones: { ...current.zones, [name]: [] } }));
     setSelected('zone:' + name);
+    cancelZoneRename();
     setStatus('');
   };
 
@@ -272,6 +337,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     const index = data.motion_masks.length;
     setData((current) => ({ ...current, motion_masks: [...current.motion_masks, []] }));
     setSelected('motion:' + index);
+    cancelZoneRename();
     setStatus('');
   };
 
@@ -287,12 +353,19 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
       object_masks: { ...current.object_masks, [name]: [...(current.object_masks[name] || []), []] },
     }));
     setSelected('object:' + name + ':' + index);
+    cancelZoneRename();
     setStatus('');
   };
 
   const removeSelected = () => {
     if (!selected) return;
     const [type, key, subkey] = selected.split(':');
+    if (type === 'zone') {
+      setZoneRenames((current) => Object.fromEntries(
+        Object.entries(current).filter(([original, name]) => name !== key)
+      ));
+    }
+    cancelZoneRename();
     setData((current) => {
       const next = clone(current);
       if (type === 'zone') delete next.zones[key];
@@ -321,9 +394,13 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     }
     setBusy(true);
     try {
-      const response = await axios.put('cameras/' + encodeURIComponent(camera) + '/polygons', { revision, ...data });
+      const response = await axios.put('cameras/' + encodeURIComponent(camera) + '/polygons', {
+        revision, ...data, zone_renames: zoneRenames,
+      });
       setRevision(response.data.revision);
       setSavedSnapshot(JSON.stringify(data));
+      setZoneRenames({});
+      cancelZoneRename();
       setSelected(null);
       setHovered(null);
       setStatus('saved');
@@ -410,7 +487,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
               </h3>
               <div className="grid grid-cols-2 gap-2">
                 <button type="button"
-                  className={toolButtonClass + ' h-10 min-w-0 border-green-500 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20'}
+                  className={toolButtonClass + ' h-10 min-w-0 border-green-500 bg-slate-800/90 text-green-500 hover:bg-slate-700'}
                   onClick={addZone} disabled={busy}>
                   <svg aria-hidden="true" className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="4 2">
                     <rect x="4" y="4" width="16" height="16" rx="2" />
@@ -418,7 +495,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                   {t('cameras.debug.editor.button.zone')}
                 </button>
                 <button type="button"
-                  className={toolButtonClass + ' h-10 min-w-0 border-red-500 bg-slate-800/70 text-slate-200 hover:bg-slate-700'}
+                  className={toolButtonClass + ' h-10 min-w-0 border-red-500 bg-slate-800/90 text-red-500 hover:bg-slate-700'}
                   onClick={addMotionMask} disabled={busy}>
                   <svg aria-hidden="true" className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                     <path d="m3 3 18 18M10.6 5.4A10.6 10.6 0 0 1 12 5c5 0 9 7 9 7a16.6 16.6 0 0 1-3 3.5M6.2 6.2A17.7 17.7 0 0 0 3 12s4 7 9 7c1.4 0 2.8-.5 4-1.3" />
@@ -438,7 +515,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                     <option key={item} value={item}>{item}</option>
                   ))}
                 </select>
-                <button type="button" className={toolButtonClass + ' h-10 w-full min-w-0 border-blue-500 bg-slate-800/90 text-slate-100 hover:border-blue-400 hover:bg-slate-700'}
+                <button type="button" className={toolButtonClass + ' h-10 w-full min-w-0 border-blue-500 bg-slate-800/90 text-blue-500 hover:border-blue-400 hover:bg-slate-700'}
                   onClick={addObjectMask} disabled={busy}>
                   <svg aria-hidden="true" className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M4 5h16l-6 7v6l-4 2v-8Z" />
@@ -475,11 +552,14 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                               aria-pressed={selected === shape.id}
                               aria-label={shape.label}
                               title={shape.label}
-                              onClick={() => setSelected((current) => current === shape.id ? null : shape.id)}
+                              onClick={() => {
+                                cancelZoneRename();
+                                setSelected((current) => current === shape.id ? null : shape.id);
+                              }}
                               onMouseEnter={() => setHovered(shape.id)}
                               onMouseLeave={() => setHovered((current) => current === shape.id ? null : current)}
                               className={selected === shape.id
-                                ? 'flex min-h-9 w-full min-w-0 items-center gap-2 rounded-lg border border-blue-500/50 bg-blue-600/20 px-2 py-1.5 text-left text-sm font-semibold text-white ring-1 ring-blue-500/30 transition-colors'
+                                ? 'flex min-h-9 w-full min-w-0 items-center gap-2 rounded-lg border border-blue-500/50 bg-blue-600/20 px-2 py-1.5 text-left text-sm font-semibold text-white transition-colors'
                                 : 'flex min-h-9 w-full min-w-0 items-center gap-2 rounded-lg border border-transparent bg-slate-950/35 px-2 py-1.5 text-left text-sm text-slate-200 transition-colors hover:border-slate-600 hover:bg-slate-800'}
                             >
                               <span aria-hidden="true" className={selected === shape.id
@@ -491,7 +571,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                           ))}
                         </div>
                       ) : (
-                        <p className="px-2 text-sm text-slate-400">{t('cameras.debug.editor.label.empty')}</p>
+                        <p className="whitespace-pre-line px-2 text-sm text-slate-400">{t('cameras.debug.editor.label.empty')}</p>
                       )}
                     </div>
                   );
@@ -513,15 +593,60 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                 <div className="mb-2 rounded-lg border border-slate-700 bg-slate-950/50 px-2 py-2">
                   <div className="flex min-w-0 items-center gap-2">
                     <span aria-hidden="true" className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: selectedShape.color }} />
-                    <span className="min-w-0 flex-1 break-all text-sm font-semibold text-white">{selectedShape.label}</span>
+                    <span className="flex min-w-0 flex-1 items-center gap-1">
+                      <span className="min-w-0 truncate text-sm font-semibold text-white">{selectedShape.label}</span>
+                      {selectedShape.id.startsWith('zone:') && (
+                        <button type="button"
+                          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-blue-300 hover:bg-slate-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                          title={t('cameras.debug.editor.button.rename_zone')}
+                          aria-label={t('cameras.debug.editor.button.rename_zone')}
+                          onClick={startZoneRename} disabled={busy}>
+                          <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="m16 5 3 3M4 20l4.5-1 11-11a2.1 2.1 0 0 0-3-3l-11 11L4 20Z" />
+                          </svg>
+                        </button>
+                      )}
+                    </span>
                     <span className="shrink-0 text-xs text-slate-400">{t('cameras.debug.editor.label.vertex_count', { count: selectedShape.points.length })}</span>
                   </div>
+                  {renamingZone && selectedShape.id.startsWith('zone:') && (
+                    <form onSubmit={applyZoneRename} className="mt-3 space-y-2 border-t border-slate-700 pt-3">
+                      <label htmlFor="zone-rename-input" className="block text-xs font-semibold text-slate-300">
+                        {t('cameras.debug.editor.label.zone_new_name')}
+                      </label>
+                      <input id="zone-rename-input" type="text" autoFocus
+                        value={renameDraft} onInput={(event) => {
+                          setRenameDraft(event.currentTarget.value);
+                          setRenameError('');
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Escape') cancelZoneRename();
+                        }}
+                        aria-invalid={Boolean(renameError)}
+                        aria-describedby={renameError ? 'zone-rename-error' : undefined}
+                        className="h-10 w-full min-w-0 rounded-lg border border-slate-600 bg-slate-950 px-3 text-sm text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400" />
+                      {renameError && (
+                        <p id="zone-rename-error" role="alert" className="whitespace-pre-line text-xs text-red-300">
+                          {renameError}
+                        </p>
+                      )}
+                      <div className="flex justify-end gap-2">
+                        <button type="button" className={secondaryButtonClass} onClick={cancelZoneRename}>
+                          {t('cameras.debug.editor.button.rename_cancel')}
+                        </button>
+                        <button type="submit" className={toolButtonClass + ' border-blue-500 bg-blue-600 text-white hover:bg-blue-500'}>
+                          {t('cameras.debug.editor.button.rename_apply')}
+                        </button>
+                      </div>
+                    </form>
+                  )}
                 </div>
               ) : (
-                <p className="mb-3 text-sm leading-5 text-slate-400">{t('cameras.debug.editor.label.no_selection')}</p>
+                <p className="mb-3 whitespace-pre-line text-sm leading-5 text-slate-400">{t('cameras.debug.editor.label.no_selection')}</p>
               )}
               <div className="grid grid-cols-2 gap-2">
-                <button type="button" className={secondaryButtonClass + ' w-full'} onClick={() => setSelected(null)} disabled={!selected || busy}>
+                <button type="button" className={secondaryButtonClass + ' w-full'} onClick={() => { cancelZoneRename(); setSelected(null); }} disabled={!selected || busy}>
                   {t('cameras.debug.editor.button.end_editing')}
                 </button>
                 <button type="button"

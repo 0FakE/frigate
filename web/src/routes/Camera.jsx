@@ -318,14 +318,14 @@ export default function Camera({ camera }) {
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex w-full flex-nowrap items-center gap-2 sm:w-auto sm:gap-3">
           {viewMode === 'live' && (
-            <label className="inline-flex items-center gap-2 rounded-lg border border-slate-700/80 bg-slate-900/80 p-1 pl-3 text-xs font-semibold text-slate-400 shadow-lg shadow-black/10">
+            <label className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-slate-700/80 bg-slate-900/80 p-1 pl-2 text-xs font-semibold text-slate-400 shadow-lg shadow-black/10 sm:gap-2 sm:pl-3">
               <span>{t('cameras.page.stream_source')}</span>
               <span className="relative inline-flex shrink-0 items-center">
                 <select
                   aria-label={t('cameras.page.stream_source')}
-                  className={'h-10 cursor-pointer appearance-none rounded-lg border border-slate-700 bg-slate-800 py-0 pl-3 pr-8 text-sm font-semibold text-slate-100 focus-visible:ring-2 focus-visible:ring-blue-400 ' +
+                  className={'h-9 cursor-pointer appearance-none rounded-lg border border-slate-700 bg-slate-800 py-0 pl-2 pr-7 text-xs font-semibold text-slate-100 focus-visible:ring-2 focus-visible:ring-blue-400 sm:h-10 sm:pl-3 sm:pr-8 sm:text-sm ' +
                     (viewSource === 'mse' ? 'w-[4.75rem]' : 'w-[6.5rem]')}
                   value={viewSource}
                   onChange={(e) => handleChangeSource(e.target.value)}
@@ -336,7 +336,7 @@ export default function Camera({ camera }) {
                     </option>
                   ))}
                 </select>
-                <svg aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-100"
+                <svg aria-hidden="true" className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-100 sm:right-3"
                   viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="m6 9 6 6 6-6" />
                 </svg>
@@ -414,7 +414,7 @@ export default function Camera({ camera }) {
 function CameraPreviewOverlay({ error }) {
   return (
     <div data-testid="camera-preview-overlay" role={error ? 'alert' : 'status'}
-      className={'pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-slate-900/95 px-4 text-center text-base font-semibold ' +
+      className={'pointer-events-none absolute inset-0 z-30 flex items-center justify-center whitespace-pre-line bg-slate-900/95 px-4 text-center text-base font-semibold ' +
         (error ? 'text-red-300' : 'text-white')}>
       {t(error ? 'cameras.page.preview_error' : 'cameras.page.preview_loading')}
     </div>

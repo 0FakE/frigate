@@ -44,7 +44,7 @@ export default function LocaleLoader({ children }) {
     <Fragment>
       {children}
       {warning && (
-        <div role="alert" className="fixed bottom-4 right-4 z-50 flex max-w-md items-start gap-3 rounded-lg bg-slate-700 p-4 text-sm text-yellow-300 shadow-xl">
+        <div role="alert" className="fixed bottom-4 right-4 z-50 flex max-w-md items-start gap-3 whitespace-pre-line rounded-lg bg-slate-700 p-4 text-sm text-yellow-300 shadow-xl">
           <span>{warning}</span>
           <button type="button" aria-label={t('app.button.dismiss_warning')}
             className="shrink-0 rounded px-1 text-yellow-300 hover:bg-slate-600"

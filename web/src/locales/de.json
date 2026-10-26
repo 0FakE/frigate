@@ -22,7 +22,10 @@
           "discard_changes": "Änderungen verwerfen",
           "save_changes": "Änderungen speichern",
           "remove_short": "Löschen",
-          "finish_short": "Abwählen"
+          "finish_short": "Abwählen",
+          "rename_zone": "Zone umbenennen",
+          "rename_apply": "Übernehmen",
+          "rename_cancel": "Abbrechen"
         },
         "header": {
           "new_area": "Neuen Bereich erstellen",
@@ -43,7 +46,8 @@
           "vertex_count": "Eckpunkte: {count}",
           "no_selection": "Wähle einen Bereich zum Bearbeiten aus.",
           "object_filter_select": "Objektklasse für Filter",
-          "status_badge": "Bearbeitung aktiv"
+          "status_badge": "Bearbeitung aktiv",
+          "zone_new_name": "Neuer Zonenname"
         },
         "prompt": {
           "zone_name": "Zonenname (Buchstaben, Zahlen, Unterstriche):",
@@ -62,7 +66,8 @@
             "invalid_object_name": "Der eingegebene Objektname ist ungültig. Bitte verwende ausschließlich Buchstaben, Zahlen und Unterstriche.",
             "load_failed": "Die vorhandenen Bereiche konnten nicht geladen werden. {details}",
             "save_failed": "Die Änderungen konnten nicht gespeichert werden. {details}",
-            "unknown_details": "Ein unbekannter Fehler ist aufgetreten."
+            "unknown_details": "Ein unbekannter Fehler ist aufgetreten.",
+            "empty_zone_name": "Bitte gib einen Zonennamen ein."
           },
           "warning": {
             "invalid_zone": "Die Zone „{name}“ kann nicht gespeichert werden. Bitte lege mindestens drei Eckpunkte fest, die nicht auf einer Linie liegen.",
@@ -82,9 +87,9 @@
         "options_aria": "Optionen für die Kameravorschau",
         "bounding_box": "Objekte",
         "timestamp": "Zeitstempel",
-        "zones": "Zonen & Bereiche",
-        "motion_masks": "Masken",
-        "motion_boxes": "Bewegungen",
+        "zones": "Zonen",
+        "motion_masks": "abgedeckte Bereiche",
+        "motion_boxes": "Bewegungsbereiche",
         "regions": "Erkennungsbereiche"
       }
     },

@@ -36,16 +36,16 @@ export default function ButtonsTabbed({
   const cameraTabs = variant === 'camera';
 
   return (
-    <nav className="flex justify-end" aria-label={cameraTabs ? t('cameras.debug.tabs.aria_label') : undefined}>
+    <nav className="flex shrink-0 justify-end" aria-label={cameraTabs ? t('cameras.debug.tabs.aria_label') : undefined}>
       {cameraTabs ? (
-        <div className="inline-flex items-center gap-1 rounded-xl border border-slate-700/80 bg-slate-900/80 p-1 shadow-lg shadow-black/10">
+        <div className="inline-flex items-center gap-0.5 rounded-xl border border-slate-700/80 bg-slate-900/80 p-1 shadow-lg shadow-black/10 sm:gap-1">
           {viewModes.map((item, i) => (
             <button
               key={item}
               type="button"
               aria-pressed={selected === i}
               onClick={() => handleClick(i)}
-              className={'inline-flex h-10 items-center gap-2 rounded-lg px-5 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ' +
+              className={'inline-flex h-9 items-center gap-1 rounded-lg px-2 text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 sm:h-10 sm:gap-2 sm:px-5 sm:text-sm ' +
                 (selected === i
                   ? 'bg-blue-600 text-white shadow-[0_4px_20px_rgba(37,99,235,0.28)] ring-1 ring-blue-400/60'
                   : 'text-slate-300 hover:bg-slate-800 hover:text-white')}
