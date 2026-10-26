@@ -281,7 +281,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     const input = screen.getByRole('textbox', { name: 'Neuer Name der Zone' });
     fireEvent.input(input, { target: { value: 'area_b' } });
     fireEvent.click(screen.getByRole('button', { name: 'Übernehmen' }));
-    expect(screen.getByRole('alert')).toHaveTextContent('existiert bereits');
+    expect(screen.getByRole('alert')).toHaveTextContent('ist bereits vorhanden');
     fireEvent.input(input, { target: { value: 'bad name' } });
     fireEvent.click(screen.getByRole('button', { name: 'Übernehmen' }));
     expect(screen.getByRole('alert')).toHaveTextContent('Buchstaben');
