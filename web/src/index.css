@@ -106,6 +106,14 @@
   max-width: 100%;
 }
 
+/* The Debug snapshot uses a real measured-width container. Keep its canvas
+   responsive without stretching its pixel aspect ratio or affecting Live. */
+.camera-modern-debug-preview canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
 .camera-modern-page :is(button, a, select):focus-visible {
   outline: 2px solid #60a5fa;
   outline-offset: 2px;
