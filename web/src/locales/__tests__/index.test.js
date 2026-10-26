@@ -7,9 +7,10 @@ describe('nested German camera editor translations', () => {
     expect(t('cameras.debug.editor.button.open')).toBe('Zonen & Masken Editor');
     expect(t('cameras.debug.editor.button.close')).toBe('Editor schließen');
     expect(t('cameras.debug.editor.status.loading_stream')).toBe('Kamera Vorschau wird geladen…');
-    expect(t('cameras.debug.editor.button.mask')).toBe('+ Maske');
-    expect(t('cameras.debug.editor.button.object_filter')).toBe('+ Objektfilter');
+    expect(t('cameras.debug.editor.button.mask')).toBe('Maske');
+    expect(t('cameras.debug.editor.button.object_filter')).toBe('Objektfilter');
     expect(t('cameras.debug.editor.header.new_area')).toBe('Neuen Bereich erstellen');
+    expect(t('cameras.debug.editor.header.mobile_menu')).toBe('cameras.debug.editor.header.mobile_menu');
     expect(t('cameras.debug.editor.header.covered_areas', { count: 0 })).toBe('Abgedeckte Bereiche (0)');
     expect(t('cameras.debug.editor.modal.error.invalid_zone_name')).toBe(
       'Der eingegebene Zonenname ist ungültig. Bitte verwende ausschließlich Buchstaben, Zahlen und Unterstriche.'
@@ -23,7 +24,7 @@ describe('nested German camera editor translations', () => {
     setLocaleMessages({ cameras: { debug: { editor: { button: { open: 'Mein eigener Editor' } } } } });
     expect(t('cameras.debug.editor.button.open')).toBe('Mein eigener Editor');
     expect(t('cameras.debug.editor.header.new_area')).toBe('Neuen Bereich erstellen');
-    expect(t('cameras.debug.editor.button.zone')).toBe('+ Zone');
+    expect(t('cameras.debug.editor.button.zone')).toBe('Zone');
   });
 
   test('interpolates placeholders from editable host entries and rejects invalid override values', () => {
