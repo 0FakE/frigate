@@ -172,6 +172,9 @@ describe('modern camera page keeps its original actions', () => {
     expect(screen.getByText('Debug Kamerabild')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Show Options' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Zonen & Masken Editor' })).toBeInTheDocument();
+    expect(screen.getByTestId('camera-debug-controls')).toHaveClass('pt-4', 'pb-0');
+    expect(screen.getByTestId('camera-debug-controls')).not.toHaveClass('py-4');
+
     fireEvent.click(screen.getByRole('button', { name: 'Show Options' }));
     expect(screen.getByText('Anzeigeoptionen')).toBeInTheDocument();
     expect(screen.getByText('Objektrahmen')).toBeInTheDocument();
@@ -182,6 +185,7 @@ describe('modern camera page keeps its original actions', () => {
     expect(editor).toHaveTextContent('JSMpeg Livebild');
     expect(editor).toHaveTextContent('Anzeigeoptionen');
     expect(editor).toHaveTextContent('Editor schließen');
+    expect(screen.getByTestId('camera-debug-controls')).toHaveClass('pt-4', 'pb-0');
     expect(screen.queryByRole('combobox', { name: 'Videoquelle' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Debug' }));
     // The actual stream-source selector stays in Live, not the Debug toolbar.
