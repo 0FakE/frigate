@@ -1,9 +1,9 @@
-name: Live Zone Editor Preview Image
+name: Modern Camera UI Preview Image
 
 on:
   push:
     branches:
-      - feature/live-zone-editor
+      - feature/modern-camera-ui
     paths:
       - 'docker/live-editor/**'
       - 'web/**'
@@ -18,7 +18,7 @@ permissions:
   packages: write
 
 concurrency:
-  group: preview-image-${{ github.ref }}
+  group: modern-ui-preview-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -33,13 +33,13 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and publish experimental AMD64 image
+      - name: Build and publish isolated Modern Camera UI AMD64 image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: docker/live-editor/Dockerfile
           push: true
           platforms: linux/amd64
-          tags: ghcr.io/0fake/frigate:0.13.2-live-editor-dev
-          cache-from: type=gha,scope=live-editor
+          tags: ghcr.io/0fake/frigate:0.13.2-modern-camera-ui-dev
+          cache-from: type=gha,scope=modern-camera-ui
           cache-to: type=gha,mode=max,scope=live-editor
