@@ -233,46 +233,32 @@ export default function Camera({ camera }) {
     </section>
   ) : null;
 
+  const mseSupported = 'MediaSource' in window || 'ManagedMediaSource' in window;
+  const unsupportedMse = viewMode === 'live' && viewSource === 'mse' && restreamEnabled && !mseSupported;
+  const resolutionStyle = {
+    width: jsmpegWidth + 'px',
+    maxWidth: '100%',
+    aspectRatio: cameraConfig.detect.width + ' / ' + cameraConfig.detect.height,
+  };
   let player;
   if (viewMode === 'live') {
-    if (viewSource == 'mse' && restreamEnabled) {
-      if ('MediaSource' in window || 'ManagedMediaSource' in window) {
-        player = (
-          <Fragment>
-            <div className="max-w-5xl">
-              <video-stream
-                mode="mse"
-                src={
-                  new URL(`${baseUrl.replace(/^http/, 'ws')}live/webrtc/api/ws?src=${cameraConfig.live.stream_name}`)
-                }
-              />
-            </div>
-          </Fragment>
-        );
-      } else {
-        player = (
-          <Fragment>
-            <div className="w-5xl text-center text-sm">
-              {t('cameras.page.mse_unsupported')}
-            </div>
-          </Fragment>
-        );
-      }
-    } else if (viewSource == 'webrtc' && restreamEnabled) {
-      player = (
-        <Fragment>
-          <div className="max-w-5xl">
-            <WebRtcPlayer camera={cameraConfig.live.stream_name} />
-          </div>
-        </Fragment>
+    if (viewSource === 'mse' && restreamEnabled) {
+      player = unsupportedMse ? (
+        <div className="flex h-full items-center justify-center p-4 text-center text-sm text-white">
+          {t('cameras.page.mse_unsupported')}
+        </div>
+      ) : (
+        <video-stream
+          mode="mse"
+          src={new URL(`${baseUrl.replace(/^http/, 'ws')}live/webrtc/api/ws?src=${cameraConfig.live.stream_name}`)}
+        />
       );
+    } else if (viewSource === 'webrtc' && restreamEnabled) {
+      player = <WebRtcPlayer camera={cameraConfig.live.stream_name} />;
     } else {
       player = (
-        <Fragment>
-          <div>
-            <JSMpegPlayer camera={camera} width={jsmpegWidth} height={cameraConfig.live.height} />
-          </div>
-        </Fragment>
+        <JSMpegPlayer camera={camera} width={jsmpegWidth} height={cameraConfig.live.height}
+          fillContainer onFirstFrame={handleFirstLiveFrame} />
       );
     }
   } else if (viewMode === 'debug') {
@@ -295,13 +281,17 @@ export default function Camera({ camera }) {
           </LiveZoneEditor>
         ) : (
           <div className="w-full min-w-0">
-            {/* CameraImage measures its parent with ResizeObserver. An
-                inline-block shrink-to-fit wrapper makes the parent collapse
-                before the first measurement, leaving a tiny debug image. */}
+            {/* Preallocate the complete video area before CameraImage's first
+                ResizeObserver measurement or its first successful JPEG. */}
             <div data-testid="modern-debug-preview"
-              className="camera-modern-video-frame camera-modern-debug-preview w-full max-w-full overflow-hidden"
-              style={{ width: cameraConfig.detect.width + 'px', maxWidth: '100%' }}>
-              <AutoUpdatingCameraImage camera={camera} searchParams={searchParams} className="w-full" showFps={false} />
+              className="camera-modern-video-frame camera-modern-debug-preview relative w-full max-w-full overflow-hidden"
+              style={{ width: cameraConfig.detect.width + 'px', maxWidth: '100%',
+                aspectRatio: cameraConfig.detect.width + ' / ' + cameraConfig.detect.height }}>
+              <div className="absolute inset-0">
+                <AutoUpdatingCameraImage camera={camera} searchParams={searchParams}
+                  className="h-full w-full" showFps={false} onFirstFrame={handleFirstDebugFrame} />
+              </div>
+              {!debugReady && <CameraPreviewOverlay error={previewError === 'debug:' + camera} />}
             </div>
             {debugControls}
             {debugOptions}
@@ -354,15 +344,15 @@ export default function Camera({ camera }) {
       <main>
         <section aria-label={t('cameras.page.camera_preview')} className="camera-modern-stage mb-8">
           {viewMode === 'live' ? (
-            <div data-testid="modern-live-preview"
-              className="camera-modern-video-frame w-full max-w-full overflow-hidden"
-              style={{
-                width: (restreamEnabled && (viewSource === 'mse' || viewSource === 'webrtc'))
-                  ? '64rem'
-                  : jsmpegWidth + 'px',
-                maxWidth: '100%',
-              }}>
-              {player}
+            <div ref={livePreviewRef} data-testid="modern-live-preview"
+              className="camera-modern-video-frame camera-modern-live-preview relative w-full max-w-full overflow-hidden"
+              style={resolutionStyle}>
+              <div key={liveSourceKey} className="absolute inset-0">
+                {player}
+              </div>
+              {!liveReady && !unsupportedMse && (
+                <CameraPreviewOverlay error={previewError === liveSourceKey} />
+              )}
             </div>
           ) : player}
         </section>
@@ -374,7 +364,8 @@ export default function Camera({ camera }) {
           </section>
         )}
 
-        <section aria-label={t('cameras.page.tracked_objects')} className="space-y-4">
+        <section aria-label={t('cameras.page.tracked_objects')}
+          className="space-y-4 border-t border-slate-700/80 pt-6">
           <div className="flex items-center gap-3">
             <span className="h-1.5 w-1.5 rounded-full bg-blue-400" aria-hidden="true" />
             <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-slate-300">
@@ -387,16 +378,11 @@ export default function Camera({ camera }) {
               const label = t(classKey) === classKey ? objectType : t(classKey);
               return (
                 <a key={objectType} href={`/events?cameras=${camera}&labels=${encodeURIComponent(objectType)}`}
-                  className="group flex min-w-0 items-center gap-3 overflow-hidden rounded-2xl border border-slate-700/90 bg-slate-900/90 pr-5 shadow-lg shadow-black/10 transition-all hover:-translate-y-0.5 hover:border-blue-500/70 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
-                  <img className="h-20 w-24 shrink-0 object-cover grayscale" loading="lazy"
+                  className="group inline-flex max-w-full min-w-0 items-center gap-4 overflow-hidden rounded-lg border border-slate-700/90 bg-slate-900/90 pr-5 shadow-lg shadow-black/10 transition-all hover:-translate-y-0.5 hover:border-blue-500/70 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
+                  <img className="h-[120px] w-[120px] shrink-0 object-cover grayscale" loading="lazy"
                     alt={t('cameras.page.object_thumbnail', { name: label })}
                     src={`${apiHost}api/${camera}/${encodeURIComponent(objectType)}/thumbnail.jpg`} />
-                  <span className="flex min-w-0 flex-col gap-1">
-                    <span className="truncate text-sm font-semibold text-slate-100">{label}</span>
-                    <span className="text-xs text-slate-400 group-hover:text-blue-300">
-                      {t('cameras.page.view_events')}
-                    </span>
-                  </span>
+                  <span className="min-w-0 truncate text-sm font-semibold text-slate-100">{label}</span>
                 </a>
               );
             })}
@@ -406,6 +392,17 @@ export default function Camera({ camera }) {
           </div>
         </section>
       </main>
+    </div>
+  );
+}
+
+// Keeps the camera viewport dimensions fixed while any source is connecting.
+function CameraPreviewOverlay({ error }) {
+  return (
+    <div data-testid="camera-preview-overlay" role={error ? 'alert' : 'status'}
+      className={'pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-slate-900/95 px-4 text-center text-base font-semibold ' +
+        (error ? 'text-red-300' : 'text-white')}>
+      {t(error ? 'cameras.page.preview_error' : 'cameras.page.preview_loading')}
     </div>
   );
 }
