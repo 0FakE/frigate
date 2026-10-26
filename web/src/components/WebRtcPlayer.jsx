@@ -1,8 +1,53 @@
 import { h } from 'preact';
 import { baseUrl } from '../api/baseUrl';
-import { useCallback, useEffect } from 'preact/hooks';
+import { useCallback, useEffect, useRef } from 'preact/hooks';
 
-export default function WebRtcPlayer({ camera, width, height }) {
+export default function WebRtcPlayer({ camera, width, height, onFirstFrame }) {
+  const videoRef = useRef(null);
+
+  // Register on the real WebRTC video element, not on its parent. Some
+  // browsers do not emit a capturable 'loadeddata' or 'playing' event at
+  // the camera page when a remote MediaStream first starts rendering.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !onFirstFrame) return;
+
+    let completed = false;
+    let videoFrameRequest = null;
+    const notifyWhenReady = () => {
+      if (completed) return;
+      completed = true;
+      clearInterval(fallbackPoll);
+      onFirstFrame();
+    };
+    const checkVideo = () => {
+      if (video.readyState >= 2 && video.videoWidth > 0) notifyWhenReady();
+    };
+    for (const eventName of ['loadeddata', 'playing', 'timeupdate', 'resize', 'canplay']) {
+      video.addEventListener(eventName, checkVideo);
+    }
+    // requestVideoFrameCallback is the most precise signal: an actual frame
+    // reached the compositor, even if ordinary HTMLMediaElement events were
+    // skipped or arrived before the camera parent registered listeners.
+    if (typeof video.requestVideoFrameCallback === 'function') {
+      videoFrameRequest = video.requestVideoFrameCallback(notifyWhenReady);
+    }
+    // Fallback for older browsers, and remote streams attached after mount.
+    const fallbackPoll = setInterval(checkVideo, 250);
+    checkVideo();
+
+    return () => {
+      completed = true;
+      clearInterval(fallbackPoll);
+      if (videoFrameRequest !== null && typeof video.cancelVideoFrameCallback === 'function') {
+        video.cancelVideoFrameCallback(videoFrameRequest);
+      }
+      for (const eventName of ['loadeddata', 'playing', 'timeupdate', 'resize', 'canplay']) {
+        video.removeEventListener(eventName, checkVideo);
+      }
+    };
+  }, [onFirstFrame]);
+
   const PeerConnection = useCallback(async (media) => {
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
@@ -39,7 +84,7 @@ export default function WebRtcPlayer({ camera, width, height }) {
       localTracks.push(...tracks);
     }
 
-    document.getElementById('video').srcObject = new MediaStream(localTracks);
+    if (videoRef.current) videoRef.current.srcObject = new MediaStream(localTracks);
 
     return pc;
   }, []);
@@ -97,7 +142,7 @@ export default function WebRtcPlayer({ camera, width, height }) {
 
   return (
     <div>
-      <video id="video" autoplay playsinline controls muted width={width} height={height} />
+      <video id="video" ref={videoRef} autoplay playsinline controls muted width={width} height={height} />
     </div>
   );
 }
