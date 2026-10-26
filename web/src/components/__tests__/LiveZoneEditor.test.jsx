@@ -24,6 +24,7 @@ describe('LiveZoneEditor vertex interactions', () => {
   beforeEach(() => {
     axios.get.mockReset().mockResolvedValue({ data: cameraData() });
     axios.put.mockReset().mockResolvedValue({ data: { revision: 'revision-2' } });
+    vi.spyOn(window, 'alert').mockImplementation(() => {});
     vi.spyOn(SVGElement.prototype, 'getBoundingClientRect').mockImplementation(() => ({
       left: 0,
       top: 0,
@@ -106,7 +107,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(screen.queryByText('Nicht gespeicherte Änderungen')).not.toBeInTheDocument();
   });
 
-  test('additional error messages stack below the first notice without clipping', async () => {
+  test('editor errors open native alerts without adding another notice above the video', async () => {
     const { container } = await openEditor();
     const video = container.querySelector('.relative');
     expect(screen.queryByTestId('live-editor-notices')).not.toBeInTheDocument();
@@ -118,17 +119,16 @@ describe('LiveZoneEditor vertex interactions', () => {
     vi.spyOn(window, 'prompt').mockReturnValueOnce('area_a');
     fireEvent.click(screen.getByRole('button', { name: '+ Zone' }));
 
-    expect(noticeSlot.querySelector('[role="alert"]')).toHaveTextContent(
-      'Eine Zone mit diesem Namen ist bereits vorhanden.'
+    expect(window.alert).toHaveBeenCalledWith(
+      'Eine Zone mit diesem Namen ist bereits vorhanden. Bitte wähle einen anderen Zonennamen.'
     );
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(noticeSlot.querySelector('[role="status"]')).toHaveTextContent(
       'Nicht gespeicherte Änderungen'
     );
     expect(noticeSlot).toHaveClass('mb-4', 'gap-4', 'flex-col');
-    expect(noticeSlot).not.toHaveClass('gap-3', 'min-h-10', 'overflow-y-auto', 'overflow-hidden', 'h-24');
     expect(noticeSlot.nextElementSibling).toBe(video);
-    expect([...noticeSlot.children]).toHaveLength(2);
-    expect([...noticeSlot.children].every((notice) => !notice.classList.contains('mb-4'))).toBe(true);
+    expect([...noticeSlot.children]).toHaveLength(1);
   });
 
   test('shows the status immediately when selecting an unchanged area without marking data dirty', async () => {
@@ -241,26 +241,27 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(screen.queryByText('Nicht gespeicherte Änderungen')).not.toBeInTheDocument();
   });
 
-  test('uses matching yellow warning text/icon and red error text/icon', async () => {
+  test('uses native browser alerts for invalid names and polygons', async () => {
     const { svg } = await openEditor();
     vi.spyOn(window, 'prompt').mockReturnValueOnce('invalid name').mockReturnValueOnce('valid_zone');
 
     fireEvent.click(screen.getByRole('button', { name: '+ Zone' }));
-    const error = screen.getByRole('alert');
-    expect(error).toHaveTextContent('Der eingegebene Zonenname ist ungültig. Bitte verwende ausschließlich Buchstaben, Zahlen und Unterstriche.');
-    expect(error.firstElementChild).toHaveClass('text-red-400', 'text-base');
-    expect(error.querySelector('svg[stroke="currentColor"]')).not.toBeNull();
+    expect(window.alert).toHaveBeenCalledWith(
+      'Der eingegebene Zonenname ist ungültig. Bitte verwende ausschließlich Buchstaben, Zahlen und Unterstriche.'
+    );
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '+ Zone' }));
-    expect(screen.queryByText(/Mindestens drei Eckpunkte/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Zum Zeichnen ins Videobild klicken/)).not.toBeInTheDocument();
+    expect(window.alert).toHaveBeenCalledTimes(1);
     expect(screen.getByText('Nicht gespeicherte Änderungen')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Speichern' })).not.toBeDisabled();
+
     fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
-    const invalid = screen.getByText(/Die Zone „valid_zone“ kann nicht gespeichert werden/).closest('[role="alert"]');
-    expect(invalid).not.toHaveClass('mb-4');
-    expect(invalid.firstElementChild).toHaveClass('text-yellow-300', 'text-base');
-    expect(invalid.querySelector('svg[stroke="currentColor"]')).not.toBeNull();
+    expect(window.alert).toHaveBeenCalledWith(
+      'Die Zone „valid_zone“ kann nicht gespeichert werden. Bitte lege mindestens drei Eckpunkte fest, die nicht auf einer Linie liegen.'
+    );
+    expect(window.alert).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(axios.put).not.toHaveBeenCalled();
     expect(svg.querySelectorAll('ellipse')).toHaveLength(0);
   });
@@ -283,26 +284,42 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(screen.getByRole('heading', { name: 'Objektfilter (1)' })).toBeInTheDocument();
   });
 
-  test('failed API writes show red errors while the unsaved indicator remains visible', async () => {
+  test('failed API writes open an alert while the unsaved indicator remains visible', async () => {
     axios.put.mockRejectedValueOnce({ response: { data: { message: 'Speichern fehlgeschlagen' } } });
     const { svg } = await openEditor();
     fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
     fireEvent.click(svg, { button: 0, clientX: 35, clientY: 90 });
     fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
-    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Die Änderungen konnten nicht gespeichert werden. Speichern fehlgeschlagen.'));
-    const error = screen.getByRole('alert');
-    expect(error.firstElementChild).toHaveClass('text-red-400');
-    expect(error.querySelector('svg[stroke="currentColor"]')).not.toBeNull();
+    await waitFor(() => expect(window.alert).toHaveBeenCalledWith(
+      'Die Änderungen konnten nicht gespeichert werden. Speichern fehlgeschlagen.'
+    ));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(screen.getByText('Nicht gespeicherte Änderungen')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'area_a' })).toHaveAttribute('aria-pressed', 'true');
     expect(svg.querySelectorAll('ellipse')).toHaveLength(4);
+  });
+
+  test('failed API reads open a native alert instead of rendering an error notice', async () => {
+    axios.get.mockRejectedValueOnce({ response: { data: { message: 'Nicht erreichbar' } } });
+    render(
+      <LiveZoneEditor camera="test_camera" width={640} height={360} displayWidth={640}
+        onClose={vi.fn()} onDirtyChange={vi.fn()}>
+        <div>Live stream</div>
+      </LiveZoneEditor>
+    );
+    await waitFor(() => expect(window.alert).toHaveBeenCalledWith(
+      'Die vorhandenen Bereiche konnten nicht geladen werden. Nicht erreichbar.'
+    ));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('live-editor-notices')).not.toBeInTheDocument();
   });
 
   test('duplicate zone names have their own complete error sentence', async () => {
     await openEditor();
     vi.spyOn(window, 'prompt').mockReturnValue('area_a');
     fireEvent.click(screen.getByRole('button', { name: '+ Zone' }));
-    expect(screen.getByRole('alert')).toHaveTextContent('Eine Zone mit diesem Namen ist bereits vorhanden. Bitte wähle einen anderen Zonennamen.');
+    expect(window.alert).toHaveBeenCalledWith('Eine Zone mit diesem Namen ist bereits vorhanden. Bitte wähle einen anderen Zonennamen.');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(axios.put).not.toHaveBeenCalled();
   });
 
@@ -316,7 +333,8 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(screen.getByText('Nicht gespeicherte Änderungen')).toBeInTheDocument();
     expect(screen.queryByText('Zum Zeichnen ins Videobild klicken')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
-    expect(screen.getByRole('alert')).toHaveTextContent(expected);
+    expect(window.alert).toHaveBeenCalledWith(expect.stringContaining(expected));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(axios.put).not.toHaveBeenCalled();
   });
 
