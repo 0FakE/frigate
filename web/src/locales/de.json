@@ -47,18 +47,20 @@
           "restart_required": "Ein Neustart von Frigate ist erforderlich.",
           "loading_stream": "Kamera Vorschau wird geladen…"
         },
-        "error": {
-          "invalid_zone_name": "Der eingegebene Zonenname ist ungültig. Bitte verwende ausschließlich Buchstaben, Zahlen und Unterstriche.",
-          "duplicate_zone_name": "Eine Zone mit diesem Namen ist bereits vorhanden. Bitte wähle einen anderen Zonennamen.",
-          "invalid_object_name": "Der eingegebene Objektname ist ungültig. Bitte verwende ausschließlich Buchstaben, Zahlen und Unterstriche.",
-          "load_failed": "Die vorhandenen Bereiche konnten nicht geladen werden. {details}",
-          "save_failed": "Die Änderungen konnten nicht gespeichert werden. {details}",
-          "unknown_details": "Ein unbekannter Fehler ist aufgetreten."
-        },
-        "warning": {
-          "invalid_zone": "Die Zone „{name}“ kann nicht gespeichert werden. Bitte lege mindestens drei Eckpunkte fest, die nicht auf einer Linie liegen.",
-          "invalid_covered_area": "Der abgedeckte Bereich „{name}“ kann nicht gespeichert werden. Bitte lege mindestens drei Eckpunkte fest, die nicht auf einer Linie liegen.",
-          "invalid_object_filter": "Der Objektfilter „{name}“ kann nicht gespeichert werden. Bitte lege mindestens drei Eckpunkte fest, die nicht auf einer Linie liegen."
+        "modal": {
+          "error": {
+            "invalid_zone_name": "Der eingegebene Zonenname ist ungültig. Bitte verwende ausschließlich Buchstaben, Zahlen und Unterstriche.",
+            "duplicate_zone_name": "Eine Zone mit diesem Namen ist bereits vorhanden. Bitte wähle einen anderen Zonennamen.",
+            "invalid_object_name": "Der eingegebene Objektname ist ungültig. Bitte verwende ausschließlich Buchstaben, Zahlen und Unterstriche.",
+            "load_failed": "Die vorhandenen Bereiche konnten nicht geladen werden. {details}",
+            "save_failed": "Die Änderungen konnten nicht gespeichert werden. {details}",
+            "unknown_details": "Ein unbekannter Fehler ist aufgetreten."
+          },
+          "warning": {
+            "invalid_zone": "Die Zone „{name}“ kann nicht gespeichert werden. Bitte lege mindestens drei Eckpunkte fest, die nicht auf einer Linie liegen.",
+            "invalid_covered_area": "Der abgedeckte Bereich „{name}“ kann nicht gespeichert werden. Bitte lege mindestens drei Eckpunkte fest, die nicht auf einer Linie liegen.",
+            "invalid_object_filter": "Der Objektfilter „{name}“ kann nicht gespeichert werden. Bitte lege mindestens drei Eckpunkte fest, die nicht auf einer Linie liegen."
+          }
         }
       }
     }
