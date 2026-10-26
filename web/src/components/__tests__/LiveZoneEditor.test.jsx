@@ -58,7 +58,7 @@ describe('LiveZoneEditor vertex interactions', () => {
       </LiveZoneEditor>
     );
     await waitFor(() => expect(screen.getByRole('button', { name: '+ Zone' })).not.toBeDisabled());
-    const svg = view.container.querySelector('svg');
+    const svg = view.container.querySelector('[data-testid="live-editor-viewport"] > svg');
     return { ...view, svg, onDirtyChange };
   }
 
@@ -412,8 +412,8 @@ describe('LiveZoneEditor vertex interactions', () => {
       </LiveZoneEditor>
     );
     expect(screen.queryByText('Kamera Vorschau wird geladen…')).not.toBeInTheDocument();
-    expect(container.querySelector('svg').querySelectorAll('polygon')).toHaveLength(2);
-    expect(container.querySelector('svg')).not.toHaveClass('invisible');
+    expect(container.querySelector('[data-testid="live-editor-viewport"] > svg').querySelectorAll('polygon')).toHaveLength(2);
+    expect(container.querySelector('[data-testid="live-editor-viewport"] > svg')).not.toHaveClass('invisible');
   });
 
   test('stream, loading cover, and polygon overlay share one explicit viewport', async () => {
