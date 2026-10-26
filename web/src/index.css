@@ -85,14 +85,19 @@
     linear-gradient(180deg, #0e1727 0%, #0b1220 62%, #0c1424 100%);
 }
 
+/* Identical square-cornered preview frames for Live (JSMpeg/MSE/WebRTC),
+   Debug snapshots and the polygon editor. Do not mask image corners. */
+.camera-modern-stage .camera-modern-video-frame,
 .camera-modern-stage .live-polygon-preview {
   border: 1px solid rgba(71, 85, 105, 0.75);
-  border-radius: 1rem;
+  border-radius: 0;
+  background-color: #020617;
   box-shadow: 0 12px 35px rgba(2, 6, 23, 0.3);
 }
 
+.camera-modern-stage .camera-modern-video-frame :is(canvas, video, video-stream),
 .camera-modern-stage .live-polygon-preview .live-editor-jsmpeg {
-  border-radius: inherit;
+  border-radius: 0;
 }
 
 .camera-modern-page .jsmpeg:not(.live-editor-jsmpeg) canvas {
