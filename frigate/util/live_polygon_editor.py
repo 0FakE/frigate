@@ -235,7 +235,11 @@ def update_polygons(raw: str, camera: str, payload: dict, width: int, height: in
             if zone_objects is not None:
                 selected_objects = zone_objects[name]
                 if selected_objects:
-                    zone["objects"] = selected_objects
+                    if isinstance(zone.get("objects"), list):
+                        # Preserve ruamel's flow/block style and list comments.
+                        zone["objects"][:] = selected_objects
+                    else:
+                        zone["objects"] = selected_objects
                 else:
                     zone.pop("objects", None)
 
