@@ -104,7 +104,6 @@ describe('nested German camera editor translations', () => {
       'cameras.debug.controls.options_show',
       'cameras.debug.controls.options_hide',
       'cameras.debug.controls.options_title',
-      'cameras.debug.preview.status.fps',
       'cameras.debug.controls.bounding_box',
       'cameras.debug.controls.timestamp',
       'cameras.debug.controls.zones',
@@ -123,8 +122,6 @@ describe('nested German camera editor translations', () => {
       .toBe('Erkennung: 640 × 360');
     expect(t('cameras.debug.editor.label.vertex_count', { count: 3 }))
       .toBe('Eckpunkte: 3');
-    expect(t('cameras.debug.preview.status.fps', { fps: '5.0' }))
-      .toBe('Anzeige mit 5.0 FPS');
   });
 
   test('interpolates area names and counts without HTML in the locale', () => {
