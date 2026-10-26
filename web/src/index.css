@@ -115,6 +115,33 @@
   height: auto;
 }
 
+/* All Live source types occupy the already reserved, aspect-ratio-locked
+   viewport. Native WebRTC and go2rtc MSE video elements must not temporarily
+   dictate the preview height before they receive their first video frame. */
+.camera-modern-live-preview > div:first-child,
+.camera-modern-live-preview > div:first-child > div,
+.camera-modern-live-preview > div:first-child > div > div,
+.camera-modern-live-preview .jsmpeg,
+.camera-modern-live-preview video-stream {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.camera-modern-live-preview video-stream,
+.camera-modern-live-preview video,
+.camera-modern-live-preview .jsmpeg canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain;
+}
+
+.camera-modern-live-preview .jsmpeg canvas {
+  max-width: none !important;
+  max-height: none !important;
+}
+
+
 .camera-modern-stage video-stream,
 .camera-modern-stage video,
 .camera-modern-stage img {
