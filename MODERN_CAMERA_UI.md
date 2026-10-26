@@ -14,6 +14,13 @@ This branch is an **isolated visual redesign** of the camera detail page and its
 
 The redesigned camera route includes a dark gradient page, translated camera and stream information, Live/Debug tabs, source selector, the six existing Debug switches, the editor entry/close toggle, the real camera stream, existing ONVIF controls when supported and event links for detected objects.
 
+### Debug snapshot sizing correction
+
+The regular Debug view (without the polygon editor) uses `AutoUpdatingCameraImage`, whose `CameraImage` canvas measures the width of its parent using `ResizeObserver`. The initial redesign accidentally wrapped it in an `inline-block` element, allowing its width to collapse to a tiny shrink-to-fit size before measurement. The snapshot now uses a **width-defined, responsive block**, with maximum width `100%` and the camera's configured detect width (e.g. 1280px). The image canvas keeps its aspect ratio and scales down on small screens. The Live player and polygon-editor canvas are unchanged.
+
+The snapshot's FPS label is now translated through `cameras.debug.preview.status.fps`: the German default is `Anzeige mit {fps} FPS`. Add the same nested key to the host-mounted `./conf/frigate/lang/de.json` for customized wording; the existing host file is never overwritten. Refresh the browser to apply edits.
+
+
 The polygon editor has three cards: **Neuen Bereich erstellen**, **Vorhandene Bereiche ({count})** and **Ausgewählter Bereich**. Existing zone/motion/object-mask creation, object selector, area selection, editing vertices, inserting/removing vertices, deletion, deselection, discard, save, close, SVG coordinate space, unsaved-change protection and camera stream first-frame loading behavior are preserved. Only real actions are rendered; conceptual actions in the initial design reference such as duplicate or color editing are intentionally **not** introduced as nonfunctional buttons.
 
 Invalid names, invalid polygons, and HTTP failures continue using the native browser `window.alert()` modal. White unsaved and green saved status notices remain above the stream as requested. All newly visible static text, switch labels, section titles, tooltips/ARIA labels, camera source names, and common tracked-object class names have nested German translations in `web/src/locales/de.json`. Unknown camera and object names are user/server data, not fixed UI strings.
@@ -52,4 +59,5 @@ Hard-refresh the browser (Ctrl+F5). For rollback, return the `image:` value to `
 3. Select overlapping zones, drag/add/remove points, and save/discard. Saved polygons must appear in raw Config Editor without a Frigate restart (restart is still required to apply them).
 4. Trigger invalid zone names, duplicate names and invalid Save; confirm native modal dialogs and unchanged camera layout.
 5. Check ONVIF controls for cameras with ONVIF enabled, detected-object event links and the host language overrides.
-6. Check camera streams and scaling with your real hardware: the generated visual concept is not a substitute for a runtime screenshot.
+6. Check the Debug snapshot at full resolution (e.g. 1280×720) and at a narrow browser width; it should no longer appear as a tiny thumbnail, must preserve aspect ratio and show its translated FPS label. Verify the Live tab remains unchanged.
+7. Check camera streams and scaling with your real hardware: the generated visual concept is not a substitute for a runtime screenshot.
