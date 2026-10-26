@@ -87,6 +87,43 @@ describe('nested German camera editor translations', () => {
     });
   });
 
+  test('modern camera interface and editor labels all have localized defaults', () => {
+    const keys = [
+      'cameras.page.subtitle',
+      'cameras.page.detect_resolution',
+      'cameras.page.stream_source',
+      'cameras.page.camera_preview',
+      'cameras.page.tracked_objects',
+      'cameras.page.control_panel',
+      'cameras.page.view_events',
+      'cameras.page.back_to_cameras',
+      'cameras.page.stream_source_jsmpeg',
+      'cameras.page.stream_source_mse',
+      'cameras.page.stream_source_webrtc',
+      'cameras.page.mse_unsupported',
+      'cameras.debug.controls.options_show',
+      'cameras.debug.controls.options_hide',
+      'cameras.debug.controls.options_title',
+      'cameras.debug.controls.bounding_box',
+      'cameras.debug.controls.timestamp',
+      'cameras.debug.controls.zones',
+      'cameras.debug.controls.motion_masks',
+      'cameras.debug.controls.motion_boxes',
+      'cameras.debug.controls.regions',
+      'cameras.debug.editor.label.no_selection',
+      'cameras.debug.editor.label.vertex_count',
+      'cameras.debug.editor.button.discard_changes',
+      'cameras.debug.editor.button.save_changes',
+      'cameras.objects.class.person',
+      'cameras.objects.class.car',
+    ];
+    keys.forEach((path) => expect(t(path)).not.toBe(path));
+    expect(t('cameras.page.detect_resolution', { width: 640, height: 360 }))
+      .toBe('Erkennung: 640 × 360');
+    expect(t('cameras.debug.editor.label.vertex_count', { count: 3 }))
+      .toBe('Eckpunkte: 3');
+  });
+
   test('interpolates area names and counts without HTML in the locale', () => {
     expect(t('cameras.debug.editor.header.existing_areas', { count: 4 })).toBe('Vorhandene Bereiche (4)');
     expect(t('cameras.debug.editor.modal.warning.invalid_object_filter', { name: 'person 1' }))
