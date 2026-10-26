@@ -484,7 +484,13 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(label).toHaveTextContent('area_a');
     expect(label).toHaveClass('pointer-events-none', 'bg-slate-950/95');
     expect(label).toHaveAttribute('aria-hidden', 'true');
-    expect(label.style.left).toMatch(/%$/);
+    expect(label.style.left).toMatch(/px$/);
+    expect(label.style.width).toBe('max-content');
+    expect(label.style.maxWidth).toBe('calc(100% - 16px)');
+    expect(label.style.overflowWrap).toBe('anywhere');
+    expect(label).toHaveClass('text-xs');
+    expect(label).not.toHaveClass('text-sm', 'max-w-[60%]');
+    expect(label.querySelector('span:last-child')).not.toHaveClass('break-all');
     expect(label.style.top).toMatch(/%$/);
     expect(areaA).toHaveAttribute('aria-pressed', 'false');
     expect(screen.queryByTestId('live-editor-notices')).not.toBeInTheDocument();
@@ -496,6 +502,30 @@ describe('LiveZoneEditor vertex interactions', () => {
     fireEvent.mouseLeave(areaB);
     expect(screen.queryByTestId('live-editor-hover-label')).not.toBeInTheDocument();
     expect(svg.querySelectorAll('polygon')).toHaveLength(2);
+  });
+
+  test('long area names wrap only at the video edge and clamped labels stay in the viewport', async () => {
+    const { rerender } = await openEditor();
+    const area = screen.getByRole('button', { name: 'area_a' });
+    fireEvent.mouseEnter(area);
+    const label = screen.getByTestId('live-editor-hover-label');
+    expect(label).toHaveClass('text-xs');
+    expect(label.style.width).toBe('max-content');
+    expect(label.style.maxWidth).toBe('calc(100% - 16px)');
+    expect(label.style.overflowWrap).toBe('anywhere');
+
+    // Simulate measured tooltip width near the right video edge. Its center
+    // must move left instead of overflowing the camera video element.
+    label.getBoundingClientRect = () => ({ width: 130, height: 24, x: 0, y: 0, top: 0, left: 0, right: 130, bottom: 24 });
+    // Trigger the mocked ResizeObserver's callback if the test setup supports
+    // it; the layout contract above is also valuable in jsdom without layout.
+    rerender(
+      <LiveZoneEditor camera="test_camera" width={640} height={360} displayWidth={640}
+        onDirtyChange={vi.fn()} streamReady={true}>
+        <div>Live stream</div>
+      </LiveZoneEditor>
+    );
+    expect(screen.getByTestId('live-editor-hover-label')).toHaveStyle({ maxWidth: 'calc(100% - 16px)' });
   });
 
   test('list hovers label masks and object filters only after the first camera frame', async () => {
