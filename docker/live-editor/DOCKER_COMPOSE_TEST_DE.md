@@ -109,12 +109,12 @@ Prüfe zusätzlich: Zonenwahl, Eckpunktverschiebung mit vergrößerter unsichtba
 - Auf kleineren Bildschirmen wird das Menü **oberhalb** des Videobilds angezeigt und bleibt **immer vollständig sichtbar**, ohne Ein- oder Ausklappknopf. Alle Buttons, Auswahllisten und Speicheraktionen prüfen.
 - Nach einem **erfolgreichen** Klick auf `Speichern` wird die aktive Zonen- oder Maskenauswahl aufgehoben: Die Eckpunktmarkierungen verschwinden, die Polygone bleiben sichtbar. Schlägt das Speichern fehl, bleibt der Bereich ausgewählt. Die Tabs **Live** und **Debug** erscheinen als kompakte Icon-Leiste weiterhin **rechtsbündig**. Ein verweigerter Tab-Wechsel wegen ungespeicherter Änderungen darf die aktive Tab-Markierung nicht verändern.
 - **Statusanzeige testen:** Beim Öffnen des Editors **ohne Statusmeldung gibt es keinen reservierten Platz** oberhalb des Livebilds. Die Auswahl einer vorhandenen Zone, eines abgedeckten Bereichs oder Objektfilters blendet sofort `Nicht gespeicherte Änderungen` ein; die Auswahl allein ändert keine Koordinaten und aktiviert `Speichern` nicht. **Zwischen zwei Statusmeldungen liegen immer 16 px, ebenso zwischen der letzten Meldung und dem Livebild.** Bei keiner Statusmeldung gibt es überhaupt keinen zusätzlichen Abstand. Das Livebild darf beim Einblenden einer Meldung nach unten rutschen. Keine Meldung wird abgeschnitten oder in einer Scrollbox dargestellt.
-- Sobald Polygonänderungen vorliegen, erscheint **direkt über dem Videobild** `Nicht gespeicherte Änderungen` mit weißer, fetter **16-px-Schrift** und weißem Warnsymbol. **Unvollständige Polygone lösen während des Zeichnens keine Warnung aus**: Erst nach einem Klick auf `Speichern` erscheint bei ungültigen Polygonen ein vollständiger gelber Warnsatz; es erfolgt dann kein API-Aufruf. Ungültige und doppelte Zonennamen erzeugen unterschiedliche vollständige rote Fehlersätze, ohne zusätzliche Überschrift. Nach erfolgreichem Speichern erscheint die vollständig **grüne** Meldung `Die Änderungen wurden gespeichert. Ein Neustart von Frigate ist erforderlich.` samt Häkchen und fettem zweiten Satz.
+- **Nur normale Statusmeldungen bleiben über dem Videobild:** `Nicht gespeicherte Änderungen` erscheint in weißer, fetter **16-px-Schrift** mit Symbol. Nach erfolgreichem Speichern bleibt die vollständig **grüne** Meldung `Die Änderungen wurden gespeichert. Ein Neustart von Frigate ist erforderlich.` mit grünem Häkchen und fettem zweiten Satz. **Alle roten Fehler und gelben Polygonwarnungen erscheinen ausschließlich in nativen Browser-Popups (`window.alert()`) mit OK-Schaltfläche**, nicht mehr als Elemente über dem Livebild. Beim Zeichnen unvollständiger Bereiche erscheint keine Warnung; erst ein Klick auf `Speichern` öffnet bei einem ungültigen Polygon das Popup und verhindert den API-Aufruf. Auch ungültige oder doppelte Zonennamen, ungültige Objektnamen und Fehler beim Laden/Speichern verwenden diese Popups. Die Abstände über dem Bild werden durch Fehler nicht verändert.
 - Der frühere lange Hilfetext wird nicht mehr angezeigt. Das Modal nach **Restart Frigate** sollte über dem Editor erscheinen. Beim Wechsel zu **Live** mit ungespeicherten Änderungen sollte eine Warnung erscheinen.
 
 - Beim Öffnen des Editors erscheint bis zum **ersten tatsächlich dekodierten Livebild** die Meldung `Kamera Vorschau wird geladen…`. Der graue Hintergrund muss die **gesamte Fläche der Kameravorschau** abdecken. Videocanvas, Ladehintergrund und Polygon-SVG benutzen jetzt eine einzige, fest dimensionierte Vorschaufläche; das JSMpeg-Canvas wird bei Bedarf an diese Fläche angepasst und darf **keinen zusätzlichen Streifen unter dem Ladehintergrund** erzeugen. Das gilt auch bei schmalerem Browserfenster und wenn die ursprüngliche Videoauflösung ein anderes Seitenverhältnis besitzt. Vorher werden keine Polygone oder Eckpunkte gezeichnet. Erst nach dem ersten Frame werden alle Bereiche eingeblendet; das Menü ist währenddessen sichtbar.
 - Im Polygoneditor `Speichern` klicken und anschließend im Hauptmenü den **Config Editor** öffnen: Änderungen müssen dort **ohne Frigate-Neustart** in der rohen `config.yml` sichtbar sein. Unbenutzte Monaco-Modelle werden synchronisiert, **ungespeicherte manuelle Eingaben im Config Editor bleiben unangetastet**. Für die tatsächliche Erkennung ist weiterhin ein Neustart erforderlich.
-- Neue Texte stammen aus `web/src/locales/de.json` mit verschachtelten Schlüsseln wie `cameras.debug.editor.button.mask` oder `cameras.debug.editor.header.existing_areas` und dynamischen Platzhaltern. Eine echte Sprachauswahl bzw. deren persistente Speicherung ist **erst für später vorgesehen**; derzeit bleibt Deutsch der Standard.
+- Neue Texte stammen aus `web/src/locales/de.json` mit verschachtelten Schlüsseln wie `cameras.debug.editor.button.mask` oder `cameras.debug.editor.header.existing_areas` und dynamischen Platzhaltern. Für Browser-Popups werden jetzt **ausschließlich** `cameras.debug.editor.modal.error.*` und `cameras.debug.editor.modal.warning.*` verwendet; die bisherigen Schlüssel unter `cameras.debug.editor.error.*` bzw. `.warning.*` sind **nicht mehr gültig**. Eine echte Sprachauswahl bzw. deren persistente Speicherung ist erst für später vorgesehen; derzeit bleibt Deutsch der Standard.
 
 **Erwartet:** Beim Speichern legt die API eine `config.yml.live-editor.bak` bzw. `config.yaml.live-editor.bak` an. Die ursprüngliche Sicherheitskopie aus Schritt 2 bleibt separat erhalten.
 
@@ -138,6 +138,31 @@ services:
 - Container: `/config/lang/de.json`
 
 Die eingebauten Vorgaben stehen weiterhin unter `web/src/locales/de.json`. Eine bereits vom Host bearbeitete Datei wird beim Containerstart **niemals überschrieben**. Ihre Einträge können auch nur einzelne Textschlüssel enthalten; fehlende Schlüssel fallen automatisch auf die eingebauten deutschen Standardtexte zurück. **Achtung:** Falls deine Host-Datei den alten Text `Livebild wird geladen …` enthält, bitte `cameras.debug.editor.status.loading_stream` dort selbst in `Kamera Vorschau wird geladen…` ändern. Eine vorhandene Host-Datei wird absichtlich nicht durch ein Image-Update überschrieben.
+
+**Umstellung der Popup-Texte ohne Rückwärtskompatibilität:** Bestehende eigene Fehlermeldungen unter `cameras.debug.editor.error` und `cameras.debug.editor.warning` müssen in der Host-Datei **manuell** in `cameras.debug.editor.modal.error` und `cameras.debug.editor.modal.warning` verschoben werden. Die alten Schlüssel werden ignoriert. Fehlt ein neuer Popup-Schlüssel, wird sein integrierter deutscher Standardtext angezeigt; die Host-Datei wird weiterhin nicht verändert.
+
+Beispiel der neuen Übersetzungsstruktur für native Browser-Popups:
+
+```json
+{
+  "cameras": {
+    "debug": {
+      "editor": {
+        "modal": {
+          "error": {
+            "invalid_zone_name": "Der eingegebene Zonenname ist ungültig. Bitte verwende ausschließlich Buchstaben, Zahlen und Unterstriche.",
+            "duplicate_zone_name": "Eine Zone mit diesem Namen ist bereits vorhanden. Bitte wähle einen anderen Zonennamen.",
+            "save_failed": "Die Änderungen konnten nicht gespeichert werden. {details}"
+          },
+          "warning": {
+            "invalid_zone": "Die Zone „{name}“ kann nicht gespeichert werden. Bitte lege mindestens drei Eckpunkte fest, die nicht auf einer Linie liegen."
+          }
+        }
+      }
+    }
+  }
+}
+```
 
 Beispiel der editierbaren Datei:
 
