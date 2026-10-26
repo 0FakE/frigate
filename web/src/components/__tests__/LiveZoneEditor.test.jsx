@@ -258,6 +258,10 @@ describe('LiveZoneEditor vertex interactions', () => {
     fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
     expect(screen.getByText('Eckpunkte: 3')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Bereich löschen' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Bereich löschen' }))
+      .toHaveClass('bg-red-800', 'border-red-700', 'text-white', 'shadow-lg', 'shadow-red-900/20', 'hover:bg-red-700');
+    expect(screen.getByRole('button', { name: 'Bereich löschen' }))
+      .not.toHaveClass('bg-red-500/10', 'border-red-500/40', 'text-red-300');
     expect(screen.getByRole('button', { name: 'Bearbeitung beenden' })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'Änderungen speichern' })).toBeDisabled();
   });
@@ -268,6 +272,10 @@ describe('LiveZoneEditor vertex interactions', () => {
     fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
     const edit = screen.getByRole('button', { name: 'Zone umbenennen' });
     expect(edit).toHaveAttribute('title', 'Zone umbenennen');
+    expect(edit).toHaveClass('h-5', 'w-5', 'text-white');
+    expect(edit).not.toHaveClass('h-7', 'w-7', 'text-blue-300');
+    expect(edit.querySelector('svg')).toHaveClass('h-5', 'w-5');
+    expect(edit.querySelectorAll('svg path')).toHaveLength(2);
     expect(edit.parentElement.nextElementSibling).toHaveTextContent('Eckpunkte: 3');
     fireEvent.click(edit);
     const input = screen.getByRole('textbox', { name: 'Neuer Zonenname' });

@@ -86,13 +86,17 @@ describe('modern camera page keeps its original actions', () => {
     expect(selector).toHaveValue('jsmpeg');
     expect(selector).toHaveClass('h-9', 'sm:h-10', 'rounded-lg', 'w-[6.5rem]', 'pr-7', 'sm:pr-8');
     expect(selector).not.toHaveClass('min-w-[8rem]', 'pr-10');
+    expect(selector).toHaveClass('bg-none');
     expect(selector.parentElement.querySelector('svg')).toHaveClass('pointer-events-none', 'right-2', 'sm:right-3');
-    expect(selector.closest('header').lastElementChild).toHaveClass('flex-nowrap', 'gap-2', 'sm:gap-3');
-    expect(selector.closest('label')).toHaveClass('p-1', 'pl-3', 'rounded-lg');
+    expect(selector.closest('header').lastElementChild)
+      .toHaveClass('ml-auto', 'w-full', 'flex-wrap', 'items-center', 'justify-end', 'gap-2', 'sm:w-auto', 'sm:gap-3');
+    expect(selector.closest('label')).toHaveClass('p-1', 'pl-2', 'sm:pl-3', 'rounded-lg');
     expect(selector.closest('label')).not.toHaveClass('py-1.5');
     const tabs = screen.getByRole('navigation', { name: 'Kameraansicht' });
     expect(tabs.firstElementChild).toHaveClass('p-1');
     expect(screen.getByRole('button', { name: 'Live' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('navigation', { name: 'Kameraansicht' }).closest('header').lastElementChild)
+      .toHaveClass('justify-end');
     expect(screen.getByText('JSMpeg Livebild')).toBeInTheDocument();
     const previewSection = screen.getByRole('region', { name: 'Kameravorschau' });
     expect(previewSection).toHaveClass('camera-modern-stage', 'mb-8');

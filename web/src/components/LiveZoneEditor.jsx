@@ -597,13 +597,14 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                       <span className="min-w-0 truncate text-sm font-semibold text-white">{selectedShape.label}</span>
                       {selectedShape.id.startsWith('zone:') && (
                         <button type="button"
-                          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-blue-300 hover:bg-slate-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                          className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-white hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
                           title={t('cameras.debug.editor.button.rename_zone')}
                           aria-label={t('cameras.debug.editor.button.rename_zone')}
                           onClick={startZoneRename} disabled={busy}>
-                          <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24"
+                          <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24"
                             fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="m16 5 3 3M4 20l4.5-1 11-11a2.1 2.1 0 0 0-3-3l-11 11L4 20Z" />
+                            <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path d="M18.375 3.625a2.121 2.121 0 0 1 3 3L12 16l-4 1 1-4Z" />
                           </svg>
                         </button>
                       )}
@@ -650,7 +651,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                   {t('cameras.debug.editor.button.end_editing')}
                 </button>
                 <button type="button"
-                  className={toolButtonClass + ' w-full border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20'}
+                  className={toolButtonClass + ' w-full border-red-700 bg-red-800 text-white shadow-lg shadow-red-900/20 hover:bg-red-700'}
                   onClick={removeSelected} disabled={!selected || busy}>
                   {t('cameras.debug.editor.button.delete_area')}
                 </button>

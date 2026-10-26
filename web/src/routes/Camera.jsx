@@ -318,14 +318,14 @@ export default function Camera({ camera }) {
             </p>
           </div>
         </div>
-        <div className="flex w-full flex-nowrap items-center gap-2 sm:w-auto sm:gap-3">
+        <div className="ml-auto flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:gap-3">
           {viewMode === 'live' && (
             <label className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-slate-700/80 bg-slate-900/80 p-1 pl-2 text-xs font-semibold text-slate-400 shadow-lg shadow-black/10 sm:gap-2 sm:pl-3">
               <span>{t('cameras.page.stream_source')}</span>
               <span className="relative inline-flex shrink-0 items-center">
                 <select
                   aria-label={t('cameras.page.stream_source')}
-                  className={'h-9 cursor-pointer appearance-none rounded-lg border border-slate-700 bg-slate-800 py-0 pl-2 pr-7 text-xs font-semibold text-slate-100 focus-visible:ring-2 focus-visible:ring-blue-400 sm:h-10 sm:pl-3 sm:pr-8 sm:text-sm ' +
+                  className={'h-9 cursor-pointer appearance-none rounded-lg border border-slate-700 bg-slate-800 bg-none py-0 pl-2 pr-7 text-xs font-semibold text-slate-100 focus-visible:ring-2 focus-visible:ring-blue-400 sm:h-10 sm:pl-3 sm:pr-8 sm:text-sm ' +
                     (viewSource === 'mse' ? 'w-[4.75rem]' : 'w-[6.5rem]')}
                   value={viewSource}
                   onChange={(e) => handleChangeSource(e.target.value)}

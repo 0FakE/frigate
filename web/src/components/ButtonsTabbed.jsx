@@ -47,7 +47,7 @@ export default function ButtonsTabbed({
               onClick={() => handleClick(i)}
               className={'inline-flex h-9 items-center gap-1 rounded-lg px-2 text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 sm:h-10 sm:gap-2 sm:px-5 sm:text-sm ' +
                 (selected === i
-                  ? 'bg-blue-600 text-white shadow-[0_4px_20px_rgba(37,99,235,0.28)] ring-1 ring-blue-400/60'
+                  ? 'bg-blue-600 text-white shadow-[0_4px_20px_rgba(37,99,235,0.28)] sm:ring-1 sm:ring-blue-400/60'
                   : 'text-slate-300 hover:bg-slate-800 hover:text-white')}
             >
               {item === 'live' && (
