@@ -27,7 +27,13 @@ vi.mock('../../components/JSMpegPlayer', () => ({
   ),
 }));
 vi.mock('../../components/WebRtcPlayer', () => ({
-  default: () => <div>WebRTC Livebild<video data-testid="mock-webrtc-video" /></div>,
+  default: ({ onFirstFrame }) => (
+    <div>
+      WebRTC Livebild
+      <video data-testid="mock-webrtc-video" />
+      <button type="button" onClick={onFirstFrame}>WebRTC Bild dargestellt</button>
+    </div>
+  ),
 }));
 vi.mock('../../components/MsePlayer', () => ({}));
 vi.mock('../../components/CameraControlPanel', () => ({
@@ -86,8 +92,11 @@ describe('modern camera page keeps its original actions', () => {
     const thumbnails = trackedSection.querySelectorAll('img');
     expect(thumbnails).toHaveLength(2);
     thumbnails.forEach((img) => {
-      expect(img).toHaveClass('h-[120px]', 'w-[120px]', 'object-cover');
+      expect(img).toHaveClass('h-40', 'w-40', 'object-cover');
+      expect(img.parentElement).toHaveClass('flex-col');
       expect(img.parentElement).not.toHaveClass('w-[360px]', 'w-[400px]');
+      expect(img.previousElementSibling).toHaveClass('text-sm');
+      expect(img.previousElementSibling).toHaveTextContent(/Person|Auto/);
     });
     expect(screen.queryByText('Ereignisse anzeigen')).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Erkannte Objekte' })).toBeInTheDocument();
@@ -180,6 +189,7 @@ describe('modern camera page keeps its original actions', () => {
     render(<Camera camera="test_camera" />);
     const frame = screen.getByTestId('modern-live-preview');
     expect(frame.style.aspectRatio).toBe('640 / 360');
+    expect(frame).toHaveClass('camera-modern-live-preview');
     expect(screen.getByRole('status')).toHaveTextContent('Kamera Vorschau wird geladen…');
     fireEvent.click(screen.getByRole('button', { name: 'JSMpeg Bild empfangen' }));
     expect(screen.queryByTestId('camera-preview-overlay')).not.toBeInTheDocument();
@@ -225,6 +235,13 @@ describe('modern camera page keeps its original actions', () => {
     Object.defineProperty(rtcVideo, 'videoWidth', { configurable: true, value: 640 });
     fireEvent.loadedData(rtcVideo);
     expect(screen.queryByTestId('camera-preview-overlay')).not.toBeInTheDocument();
+    // A real WebRTC video may render frames without bubbling loadeddata.
+    // The player explicitly signals its first *presented* frame via callback.
+    fireEvent.change(screen.getByRole('combobox', { name: 'Videoquelle' }), { target: { value: 'jsmpeg' } });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Videoquelle' }), { target: { value: 'webrtc' } });
+    expect(screen.getByTestId('camera-preview-overlay')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'WebRTC Bild dargestellt' }));
+    expect(screen.queryByTestId('camera-preview-overlay')).not.toBeInTheDocument();
 
     // MSE is a custom element which attaches its native video after connecting.
     Object.defineProperty(window, 'MediaSource', { configurable: true, value: class MediaSource {} });
@@ -242,6 +259,28 @@ describe('modern camera page keeps its original actions', () => {
     expect(screen.queryByTestId('camera-preview-overlay')).not.toBeInTheDocument();
     delete window.MediaSource;
     rerender(<Camera camera="test_camera" />);
+  });
+
+  test('a directly reported WebRTC first frame cancels the spurious 20-second error', () => {
+    vi.useFakeTimers();
+    try {
+      const restreamConfig = {
+        ...cameraConfig,
+        ui: { live_mode: 'webrtc' },
+        go2rtc: { streams: { test_camera: {} } },
+      };
+      useSWR.mockImplementation((key) =>
+        key === 'config' ? { data: restreamConfig } : { data: ['person'] }
+      );
+      render(<Camera camera="test_camera" />);
+      expect(screen.getByTestId('camera-preview-overlay')).toHaveAttribute('role', 'status');
+      fireEvent.click(screen.getByRole('button', { name: 'WebRTC Bild dargestellt' }));
+      expect(screen.queryByTestId('camera-preview-overlay')).not.toBeInTheDocument();
+      act(() => vi.advanceTimersByTime(20000));
+      expect(screen.queryByTestId('camera-preview-overlay')).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   test('a camera source that never provides a frame reports a translated error', () => {
