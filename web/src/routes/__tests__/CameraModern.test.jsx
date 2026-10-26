@@ -9,7 +9,7 @@ vi.mock('../../context', () => ({
   usePersistence: (_key, initial) => [initial, vi.fn(), true],
 }));
 vi.mock('../../components/AutoUpdatingCameraImage', () => ({
-  default: () => <div>Debug Kamerabild</div>,
+  default: ({ className }) => <div className={className}>Debug Kamerabild</div>,
 }));
 vi.mock('../../components/JSMpegPlayer', () => ({
   default: ({ fillContainer }) => <div>{fillContainer ? 'JSMpeg Editorbild' : 'JSMpeg Livebild'}</div>,
@@ -71,6 +71,12 @@ describe('modern camera page keeps its original actions', () => {
   test('retains Debug option toggles, editor entry and a toolbar under the stream', () => {
     render(<Camera camera="test_camera" />);
     fireEvent.click(screen.getByRole('button', { name: 'Debug' }));
+    const preview = screen.getByTestId('modern-debug-preview');
+    expect(preview).toHaveClass('camera-modern-debug-preview', 'w-full', 'max-w-full');
+    expect(preview).not.toHaveClass('inline-block');
+    expect(preview.style.width).toBe('640px');
+    expect(preview.style.maxWidth).toBe('100%');
+    expect(preview.firstElementChild).toHaveClass('w-full');
     expect(screen.getByText('Debug Kamerabild')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Show Options' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Zonen & Masken Editor' })).toBeInTheDocument();
@@ -84,6 +90,37 @@ describe('modern camera page keeps its original actions', () => {
     expect(editor).toHaveTextContent('JSMpeg Editorbild');
     expect(editor).toHaveTextContent('Anzeigeoptionen');
     expect(editor).toHaveTextContent('Editor schließen');
+  });
+
+  test('Debug snapshot retains full camera resolution while remaining width-responsive', () => {
+    const highResolution = {
+      ...cameraConfig,
+      cameras: {
+        ...cameraConfig.cameras,
+        test_camera: {
+          ...cameraConfig.cameras.test_camera,
+          detect: { width: 1280, height: 720 },
+        },
+      },
+    };
+    useSWR.mockImplementation((key) => (
+      key === 'config' ? { data: highResolution } : { data: [] }
+    ));
+    render(<Camera camera="test_camera" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Debug' }));
+
+    const frame = screen.getByTestId('modern-debug-preview');
+    expect(frame).toHaveClass('w-full', 'max-w-full');
+    expect(frame).not.toHaveClass('inline-block');
+    expect(frame.style.width).toBe('1280px');
+    expect(frame.style.maxWidth).toBe('100%');
+    expect(frame.firstElementChild).toHaveClass('w-full');
+    expect(screen.getByText('Erkennung: 1280 × 720')).toBeInTheDocument();
+
+    // The ordinary Live tab still uses its unmodified stream player.
+    fireEvent.click(screen.getByRole('button', { name: 'Live' }));
+    expect(screen.getByText('JSMpeg Livebild')).toBeInTheDocument();
+    expect(screen.queryByTestId('modern-debug-preview')).not.toBeInTheDocument();
   });
 
   test('a rejected unsaved-change navigation keeps the selected Debug tab and editor', () => {
