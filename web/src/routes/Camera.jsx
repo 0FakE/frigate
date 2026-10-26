@@ -199,7 +199,7 @@ export default function Camera({ camera }) {
   // The same debug controls are rendered beside the video in both editor
   // and ordinary Debug modes; they remain connected to the existing handlers.
   const debugControls = (
-    <div className="flex flex-wrap items-center gap-3 pt-4 pb-0" data-testid="camera-debug-controls">
+    <div className="flex flex-wrap items-center gap-3 py-4" data-testid="camera-debug-controls">
       <button type="button" onClick={handleToggleSettings}
         aria-expanded={showSettings} aria-controls="camera-debug-options"
         className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/90 px-4 text-sm font-semibold text-slate-100 shadow-sm transition-colors hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
@@ -323,18 +323,24 @@ export default function Camera({ camera }) {
           {viewMode === 'live' && (
             <label className="inline-flex items-center gap-2 rounded-lg border border-slate-700/80 bg-slate-900/80 p-1 pl-3 text-xs font-semibold text-slate-400 shadow-lg shadow-black/10">
               <span>{t('cameras.page.stream_source')}</span>
-              <select
-                aria-label={t('cameras.page.stream_source')}
-                className="h-10 cursor-pointer rounded-lg border border-slate-700 bg-slate-800 px-3 py-0 text-sm font-semibold text-slate-100 focus-visible:ring-2 focus-visible:ring-blue-400"
-                value={viewSource}
-                onChange={(e) => handleChangeSource(e.target.value)}
-              >
-                {sourceValues.map((item) => (
-                  <option key={item} value={item}>
-                    {t('cameras.page.stream_source_' + item)}
-                  </option>
-                ))}
-              </select>
+              <span className="relative inline-flex shrink-0 items-center">
+                <select
+                  aria-label={t('cameras.page.stream_source')}
+                  className="h-10 min-w-[8rem] cursor-pointer appearance-none rounded-lg border border-slate-700 bg-slate-800 py-0 pl-3 pr-10 text-sm font-semibold text-slate-100 focus-visible:ring-2 focus-visible:ring-blue-400"
+                  value={viewSource}
+                  onChange={(e) => handleChangeSource(e.target.value)}
+                >
+                  {sourceValues.map((item) => (
+                    <option key={item} value={item}>
+                      {t('cameras.page.stream_source_' + item)}
+                    </option>
+                  ))}
+                </select>
+                <svg aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-100"
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </span>
             </label>
           )}
           <ButtonsTabbed viewModes={['live', 'debug']} currentViewMode={viewMode} setViewMode={handleChangeViewMode} variant="camera" />
@@ -364,6 +370,7 @@ export default function Camera({ camera }) {
           </section>
         )}
 
+        {viewMode === 'live' && (
         <section aria-label={t('cameras.page.tracked_objects')}
           className="space-y-4 border-t border-slate-700/80 pt-6">
           <div className="flex items-center gap-3">
@@ -397,6 +404,7 @@ export default function Camera({ camera }) {
             )}
           </div>
         </section>
+        )}
       </main>
     </div>
   );
