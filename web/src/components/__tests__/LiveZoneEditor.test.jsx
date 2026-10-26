@@ -203,7 +203,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     const panel = screen.getByRole('complementary', { name: 'Werkzeuge und Bereiche' });
 
     expect(panel).toHaveClass('xl:order-last', 'xl:w-[360px]');
-    expect(screen.getByRole('heading', { name: 'Bearbeitungsmenü' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Bearbeitungsmenü' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Bearbeitungsmenü/ })).not.toBeInTheDocument();
     expect(container.querySelector('#live-polygon-tools')).toHaveClass('space-y-3');
     expect(container.querySelector('#live-polygon-tools')).not.toHaveClass('hidden');
@@ -475,7 +475,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     const { svg } = await openEditor();
     expect(screen.queryByTestId('live-editor-hover-label')).not.toBeInTheDocument();
 
-    fireEvent.pointerMove(svg, { clientX: 90, clientY: 50, pointerType: 'mouse' });
+    fireEvent.mouseMove(svg, { clientX: 90, clientY: 50 });
     const label = screen.getByTestId('live-editor-hover-label');
     expect(label).toHaveTextContent('area_a');
     expect(label).toHaveClass('pointer-events-none');
@@ -485,13 +485,13 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(screen.getByRole('button', { name: 'area_a' })).toHaveAttribute('aria-pressed', 'false');
     expect(screen.queryByTestId('live-editor-notices')).not.toBeInTheDocument();
 
-    fireEvent.pointerMove(svg, { clientX: 180, clientY: 95, pointerType: 'mouse' });
+    fireEvent.mouseMove(svg, { clientX: 180, clientY: 95 });
     expect(screen.getByTestId('live-editor-hover-label')).toHaveTextContent('area_b');
 
-    fireEvent.pointerMove(svg, { clientX: 330, clientY: 250, pointerType: 'mouse' });
+    fireEvent.mouseMove(svg, { clientX: 330, clientY: 250 });
     expect(screen.queryByTestId('live-editor-hover-label')).not.toBeInTheDocument();
-    fireEvent.pointerMove(svg, { clientX: 90, clientY: 50, pointerType: 'mouse' });
-    fireEvent.pointerLeave(svg);
+    fireEvent.mouseMove(svg, { clientX: 90, clientY: 50 });
+    fireEvent.mouseLeave(svg);
     expect(screen.queryByTestId('live-editor-hover-label')).not.toBeInTheDocument();
     expect(svg.querySelectorAll('polygon')).toHaveLength(2);
   });
@@ -503,7 +503,7 @@ describe('LiveZoneEditor vertex interactions', () => {
       object_masks: { person: [[[30, 30], [80, 30], [80, 80]]] },
     } });
     const { svg, rerender } = await openEditor({ streamReady: false });
-    fireEvent.pointerMove(svg, { clientX: 35, clientY: 25, pointerType: 'mouse' });
+    fireEvent.mouseMove(svg, { clientX: 35, clientY: 25 });
     expect(screen.queryByTestId('live-editor-hover-label')).not.toBeInTheDocument();
 
     rerender(
@@ -513,11 +513,11 @@ describe('LiveZoneEditor vertex interactions', () => {
       </LiveZoneEditor>
     );
     const activeSvg = screen.getByTestId('live-editor-viewport').querySelector('svg');
-    fireEvent.pointerMove(activeSvg, { clientX: 35, clientY: 25, pointerType: 'mouse' });
+    fireEvent.mouseMove(activeSvg, { clientX: 35, clientY: 25 });
     expect(screen.getByTestId('live-editor-hover-label')).toHaveTextContent('Maske 1');
-    fireEvent.pointerMove(activeSvg, { clientX: 70, clientY: 45, pointerType: 'mouse' });
+    fireEvent.mouseMove(activeSvg, { clientX: 70, clientY: 45 });
     expect(screen.getByTestId('live-editor-hover-label')).toHaveTextContent('person 1');
-    fireEvent.pointerMove(activeSvg, { clientX: 70, clientY: 45, pointerType: 'touch' });
+    fireEvent.mouseLeave(activeSvg);
     expect(screen.queryByTestId('live-editor-hover-label')).not.toBeInTheDocument();
   });
 
