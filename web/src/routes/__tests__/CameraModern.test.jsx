@@ -9,7 +9,7 @@ vi.mock('../../context', () => ({
   usePersistence: (_key, initial) => [initial, vi.fn(), true],
 }));
 vi.mock('../../components/AutoUpdatingCameraImage', () => ({
-  default: ({ className }) => <div className={className}>Debug Kamerabild</div>,
+  default: ({ className, showFps }) => <div className={className} data-show-fps={String(showFps)}>Debug Kamerabild</div>,
 }));
 vi.mock('../../components/JSMpegPlayer', () => ({
   default: ({ fillContainer }) => <div>{fillContainer ? 'JSMpeg Editorbild' : 'JSMpeg Livebild'}</div>,
@@ -62,6 +62,10 @@ describe('modern camera page keeps its original actions', () => {
     expect(screen.getByRole('combobox', { name: 'Videoquelle' })).toHaveValue('jsmpeg');
     expect(screen.getByRole('button', { name: 'Live' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByText('JSMpeg Livebild')).toBeInTheDocument();
+    const liveFrame = screen.getByTestId('modern-live-preview');
+    expect(liveFrame).toHaveClass('camera-modern-video-frame', 'w-full', 'overflow-hidden');
+    expect(liveFrame).not.toHaveClass('rounded-2xl', 'rounded-lg', 'rounded-xl');
+    expect(liveFrame.style.width).toBe('640px');
     expect(screen.getByRole('heading', { name: 'Erkannte Objekte' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Person/ })).toHaveAttribute('href', '/events?cameras=test_camera&labels=person');
     expect(screen.getByRole('link', { name: /Auto/ })).toHaveAttribute('href', '/events?cameras=test_camera&labels=car');
@@ -72,7 +76,11 @@ describe('modern camera page keeps its original actions', () => {
     render(<Camera camera="test_camera" />);
     fireEvent.click(screen.getByRole('button', { name: 'Debug' }));
     const preview = screen.getByTestId('modern-debug-preview');
-    expect(preview).toHaveClass('camera-modern-debug-preview', 'w-full', 'max-w-full');
+    expect(preview).toHaveClass('camera-modern-debug-preview', 'camera-modern-video-frame', 'w-full', 'max-w-full');
+    expect(preview).not.toHaveClass('rounded-2xl', 'rounded-lg', 'rounded-xl');
+    expect(preview.firstElementChild).toHaveAttribute('data-show-fps', 'false');
+    expect(screen.queryByRole('combobox', { name: 'Videoquelle' })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('modern-live-preview')).not.toBeInTheDocument();
     expect(preview).not.toHaveClass('inline-block');
     expect(preview.style.width).toBe('640px');
     expect(preview.style.maxWidth).toBe('100%');
@@ -90,6 +98,12 @@ describe('modern camera page keeps its original actions', () => {
     expect(editor).toHaveTextContent('JSMpeg Editorbild');
     expect(editor).toHaveTextContent('Anzeigeoptionen');
     expect(editor).toHaveTextContent('Editor schließen');
+    expect(screen.queryByRole('combobox', { name: 'Videoquelle' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Debug' }));
+    // The actual stream-source selector stays in Live, not the Debug toolbar.
+    fireEvent.click(screen.getByRole('button', { name: 'Live' }));
+    expect(screen.getByRole('combobox', { name: 'Videoquelle' })).toBeInTheDocument();
+    expect(screen.getByTestId('modern-live-preview')).toBeInTheDocument();
   });
 
   test('Debug snapshot retains full camera resolution while remaining width-responsive', () => {
@@ -120,6 +134,21 @@ describe('modern camera page keeps its original actions', () => {
     // The ordinary Live tab still uses its unmodified stream player.
     fireEvent.click(screen.getByRole('button', { name: 'Live' }));
     expect(screen.getByText('JSMpeg Livebild')).toBeInTheDocument();
+    expect(screen.queryByTestId('modern-debug-preview')).not.toBeInTheDocument();
+  });
+
+  test('source selector reappears on Live and the Debug source remains a separate preview', () => {
+    render(<Camera camera="test_camera" />);
+    expect(screen.getByRole('combobox', { name: 'Videoquelle' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Debug' }));
+    expect(screen.queryByRole('combobox', { name: 'Videoquelle' })).not.toBeInTheDocument();
+    expect(screen.getByTestId('modern-debug-preview').firstElementChild)
+      .toHaveAttribute('data-show-fps', 'false');
+    expect(screen.queryByTestId('modern-live-preview')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Live' }));
+    expect(screen.getByRole('combobox', { name: 'Videoquelle' })).toHaveValue('jsmpeg');
+    expect(screen.getByTestId('modern-live-preview')).toHaveClass('camera-modern-video-frame');
     expect(screen.queryByTestId('modern-debug-preview')).not.toBeInTheDocument();
   });
 
