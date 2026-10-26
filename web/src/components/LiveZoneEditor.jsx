@@ -122,6 +122,7 @@ function EditorNotice({ variant, children }) {
 
 export default function LiveZoneEditor({ camera, width, height, displayWidth, trackedObjects = [], onDirtyChange, streamReady = true, toolbar = null, optionsPanel = null, children }) {
   const svgRef = useRef(null);
+  const hoverLabelRef = useRef(null);
   const dragRef = useRef(null);
   const suppressNextClickRef = useRef(false);
   const [svgPixelSize, setSvgPixelSize] = useState({
@@ -133,6 +134,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   const [savedSnapshot, setSavedSnapshot] = useState('');
   const [selected, setSelected] = useState(null);
   const [hovered, setHovered] = useState(null);
+  const [hoverLabelWidth, setHoverLabelWidth] = useState(0);
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(true);
   const [objectLabel, setObjectLabel] = useState(trackedObjects[0] || 'person');
@@ -364,6 +366,27 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   const hoveredShape = streamReady && !dragRef.current
     ? shapes.find((shape) => shape.id === hovered) : null;
   const hoveredPosition = hoveredShape ? polygonLabelPoint(hoveredShape.points) : null;
+  // A max-content label stays on one line unless it genuinely exceeds the
+  // image width. Measure it to keep its center inside the viewport at edges.
+  useEffect(() => {
+    const label = hoverLabelRef.current;
+    if (!label) return;
+    const measure = () => {
+      const measured = label.getBoundingClientRect().width;
+      setHoverLabelWidth((previous) => Math.abs(previous - measured) > 0.5 ? measured : previous);
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(label);
+    return () => observer.disconnect();
+  }, [hoveredShape?.id, svgPixelSize.width]);
+  const halfLabel = Math.min(hoverLabelWidth, Math.max(0, svgPixelSize.width - 16)) / 2;
+  const lowerX = halfLabel + 8;
+  const upperX = Math.max(lowerX, svgPixelSize.width - halfLabel - 8);
+  const hoverLabelX = hoveredPosition
+    ? Math.min(Math.max(hoveredPosition[0] / width * svgPixelSize.width, lowerX), upperX)
+    : 0;
   const panelCardClass = 'rounded-lg border border-slate-700/80 bg-slate-800/90 p-3 shadow-xl shadow-black/10';
   const headingClass = 'mb-2 flex items-center gap-2 text-sm font-bold text-white';
   const headingIconClass = 'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/15 text-blue-400';
@@ -597,11 +620,15 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
           ))}
         </svg>
         {hoveredShape && hoveredPosition && (
-          <div data-testid="live-editor-hover-label" aria-hidden="true"
-            className="pointer-events-none absolute z-30 max-w-[60%] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-slate-600/90 bg-slate-950/95 px-2 py-1 text-center text-sm font-semibold text-white shadow-lg"
-            style={{ left: hoveredPosition[0] / width * 100 + '%', top: hoveredPosition[1] / height * 100 + '%' }}>
+          <div ref={hoverLabelRef} data-testid="live-editor-hover-label" aria-hidden="true"
+            className="pointer-events-none absolute z-30 -translate-x-1/2 -translate-y-1/2 rounded-lg border border-slate-600/90 bg-slate-950/95 px-2 py-1 text-center text-xs font-semibold text-white shadow-lg"
+            style={{
+              left: hoverLabelX + 'px', top: hoveredPosition[1] / height * 100 + '%',
+              width: 'max-content', maxWidth: 'calc(100% - 16px)',
+              overflowWrap: 'anywhere',
+            }}>
             <span className="mr-2 inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: hoveredShape.color }} />
-            <span className="break-all">{hoveredShape.label}</span>
+            <span>{hoveredShape.label}</span>
           </div>
         )}
           </div>
