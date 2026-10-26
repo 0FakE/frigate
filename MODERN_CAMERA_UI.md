@@ -12,13 +12,18 @@ This branch is an **isolated visual redesign** of the camera detail page and its
 
 ## Scope and features preserved
 
-The redesigned camera route includes a dark gradient page, translated camera and stream information, Live/Debug tabs, source selector, the six existing Debug switches, the editor entry/close toggle, the real camera stream, existing ONVIF controls when supported and event links for detected objects.
+The redesigned camera route includes a dark gradient page, translated camera and stream information, Live/Debug tabs, a **Live-only source selector**, the six existing Debug switches, the editor entry/close toggle, the real camera stream, existing ONVIF controls when supported and event links for detected objects.
 
 ### Debug snapshot sizing correction
 
 The regular Debug view (without the polygon editor) uses `AutoUpdatingCameraImage`, whose `CameraImage` canvas measures the width of its parent using `ResizeObserver`. The initial redesign accidentally wrapped it in an `inline-block` element, allowing its width to collapse to a tiny shrink-to-fit size before measurement. The snapshot now uses a **width-defined, responsive block**, with maximum width `100%` and the camera's configured detect width (e.g. 1280px). The image canvas keeps its aspect ratio and scales down on small screens. The Live player and polygon-editor canvas are unchanged.
 
-The snapshot's FPS label is now translated through `cameras.debug.preview.status.fps`: the German default is `Anzeige mit {fps} FPS`. Add the same nested key to the host-mounted `./conf/frigate/lang/de.json` for customized wording; the existing host file is never overwritten. Refresh the browser to apply edits.
+### Consistent square video frames and streamlined Debug controls
+
+The Live, Debug snapshot, and polygon-editor video all have a consistent thin dark border with **square corners** so the frames never crop the video corners. Live's frame adapts to the selected source (JSMpeg, MSE, or WebRTC) without changing any playback or video-source preference behavior.
+
+**Only Live shows the `Videoquelle` selector.** Debug uses its own snapshot by default, and the editing mode continues to use JSMpeg regardless of the Live source selection. The FPS label is **not shown in the Debug snapshot**, and the obsolete `cameras.debug.preview.status.fps` translation has been removed from bundled `de.json`. An existing host-language file is never edited automatically; a stale FPS key there can be deleted manually but is not used on this camera page. The reusable AutoUpdatingCameraImage component preserves its optional FPS feature for other consumers.
+
 
 
 The polygon editor has three cards: **Neuen Bereich erstellen**, **Vorhandene Bereiche ({count})** and **Ausgewählter Bereich**. Existing zone/motion/object-mask creation, object selector, area selection, editing vertices, inserting/removing vertices, deletion, deselection, discard, save, close, SVG coordinate space, unsaved-change protection and camera stream first-frame loading behavior are preserved. Only real actions are rendered; conceptual actions in the initial design reference such as duplicate or color editing are intentionally **not** introduced as nonfunctional buttons.
@@ -59,5 +64,5 @@ Hard-refresh the browser (Ctrl+F5). For rollback, return the `image:` value to `
 3. Select overlapping zones, drag/add/remove points, and save/discard. Saved polygons must appear in raw Config Editor without a Frigate restart (restart is still required to apply them).
 4. Trigger invalid zone names, duplicate names and invalid Save; confirm native modal dialogs and unchanged camera layout.
 5. Check ONVIF controls for cameras with ONVIF enabled, detected-object event links and the host language overrides.
-6. Check the Debug snapshot at full resolution (e.g. 1280×720) and at a narrow browser width; it should no longer appear as a tiny thumbnail, must preserve aspect ratio and show its translated FPS label. Verify the Live tab remains unchanged.
+6. Check the Debug snapshot at full resolution (e.g. 1280×720) and at a narrow browser width; it should not appear as a tiny thumbnail and must preserve aspect ratio. Verify it has **no FPS text**, **no Videoquelle selector**, and the same square video border as Live. The selector must remain available in Live and preserve its current source. Verify the polygon editor's video border has square corners as well.
 7. Check camera streams and scaling with your real hardware: the generated visual concept is not a substitute for a runtime screenshot.
