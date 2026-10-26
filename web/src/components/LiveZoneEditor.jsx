@@ -238,20 +238,6 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     setHovered(null);
     setStatus('');
   };
-  const moveHover = (event) => {
-    // Mouse events are independent from captured pointer events used for
-    // dragging, preventing a hover tooltip from hijacking a vertex drag.
-    if (!streamReady || dragRef.current) {
-      setHovered(null);
-      return;
-    }
-    const point = eventPoint(event);
-    // Draw order determines hover precedence when polygons overlap.
-    const hoveredShape = [...shapes].reverse().find(
-      (shape) => insidePolygon(point, shape.points)
-    );
-    setHovered((current) => current === hoveredShape?.id ? current : hoveredShape?.id || null);
-  };
   const endDrag = (event) => {
     if (dragRef.current && dragRef.current.pointerId === event.pointerId) {
       dragRef.current = null;
@@ -373,6 +359,8 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   const toolButtonClass = 'inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border px-2 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-not-allowed disabled:opacity-40';
   const secondaryButtonClass = toolButtonClass + ' border-slate-700 bg-slate-800/90 text-slate-100 hover:border-slate-500 hover:bg-slate-700';
   const selectedShape = shapes.find((shape) => shape.id === selected);
+  // Only hovering an existing list entry triggers this label; pointer
+  // movement within the camera preview never selects a label.
   const hoveredShape = streamReady && !dragRef.current
     ? shapes.find((shape) => shape.id === hovered) : null;
   const hoveredPosition = hoveredShape ? polygonLabelPoint(hoveredShape.points) : null;
@@ -464,6 +452,8 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                               aria-label={shape.label}
                               title={shape.label}
                               onClick={() => setSelected((current) => current === shape.id ? null : shape.id)}
+                              onMouseEnter={() => setHovered(shape.id)}
+                              onMouseLeave={() => setHovered((current) => current === shape.id ? null : current)}
                               className={selected === shape.id
                                 ? 'flex min-h-9 w-full min-w-0 items-center gap-2 rounded-lg border border-blue-500/50 bg-blue-600/20 px-2 py-1.5 text-left text-sm font-semibold text-white ring-1 ring-blue-500/30 transition-colors'
                                 : 'flex min-h-9 w-full min-w-0 items-center gap-2 rounded-lg border border-transparent bg-slate-950/35 px-2 py-1.5 text-left text-sm text-slate-200 transition-colors hover:border-slate-600 hover:bg-slate-800'}
@@ -562,9 +552,6 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
           onPointerDown={handleCanvasPointerDown}
           onClick={addPoint}
           onPointerMove={moveDrag}
-          onMouseMove={moveHover}
-          onMouseLeave={() => setHovered(null)}
-          onPointerLeave={() => setHovered(null)}
           onPointerUp={endDrag}
           onPointerCancel={endDrag}>
           {streamReady && shapes.map((shape) => (
@@ -611,7 +598,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
         </svg>
         {hoveredShape && hoveredPosition && (
           <div data-testid="live-editor-hover-label" aria-hidden="true"
-            className="pointer-events-none absolute z-30 max-w-[60%] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-slate-600/70 bg-slate-950/85 px-2 py-1 text-center text-sm font-semibold text-white shadow-md"
+            className="pointer-events-none absolute z-30 max-w-[60%] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-slate-600/90 bg-slate-950/95 px-2 py-1 text-center text-sm font-semibold text-white shadow-lg"
             style={{ left: hoveredPosition[0] / width * 100 + '%', top: hoveredPosition[1] / height * 100 + '%' }}>
             <span className="mr-2 inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: hoveredShape.color }} />
             <span className="break-all">{hoveredShape.label}</span>
