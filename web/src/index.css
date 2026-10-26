@@ -78,11 +78,21 @@
   }
 }
 
-/* Modern camera route only. Other Frigate routes retain their original UI. */
+/* The modern camera route inherits the original Frigate page background.
+   Unify its rounded controls and cards at one understated 8px radius; the
+   square video frames and circular status dots are explicitly excluded. */
 .camera-modern-page {
-  background:
-    radial-gradient(ellipse 65% 50% at 50% -15%, rgba(36, 81, 143, 0.15), transparent),
-    linear-gradient(180deg, #0e1727 0%, #0b1220 62%, #0c1424 100%);
+  --camera-ui-radius: 0.5rem;
+  background: transparent;
+}
+
+.camera-modern-page :is(.rounded, .rounded-md, .rounded-lg, .rounded-xl, .rounded-2xl) {
+  border-radius: var(--camera-ui-radius);
+}
+
+.camera-modern-page .camera-modern-stage :is(.camera-modern-video-frame, .live-polygon-preview),
+.camera-modern-page .camera-modern-stage :is(.camera-modern-video-frame, .live-polygon-preview) :is(canvas, video, video-stream) {
+  border-radius: 0;
 }
 
 /* Identical square-cornered preview frames for Live (JSMpeg/MSE/WebRTC),
