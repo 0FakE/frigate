@@ -5,7 +5,7 @@ import useSWR from 'swr';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useResizeObserver } from '../hooks';
 
-export default function CameraImage({ camera, onload, searchParams = '', stretch = false }) {
+export default function CameraImage({ camera, onload, searchParams = '', stretch = false, matchContainer = false }) {
   const { data: config } = useSWR('config');
   const apiHost = useApiHost();
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -19,7 +19,10 @@ export default function CameraImage({ camera, onload, searchParams = '', stretch
   if (window.innerWidth && document.body.offsetWidth) {
     scrollBarWidth = window.innerWidth - document.body.offsetWidth;
   }
-  const availableWidth = scrollBarWidth ? containerWidth + scrollBarWidth : containerWidth;
+  // Normal Frigate snapshots keep their legacy scrollbar correction. The
+  // modern Debug preview already owns a fixed-width 16:9 viewport; applying
+  // global scrollbar compensation inside that viewport leaves side gaps.
+  const availableWidth = matchContainer ? containerWidth : (scrollBarWidth ? containerWidth + scrollBarWidth : containerWidth);
 
   const { name } = config ? config.cameras[camera] : '';
   const enabled = config ? config.cameras[camera].enabled : 'True';
@@ -37,8 +40,8 @@ export default function CameraImage({ camera, onload, searchParams = '', stretch
     return 100;
   }, [availableWidth, aspectRatio, height, stretch]);
   const scaledWidth = useMemo(
-    () => Math.ceil(scaledHeight * aspectRatio - scrollBarWidth),
-    [scaledHeight, aspectRatio, scrollBarWidth]
+    () => matchContainer ? Math.round(scaledHeight * aspectRatio) : Math.ceil(scaledHeight * aspectRatio - scrollBarWidth),
+    [scaledHeight, aspectRatio, scrollBarWidth, matchContainer]
   );
 
   const img = useMemo(() => new Image(), []);
@@ -62,9 +65,10 @@ export default function CameraImage({ camera, onload, searchParams = '', stretch
   }, [apiHost, canvasRef, name, img, searchParams, scaledHeight, config]);
 
   return (
-    <div className="relative w-full" ref={containerRef}>
+    <div className={matchContainer ? 'relative h-full w-full' : 'relative w-full'} ref={containerRef}>
       {enabled ? (
-        <canvas data-testid="cameraimage-canvas" height={scaledHeight} ref={canvasRef} width={scaledWidth} />
+        <canvas data-testid="cameraimage-canvas" height={scaledHeight} ref={canvasRef} width={scaledWidth}
+          style={matchContainer ? { display: 'block', width: '100%', height: '100%' } : undefined} />
       ) : (
         <div class="text-center pt-6">Camera is disabled in config, no stream or snapshot available!</div>
       )}
