@@ -289,7 +289,7 @@ export default function Camera({ camera }) {
                 aspectRatio: cameraConfig.detect.width + ' / ' + cameraConfig.detect.height }}>
               <div className="absolute inset-0">
                 <AutoUpdatingCameraImage camera={camera} searchParams={searchParams}
-                  className="h-full w-full" showFps={false} onFirstFrame={handleFirstDebugFrame} />
+                  className="h-full w-full" matchContainer showFps={false} onFirstFrame={handleFirstDebugFrame} />
               </div>
               {!debugReady && <CameraPreviewOverlay error={previewError === 'debug:' + camera} />}
             </div>
@@ -321,11 +321,11 @@ export default function Camera({ camera }) {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {viewMode === 'live' && (
-            <label className="flex items-center gap-2 rounded-xl border border-slate-700/80 bg-slate-900/75 px-3 py-1.5 text-xs font-semibold text-slate-400">
+            <label className="inline-flex items-center gap-2 rounded-lg border border-slate-700/80 bg-slate-900/80 p-1 pl-3 text-xs font-semibold text-slate-400 shadow-lg shadow-black/10">
               <span>{t('cameras.page.stream_source')}</span>
               <select
                 aria-label={t('cameras.page.stream_source')}
-                className="cursor-pointer rounded-lg border border-slate-700 bg-slate-800 px-2 py-1.5 text-sm font-semibold text-slate-100 focus-visible:ring-2 focus-visible:ring-blue-400"
+                className="h-10 cursor-pointer rounded-lg border border-slate-700 bg-slate-800 px-3 py-0 text-sm font-semibold text-slate-100 focus-visible:ring-2 focus-visible:ring-blue-400"
                 value={viewSource}
                 onChange={(e) => handleChangeSource(e.target.value)}
               >
@@ -378,8 +378,8 @@ export default function Camera({ camera }) {
               const label = t(classKey) === classKey ? objectType : t(classKey);
               return (
                 <a key={objectType} href={`/events?cameras=${camera}&labels=${encodeURIComponent(objectType)}`}
-                  className="group inline-flex max-w-full min-w-0 flex-col items-stretch overflow-hidden rounded-lg border border-slate-700/90 bg-slate-900/90 shadow-lg shadow-black/10 transition-all hover:-translate-y-0.5 hover:border-blue-500/70 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
-                  <span className="min-w-0 px-3 py-2 text-sm font-semibold text-slate-100">{label}</span>
+                  className="group inline-flex max-w-full min-w-0 flex-col items-stretch overflow-hidden rounded-lg border border-slate-700/90 bg-slate-900/90 shadow-lg shadow-black/10 transition-colors hover:border-blue-500/70 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
+                  <span className="min-w-0 px-3 py-2 text-center text-sm font-semibold uppercase text-slate-100">{label}</span>
                   <img className="shrink-0 object-cover grayscale" loading="lazy"
                     width="175" height="175"
                     style={{
