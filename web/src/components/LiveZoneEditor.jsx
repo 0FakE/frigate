@@ -231,15 +231,17 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     }
   };
   const moveDrag = (event) => {
-    if (dragRef.current) {
-      const { id, index } = dragRef.current;
-      const point = eventPoint(event);
-      setData((current) => editShape(current, id, (points) => points.map((p, i) => i === index ? point : p)));
-      setHovered(null);
-      setStatus('');
-      return;
-    }
-    if (!streamReady || (event.pointerType && event.pointerType !== 'mouse')) {
+    if (!dragRef.current) return;
+    const { id, index } = dragRef.current;
+    const point = eventPoint(event);
+    setData((current) => editShape(current, id, (points) => points.map((p, i) => i === index ? point : p)));
+    setHovered(null);
+    setStatus('');
+  };
+  const moveHover = (event) => {
+    // Mouse events are independent from captured pointer events used for
+    // dragging, preventing a hover tooltip from hijacking a vertex drag.
+    if (!streamReady || dragRef.current) {
       setHovered(null);
       return;
     }
@@ -560,6 +562,8 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
           onPointerDown={handleCanvasPointerDown}
           onClick={addPoint}
           onPointerMove={moveDrag}
+          onMouseMove={moveHover}
+          onMouseLeave={() => setHovered(null)}
           onPointerLeave={() => setHovered(null)}
           onPointerUp={endDrag}
           onPointerCancel={endDrag}>
