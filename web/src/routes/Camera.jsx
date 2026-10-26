@@ -2,10 +2,6 @@ import { h, Fragment } from 'preact';
 import AutoUpdatingCameraImage from '../components/AutoUpdatingCameraImage';
 import ActivityIndicator from '../components/ActivityIndicator';
 import JSMpegPlayer from '../components/JSMpegPlayer';
-import Button from '../components/Button';
-import Card from '../components/Card';
-import Heading from '../components/Heading';
-import SettingsIcon from '../icons/Settings';
 import Switch from '../components/Switch';
 import ButtonsTabbed from '../components/ButtonsTabbed';
 import { usePersistence } from '../context';
@@ -101,39 +97,76 @@ export default function Camera({ camera }) {
         checked={options['bbox']}
         id="bbox"
         onChange={handleSetOption}
-        label="Bounding box"
+        label={t('cameras.debug.controls.bounding_box')}
         labelPosition="after"
       />
       <Switch
         checked={options['timestamp']}
         id="timestamp"
         onChange={handleSetOption}
-        label="Timestamp"
+        label={t('cameras.debug.controls.timestamp')}
         labelPosition="after"
       />
-      <Switch checked={options['zones']} id="zones" onChange={handleSetOption} label="Zones" labelPosition="after" />
+      <Switch checked={options['zones']} id="zones" onChange={handleSetOption} label={t('cameras.debug.controls.zones')} labelPosition="after" />
       <Switch
         checked={options['mask']}
         id="mask"
         onChange={handleSetOption}
-        label="Motion Masks"
+        label={t('cameras.debug.controls.motion_masks')}
         labelPosition="after"
       />
       <Switch
         checked={options['motion']}
         id="motion"
         onChange={handleSetOption}
-        label="Motion boxes"
+        label={t('cameras.debug.controls.motion_boxes')}
         labelPosition="after"
       />
       <Switch
         checked={options['regions']}
         id="regions"
         onChange={handleSetOption}
-        label="Regions"
+        label={t('cameras.debug.controls.regions')}
         labelPosition="after"
       />
     </div>
+  ) : null;
+
+  // The same debug controls are rendered beside the video in both editor
+  // and ordinary Debug modes; they remain connected to the existing handlers.
+  const debugControls = (
+    <div className="flex flex-wrap items-center gap-3 py-4" data-testid="camera-debug-controls">
+      <button type="button" onClick={handleToggleSettings}
+        aria-expanded={showSettings} aria-controls="camera-debug-options"
+        className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/90 px-4 text-sm font-semibold text-slate-100 shadow-sm transition-colors hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
+        <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.7 5.7l2.1 2.1m8.4 8.4 2.1 2.1m0-12.6-2.1 2.1M7.8 16.2l-2.1 2.1" />
+          <circle cx="12" cy="12" r="4" />
+        </svg>
+        {t(showSettings ? 'cameras.debug.controls.options_hide' : 'cameras.debug.controls.options_show')}
+        <svg aria-hidden="true" className={'h-3.5 w-3.5 transition-transform ' + (showSettings ? 'rotate-180' : '')} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+      <button type="button" onClick={handleToggleEditor}
+        aria-pressed={editLivePolygons}
+        className={'inline-flex h-10 items-center gap-2 rounded-xl border px-4 text-sm font-semibold shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ' +
+          (editLivePolygons
+            ? 'border-blue-500/80 bg-blue-600 text-white shadow-blue-900/30 hover:bg-blue-500'
+            : 'border-blue-500/70 bg-blue-600 text-white shadow-blue-900/30 hover:bg-blue-500')}>
+        <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="m12 3 9 6-3.5 12h-11L3 9Z" /><path d="M3 9l9 5 9-5M12 14v7" />
+        </svg>
+        {t(editLivePolygons ? 'cameras.debug.editor.button.close' : 'cameras.debug.editor.button.open')}
+      </button>
+    </div>
+  );
+  const debugOptions = showSettings ? (
+    <section id="camera-debug-options" aria-label={t('cameras.debug.controls.options_aria')}
+      className="rounded-2xl border border-slate-700/80 bg-slate-900/80 p-4 shadow-lg shadow-black/10">
+      <h3 className="mb-4 text-sm font-bold text-white">{t('cameras.debug.controls.options_title')}</h3>
+      {optionContent}
+    </section>
   ) : null;
 
   let player;
@@ -156,7 +189,7 @@ export default function Camera({ camera }) {
         player = (
           <Fragment>
             <div className="w-5xl text-center text-sm">
-            MSE is only supported on iOS 17.1+. You'll need to update if available or use jsmpeg / webRTC streams. See the docs for more info.
+              {t('cameras.page.mse_unsupported')}
             </div>
           </Fragment>
         );
@@ -183,6 +216,8 @@ export default function Camera({ camera }) {
       <Fragment>
         {editLivePolygons ? (
           <LiveZoneEditor
+            toolbar={debugControls}
+            optionsPanel={debugOptions}
             camera={camera}
             width={cameraConfig.detect.width}
             height={cameraConfig.detect.height}
@@ -200,79 +235,100 @@ export default function Camera({ camera }) {
               fillContainer onFirstFrame={handleFirstEditorFrame} />
           </LiveZoneEditor>
         ) : (
-          <div>
-            <AutoUpdatingCameraImage camera={camera} searchParams={searchParams} />
+          <div className="max-w-full">
+            <div className="inline-block max-w-full overflow-hidden rounded-2xl border border-slate-700/90 bg-slate-950 shadow-xl shadow-black/20">
+              <AutoUpdatingCameraImage camera={camera} searchParams={searchParams} />
+            </div>
+            {debugControls}
+            {debugOptions}
           </div>
         )}
-
-        <div className="flex flex-wrap items-center gap-2">
-          <Button onClick={handleToggleSettings} type="text" className="h-10">
-            <span className="w-5 h-5">
-              <SettingsIcon />
-            </span>{' '}
-            <span>{showSettings ? 'Hide' : 'Show'} Options</span>
-          </Button>
-          <button
-            type="button"
-            className="inline-flex h-10 w-auto items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold uppercase text-slate-700 transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-800"
-            onClick={handleToggleEditor}
-          >
-            <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
-              <path d="m12 2 9 7-3.5 11h-11L3 9Z" />
-              <path d="M3 9 12 14l9-5M12 14v7" />
-            </svg>
-            {t(editLivePolygons ? 'cameras.debug.editor.button.close' : 'cameras.debug.editor.button.open')}
-          </button>
-        </div>
-        {showSettings ? <Card header="Options" elevated={false} content={optionContent} /> : null}
       </Fragment>
     );
   }
 
   return (
-    <div className="space-y-4 p-2 px-4">
-      <div className="flex justify-between">
-        <Heading className="p-2" size="2xl">
-          {camera.replaceAll('_', ' ')}
-        </Heading>
-        <select
-          className="basis-1/8 cursor-pointer rounded dark:bg-slate-800"
-          value={viewSource}
-          onChange={(e) => setViewSource(e.target.value)}
-        >
-          {sourceValues.map((item) => (
-            <option key={item} value={item}>
-              {item}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <ButtonsTabbed viewModes={['live', 'debug']} currentViewMode={viewMode} setViewMode={handleChangeViewMode} variant="camera" />
-
-      {player}
-
-      {cameraConfig?.onvif?.host && (
-        <div className="dark:bg-gray-800 shadow-md hover:shadow-lg rounded-lg transition-shadow p-4 w-full sm:w-min">
-          <Heading size="sm">Control Panel</Heading>
-          <CameraControlPanel camera={camera} />
+    <div className="camera-modern-page min-h-[calc(100vh-4rem)] px-4 pb-10 pt-6 text-slate-100 sm:px-6 xl:px-8">
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-5" data-testid="modern-camera-header">
+        <div className="flex min-w-0 items-center gap-4">
+          <a href="/" aria-label={t('cameras.page.back_to_cameras')}
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-700/90 bg-slate-800/90 text-slate-200 shadow-lg shadow-black/10 transition-colors hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
+            <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m15 18-6-6 6-6M9 12h12" />
+            </svg>
+          </a>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{t('cameras.page.subtitle')}</p>
+            <h1 className="truncate text-2xl font-bold tracking-tight text-white sm:text-3xl">{camera.replaceAll('_', ' ')}</h1>
+            <p className="mt-1 text-xs text-slate-400">
+              {t('cameras.page.detect_resolution', { width: cameraConfig.detect.width, height: cameraConfig.detect.height })}
+            </p>
+          </div>
         </div>
-      )}
-
-      <div className="space-y-4">
-        <Heading size="sm">Tracked objects</Heading>
-        <div className="flex flex-wrap justify-start">
-          {(trackedLabels || []).map((objectType) => (
-            <Card
-              className="mb-4 mr-4"
-              key={objectType}
-              header={objectType}
-              href={`/events?cameras=${camera}&labels=${encodeURIComponent(objectType)}`}
-              media={<img src={`${apiHost}api/${camera}/${encodeURIComponent(objectType)}/thumbnail.jpg`} />}
-            />
-          ))}
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="flex items-center gap-2 rounded-xl border border-slate-700/80 bg-slate-900/75 px-3 py-1.5 text-xs font-semibold text-slate-400">
+            <span>{t('cameras.page.stream_source')}</span>
+            <select
+              aria-label={t('cameras.page.stream_source')}
+              className="cursor-pointer rounded-lg border border-slate-700 bg-slate-800 px-2 py-1.5 text-sm font-semibold text-slate-100 focus-visible:ring-2 focus-visible:ring-blue-400"
+              value={viewSource}
+              onChange={(e) => setViewSource(e.target.value)}
+            >
+              {sourceValues.map((item) => (
+                <option key={item} value={item}>
+                  {t('cameras.page.stream_source_' + item)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <ButtonsTabbed viewModes={['live', 'debug']} currentViewMode={viewMode} setViewMode={handleChangeViewMode} variant="camera" />
         </div>
-      </div>
+      </header>
+
+      <main>
+        <section aria-label={t('cameras.page.camera_preview')} className="camera-modern-stage mb-8">
+          {player}
+        </section>
+
+        {cameraConfig?.onvif?.host && (
+          <section aria-label={t('cameras.page.control_panel')} className="mb-8 w-full rounded-2xl border border-slate-700/80 bg-slate-900/80 p-5 shadow-xl shadow-black/10 sm:w-fit">
+            <h2 className="mb-3 text-base font-bold text-white">{t('cameras.page.control_panel')}</h2>
+            <CameraControlPanel camera={camera} />
+          </section>
+        )}
+
+        <section aria-label={t('cameras.page.tracked_objects')} className="space-y-4">
+          <div className="flex items-center gap-3">
+            <span className="h-1.5 w-1.5 rounded-full bg-blue-400" aria-hidden="true" />
+            <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-slate-300">
+              {t('cameras.page.tracked_objects')}
+            </h2>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {(trackedLabels || []).map((objectType) => {
+              const classKey = 'cameras.objects.class.' + objectType;
+              const label = t(classKey) === classKey ? objectType : t(classKey);
+              return (
+                <a key={objectType} href={`/events?cameras=${camera}&labels=${encodeURIComponent(objectType)}`}
+                  className="group flex min-w-0 items-center gap-3 overflow-hidden rounded-2xl border border-slate-700/90 bg-slate-900/90 pr-5 shadow-lg shadow-black/10 transition-all hover:-translate-y-0.5 hover:border-blue-500/70 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
+                  <img className="h-20 w-24 shrink-0 object-cover grayscale" loading="lazy"
+                    alt={t('cameras.page.object_thumbnail', { name: label })}
+                    src={`${apiHost}api/${camera}/${encodeURIComponent(objectType)}/thumbnail.jpg`} />
+                  <span className="flex min-w-0 flex-col gap-1">
+                    <span className="truncate text-sm font-semibold text-slate-100">{label}</span>
+                    <span className="text-xs text-slate-400 group-hover:text-blue-300">
+                      {t('cameras.page.view_events')}
+                    </span>
+                  </span>
+                </a>
+              );
+            })}
+            {trackedLabels && trackedLabels.length === 0 && (
+              <p className="text-sm text-slate-400">{t('cameras.page.tracked_objects_empty')}</p>
+            )}
+          </div>
+        </section>
+      </main>
     </div>
   );
 }
