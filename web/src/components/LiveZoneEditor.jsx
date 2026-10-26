@@ -299,23 +299,24 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
       ? 'cameras.debug.editor.modal.warning.invalid_covered_area'
       : 'cameras.debug.editor.modal.warning.invalid_object_filter';
 
-  const toolButtonClass = 'inline-flex min-h-10 w-auto items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-not-allowed disabled:opacity-40';
+  const toolButtonClass = 'inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border px-2 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-not-allowed disabled:opacity-40';
   const secondaryButtonClass = toolButtonClass + ' border-slate-700 bg-slate-800/90 text-slate-100 hover:border-slate-500 hover:bg-slate-700';
   const selectedShape = shapes.find((shape) => shape.id === selected);
-  const panelCardClass = 'rounded-2xl border border-slate-700/80 bg-gradient-to-b from-slate-800/90 to-slate-900/95 p-4 shadow-xl shadow-black/10';
+  const panelCardClass = 'rounded-lg border border-slate-700/80 bg-slate-800/90 p-3 shadow-xl shadow-black/10';
+  const headingClass = 'mb-2 flex items-center gap-2 text-sm font-bold text-white';
+  const headingIconClass = 'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/15 text-blue-400';
 
   return (
     <div className="w-full" data-testid="modern-zone-editor">
-      <div className="flex flex-col items-start gap-5 xl:flex-row">
+      <div className="flex flex-col items-start gap-3 xl:flex-row">
         <aside
           aria-label={t('cameras.debug.editor.label.sidebar')}
           className="order-first w-full shrink-0 text-slate-100 xl:order-last xl:w-[360px]"
         >
-          <h2 className="mb-3 text-sm font-semibold text-slate-300 xl:hidden">{t('cameras.debug.editor.header.mobile_menu')}</h2>
-          <div id="live-polygon-tools" className="space-y-3">
+          <div id="live-polygon-tools" className="space-y-2">
             <section aria-label={t('cameras.debug.editor.header.new_area')} className={panelCardClass}>
-              <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-white">
-                <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/15 text-blue-400">
+              <h3 className={headingClass}>
+                <span aria-hidden="true" className={headingIconClass}>
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M12 5v14M5 12h14" />
                   </svg>
@@ -324,25 +325,25 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
               </h3>
               <div className="grid grid-cols-2 gap-2">
                 <button type="button"
-                  className="flex min-h-[76px] flex-col items-center justify-center gap-2 rounded-xl border border-blue-500/50 bg-blue-500/10 px-2 py-3 text-sm font-semibold text-blue-300 transition-colors hover:bg-blue-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:opacity-40"
+                  className={toolButtonClass + ' h-10 min-w-0 border-blue-500/50 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20'}
                   onClick={addZone} disabled={busy}>
-                  <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="4 2">
+                  <svg aria-hidden="true" className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="4 2">
                     <rect x="4" y="4" width="16" height="16" rx="2" />
                   </svg>
                   {t('cameras.debug.editor.button.zone')}
                 </button>
                 <button type="button"
-                  className="flex min-h-[76px] flex-col items-center justify-center gap-2 rounded-xl border border-slate-600 bg-slate-800/70 px-2 py-3 text-sm font-semibold text-slate-200 transition-colors hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:opacity-40"
+                  className={toolButtonClass + ' h-10 min-w-0 border-slate-600 bg-slate-800/70 text-slate-200 hover:bg-slate-700'}
                   onClick={addMotionMask} disabled={busy}>
-                  <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <svg aria-hidden="true" className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                     <path d="m3 3 18 18M10.6 5.4A10.6 10.6 0 0 1 12 5c5 0 9 7 9 7a16.6 16.6 0 0 1-3 3.5M6.2 6.2A17.7 17.7 0 0 0 3 12s4 7 9 7c1.4 0 2.8-.5 4-1.3" />
                   </svg>
                   {t('cameras.debug.editor.button.mask')}
                 </button>
               </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
+              <div className="mt-2 grid grid-cols-2 gap-2">
                 <select
-                  className="w-[145px] max-w-full shrink-0 rounded-xl border border-slate-600 bg-slate-950 px-2 py-2.5 text-sm text-slate-100 focus-visible:ring-2 focus-visible:ring-blue-400"
+                  className="h-10 w-full min-w-0 rounded-lg border border-slate-600 bg-slate-950 px-2 text-sm text-slate-100 focus-visible:ring-2 focus-visible:ring-blue-400"
                   aria-label={t('cameras.debug.editor.label.object_class')}
                   title={t('cameras.debug.editor.label.object_filter_select')}
                   value={objectLabel}
@@ -352,7 +353,8 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                     <option key={item} value={item}>{item}</option>
                   ))}
                 </select>
-                <button type="button" className={secondaryButtonClass + ' flex-1'} onClick={addObjectMask} disabled={busy}>
+                <button type="button" className={secondaryButtonClass + ' h-10 w-full min-w-0'}
+                  onClick={addObjectMask} disabled={busy}>
                   <svg aria-hidden="true" className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M4 5h16l-6 7v6l-4 2v-8Z" />
                   </svg>
@@ -362,8 +364,8 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
             </section>
 
             <section aria-label={t('cameras.debug.editor.header.existing_areas', { count: shapes.length })} className={panelCardClass}>
-              <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-white">
-                <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/15 text-blue-400">
+              <h3 className={headingClass}>
+                <span aria-hidden="true" className={headingIconClass}>
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="m4 6 6 4 6-4 4 2v10l-4-2-6 4-6-4Z" />
                     <path d="M10 10v10M16 6v10" />
@@ -371,17 +373,17 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                 </span>
                 {t('cameras.debug.editor.header.existing_areas', { count: shapes.length })}
               </h3>
-              <div className="max-h-[420px] space-y-4 overflow-y-auto pr-1">
+              <div className="max-h-[420px] space-y-2 overflow-y-auto pr-1">
                 {areaGroups.map((group) => {
                   const groupShapes = shapes.filter((shape) => shape.id.startsWith(group.key));
                   return (
-                    <div key={group.key} className="space-y-2">
-                      <h4 className="flex items-center gap-2 rounded-lg bg-slate-950/50 px-2 py-2 text-sm font-semibold text-slate-200">
+                    <div key={group.key} className="space-y-1.5">
+                      <h4 className="flex items-center gap-2 rounded-lg bg-slate-950/50 px-2 py-1.5 text-sm font-semibold text-slate-200">
                         <span aria-hidden="true" className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: group.color }} />
                         {t(group.titleKey, { count: groupShapes.length })}
                       </h4>
                       {groupShapes.length ? (
-                        <div className="space-y-1">
+                        <div className="space-y-0.5">
                           {groupShapes.map((shape) => (
                             <button key={shape.id} type="button"
                               aria-pressed={selected === shape.id}
@@ -389,8 +391,8 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                               title={shape.label}
                               onClick={() => setSelected((current) => current === shape.id ? null : shape.id)}
                               className={selected === shape.id
-                                ? 'flex w-full min-w-0 items-center gap-2 rounded-xl border border-blue-500/50 bg-blue-600/20 px-3 py-2.5 text-left text-sm font-semibold text-white ring-1 ring-blue-500/30 transition-colors'
-                                : 'flex w-full min-w-0 items-center gap-2 rounded-xl border border-transparent bg-slate-950/35 px-3 py-2.5 text-left text-sm text-slate-200 transition-colors hover:border-slate-600 hover:bg-slate-800'}
+                                ? 'flex min-h-9 w-full min-w-0 items-center gap-2 rounded-lg border border-blue-500/50 bg-blue-600/20 px-2 py-1.5 text-left text-sm font-semibold text-white ring-1 ring-blue-500/30 transition-colors'
+                                : 'flex min-h-9 w-full min-w-0 items-center gap-2 rounded-lg border border-transparent bg-slate-950/35 px-2 py-1.5 text-left text-sm text-slate-200 transition-colors hover:border-slate-600 hover:bg-slate-800'}
                             >
                               <span aria-hidden="true" className={selected === shape.id
                                 ? 'h-3.5 w-3.5 shrink-0 rounded-full border-4 border-blue-400 bg-white'
@@ -401,7 +403,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                           ))}
                         </div>
                       ) : (
-                        <p className="px-3 text-sm text-slate-400">{t('cameras.debug.editor.label.empty')}</p>
+                        <p className="px-2 text-sm text-slate-400">{t('cameras.debug.editor.label.empty')}</p>
                       )}
                     </div>
                   );
@@ -410,8 +412,8 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
             </section>
 
             <section aria-label={t('cameras.debug.editor.header.selected_area')} className={panelCardClass}>
-              <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-white">
-                <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400">
+              <h3 className={headingClass}>
+                <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400">
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M12 21s7-6 7-11a7 7 0 1 0-14 0c0 5 7 11 7 11Z" />
                     <circle cx="12" cy="10" r="2" />
@@ -420,39 +422,36 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                 {t('cameras.debug.editor.header.selected_area')}
               </h3>
               {selectedShape ? (
-                <div className="mb-4 rounded-xl border border-slate-700 bg-slate-950/50 p-3">
-                  <div className="flex min-w-0 items-center gap-3">
+                <div className="mb-2 rounded-lg border border-slate-700 bg-slate-950/50 px-2 py-2">
+                  <div className="flex min-w-0 items-center gap-2">
                     <span aria-hidden="true" className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: selectedShape.color }} />
                     <span className="min-w-0 flex-1 break-all text-sm font-semibold text-white">{selectedShape.label}</span>
                     <span className="shrink-0 text-xs text-slate-400">{t('cameras.debug.editor.label.vertex_count', { count: selectedShape.points.length })}</span>
                   </div>
                 </div>
               ) : (
-                <p className="mb-4 text-sm leading-6 text-slate-400">{t('cameras.debug.editor.label.no_selection')}</p>
+                <p className="mb-2 text-sm leading-5 text-slate-400">{t('cameras.debug.editor.label.no_selection')}</p>
               )}
-              <div className="flex flex-wrap gap-2">
-                <button type="button" className={secondaryButtonClass + ' flex-1'} onClick={() => setSelected(null)} disabled={!selected || busy}>
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" className={secondaryButtonClass + ' w-full'} onClick={() => setSelected(null)} disabled={!selected || busy}>
                   {t('cameras.debug.editor.button.end_editing')}
                 </button>
                 <button type="button"
-                  className={toolButtonClass + ' flex-1 border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20'}
+                  className={toolButtonClass + ' w-full border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20'}
                   onClick={removeSelected} disabled={!selected || busy}>
                   {t('cameras.debug.editor.button.delete_area')}
                 </button>
               </div>
-              <div className="mt-4 grid grid-cols-2 gap-2 border-t border-slate-700 pt-4">
-                <button type="button" className={secondaryButtonClass} onClick={load} disabled={busy}>
+              <div className="mt-2 grid grid-cols-2 gap-2 border-t border-slate-700 pt-2">
+                <button type="button" className={secondaryButtonClass + ' w-full'} onClick={load} disabled={busy}>
                   {t('cameras.debug.editor.button.discard_changes')}
                 </button>
                 <button type="button"
-                  className={toolButtonClass + ' border-blue-500 bg-blue-600 text-white shadow-lg shadow-blue-900/20 hover:bg-blue-500'}
+                  className={toolButtonClass + ' w-full border-blue-500 bg-blue-600 text-white shadow-lg shadow-blue-900/20 hover:bg-blue-500'}
                   onClick={save} disabled={busy || !revision || !isDirty}>
                   {t('cameras.debug.editor.button.save_changes')}
                 </button>
               </div>
-              <button type="button" className={secondaryButtonClass + ' mt-2 w-full'} onClick={handleClose}>
-                {t('cameras.debug.editor.button.close')}
-              </button>
             </section>
           </div>
         </aside>
