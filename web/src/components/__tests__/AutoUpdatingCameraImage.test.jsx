@@ -4,11 +4,11 @@ import { screen, render } from '@testing-library/preact';
 
 let mockOnload;
 vi.mock('../CameraImage', () => {
-  function CameraImage({ onload, searchParams }) {
+  function CameraImage({ onload, searchParams, matchContainer }) {
     mockOnload = () => {
       onload();
     };
-    return <div data-testid="camera-image">{searchParams}</div>;
+    return <div data-testid="camera-image" data-match-container={String(matchContainer)}>{searchParams}</div>;
   }
   return {
     __esModule: true,
@@ -42,6 +42,14 @@ describe('AutoUpdatingCameraImage', () => {
     expect(onFirstFrame).not.toHaveBeenCalled();
     mockOnload();
     expect(onFirstFrame).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('Displaying at 0fps')).not.toBeInTheDocument();
+  });
+
+  test('enables exact-fit canvas only when explicitly requested by modern Debug preview', () => {
+    const { rerender } = render(<AutoUpdatingCameraImage camera="garage" showFps={false} />);
+    expect(screen.getByTestId('camera-image')).toHaveAttribute('data-match-container', 'false');
+    rerender(<AutoUpdatingCameraImage camera="garage" showFps={false} matchContainer />);
+    expect(screen.getByTestId('camera-image')).toHaveAttribute('data-match-container', 'true');
     expect(screen.queryByText('Displaying at 0fps')).not.toBeInTheDocument();
   });
 
