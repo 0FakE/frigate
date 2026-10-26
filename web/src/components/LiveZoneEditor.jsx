@@ -621,11 +621,9 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
         </svg>
         {hoveredShape && hoveredPosition && (
           <div ref={hoverLabelRef} data-testid="live-editor-hover-label" aria-hidden="true"
-            className="pointer-events-none absolute z-30 -translate-x-1/2 -translate-y-1/2 rounded-lg border border-slate-600/90 bg-slate-950/95 px-2 py-1 text-center text-xs font-semibold text-white shadow-lg"
+            className="pointer-events-none absolute z-30 w-max max-w-[calc(100%-16px)] -translate-x-1/2 -translate-y-1/2 break-words rounded-lg border border-slate-600/90 bg-slate-950/95 px-2 py-1 text-center text-xs font-semibold text-white shadow-lg"
             style={{
               left: hoverLabelX + 'px', top: hoveredPosition[1] / height * 100 + '%',
-              width: 'max-content', maxWidth: 'calc(100% - 16px)',
-              overflowWrap: 'anywhere',
             }}>
             <span className="mr-2 inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: hoveredShape.color }} />
             <span>{hoveredShape.label}</span>
