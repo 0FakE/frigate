@@ -96,14 +96,15 @@
       "tracked_objects": "Erkannte Objekte",
       "tracked_objects_empty": "Für diese Kamera sind keine Objektklassen verfügbar.",
       "control_panel": "Kamerasteuerung",
-      "view_events": "Ereignisse anzeigen",
       "object_thumbnail": "Letztes Vorschaubild: {name}",
       "stream_source_jsmpeg": "JSMpeg",
       "stream_source_mse": "MSE",
       "stream_source_webrtc": "WebRTC",
       "mse_unsupported": "MSE wird von diesem Browser nicht unterstützt. Bitte verwende JSMpeg oder WebRTC.",
       "back_to_cameras": "Zur Kameraübersicht",
-      "streaming": "Videowiedergabe"
+      "streaming": "Videowiedergabe",
+      "preview_loading": "Kamera Vorschau wird geladen…",
+      "preview_error": "Die Kameravorschau konnte nicht geladen werden. Bitte prüfe die Verbindung und lade die Seite neu."
     },
     "objects": {
       "class": {
