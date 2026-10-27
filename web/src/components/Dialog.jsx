@@ -1,6 +1,7 @@
 import { h } from 'preact';
 import { createPortal } from 'preact/compat';
 import { useEffect, useRef, useState } from 'preact/hooks';
+import { t } from '../locales';
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
@@ -10,7 +11,7 @@ export default function Dialog({
   size = 'md',
   labelledBy,
   describedBy,
-  label = 'Dialog',
+  label,
 }) {
   const portalRoot = portalRootID && document.getElementById(portalRootID);
   const dialogRef = useRef(null);
@@ -61,7 +62,7 @@ export default function Dialog({
       className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/70 px-4 py-4 sm:px-6 sm:py-8">
       <div ref={dialogRef} role="dialog" aria-modal="true"
         aria-labelledby={labelledBy} aria-describedby={describedBy}
-        aria-label={labelledBy ? undefined : label} tabIndex={-1}
+        aria-label={labelledBy ? undefined : (label || t('app.modal.dialog_label'))} tabIndex={-1}
         className={`relative w-full min-w-0 ${maxWidth} max-h-[calc(100vh-2rem)] overflow-y-auto rounded-lg border border-slate-300/70 bg-white text-slate-900 shadow-2xl transition-opacity transition-transform duration-150 dark:border-slate-600/70 dark:bg-slate-900 dark:text-slate-100 ${show ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}>
         {children}
       </div>

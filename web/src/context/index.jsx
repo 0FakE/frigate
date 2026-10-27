@@ -6,13 +6,13 @@ const DarkMode = createContext(null);
 
 export function DarkModeProvider({ children }) {
   const [persistedMode, setPersistedMode] = useState(null);
-  const [currentMode, setCurrentMode] = useState(persistedMode !== 'media' ? persistedMode : null);
+  const currentMode = persistedMode;
 
   const setDarkMode = useCallback(
     (value) => {
-      setPersistedMode(value);
-      setData('darkmode', value);
-      setCurrentMode(value);
+      const mode = value === 'light' ? 'light' : 'dark';
+      setPersistedMode(mode);
+      setData('darkmode', mode);
     },
     [setPersistedMode]
   );
@@ -20,32 +20,12 @@ export function DarkModeProvider({ children }) {
   useEffect(() => {
     async function load() {
       const darkmode = await getData('darkmode');
-      setDarkMode(darkmode || 'media');
+      // Older automatic preferences and missing values default to dark.
+      setDarkMode(darkmode === 'light' ? 'light' : 'dark');
     }
 
     load();
   }, [setDarkMode]);
-
-  const handleMediaMatch = useCallback(
-    ({ matches }) => {
-      if (matches) {
-        setCurrentMode('dark');
-      } else {
-        setCurrentMode('light');
-      }
-    },
-    [setCurrentMode]
-  );
-
-  useEffect(() => {
-    if (persistedMode !== 'media') {
-      return;
-    }
-
-    const query = window.matchMedia('(prefers-color-scheme: dark)');
-    query.addEventListener('change', handleMediaMatch);
-    handleMediaMatch(query);
-  }, [persistedMode, handleMediaMatch]);
 
   useLayoutEffect(() => {
     if (currentMode === 'dark') {

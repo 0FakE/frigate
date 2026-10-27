@@ -4,6 +4,7 @@ import MenuIcon from '../icons/Menu';
 import MoreIcon from '../icons/More';
 import { useDrawer } from '../context';
 import { useLayoutEffect, useCallback, useState } from 'preact/hooks';
+import { t } from '../locales';
 
 // We would typically preserve these in component state
 // But need to avoid too many re-renders
@@ -53,7 +54,7 @@ export default function AppBar({ title: Title, overflowRef, onOverflowClick }) {
         {overflowRef && onOverflowClick ? (
           <div className="w-auto" ref={overflowRef}>
             <Button
-              aria-label="More options"
+              aria-label={t('app.menu.more_options')}
               color="black"
               className="rounded-full w-9 h-9"
               onClick={onOverflowClick}

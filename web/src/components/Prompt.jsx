@@ -1,6 +1,7 @@
 import { h } from 'preact';
 import { useId } from 'preact/hooks';
 import Dialog from './Dialog';
+import { t } from '../locales';
 
 const styles = {
   neutral: 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700',
@@ -65,7 +66,7 @@ export default function Prompt({ actions = [], title, text, children, variant = 
           </div>
         )}
         {actions.length === 0 && variant === 'info' && (
-          <div role="status" aria-label="Bitte warten" className="mt-6 flex justify-center">
+          <div role="status" aria-label={t('app.modal.please_wait')} className="mt-6 flex justify-center">
             <span className="h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
           </div>
         )}

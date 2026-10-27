@@ -196,3 +196,21 @@
     padding-right: 0.75rem;
   }
 }
+
+/* Compact settings menu shared by desktop and mobile app headers. */
+.frigate-settings-menu {
+  width: min(18rem, calc(100vw - 2.5rem));
+  max-width: calc(100vw - 2.5rem);
+  padding: 0 !important;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #0f172a;
+  box-shadow: 0 20px 45px rgba(2, 6, 23, 0.3);
+}
+
+.dark .frigate-settings-menu {
+  border-color: rgba(100, 116, 139, 0.7);
+  background: #172235;
+  color: #f8fafc;
+}

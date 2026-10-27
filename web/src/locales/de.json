@@ -153,6 +153,39 @@
     },
     "error": {
       "loading_translations": "Die externe Sprachdatei konnte nicht geladen werden. Die integrierten deutschen Texte werden verwendet."
+    },
+    "navigation": {
+      "cameras": "Kameras",
+      "birdseye": "Birdseye",
+      "events": "Ereignisse",
+      "exports": "Exporte",
+      "storage": "Speicher",
+      "system": "System",
+      "config": "Konfiguration",
+      "logs": "Protokolle",
+      "styleguide": "Styleguide",
+      "github": "GitHub"
+    },
+    "menu": {
+      "more_options": "Weitere Optionen",
+      "settings_label": "Darstellung und System",
+      "design": "Design",
+      "light": "Hell",
+      "dark": "Dunkel",
+      "system": "System",
+      "restart": "Frigate neu starten"
+    },
+    "modal": {
+      "dialog_label": "Dialog",
+      "please_wait": "Bitte warten",
+      "restart": {
+        "title": "Frigate neu starten",
+        "confirm": "Möchtest du Frigate wirklich neu starten? Alle laufenden Prozesse werden beendet und anschließend wieder gestartet.",
+        "restart": "Neu starten",
+        "cancel": "Abbrechen",
+        "progress_title": "Frigate wird neu gestartet",
+        "progress_text": "Das kann bis zu einer Minute dauern. Bitte lade die Seite erst danach neu."
+      }
     }
   }
 }

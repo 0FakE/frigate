@@ -2,12 +2,14 @@ import { h } from 'preact';
 import RelativeModal from './RelativeModal';
 import { useCallback } from 'preact/hooks';
 
-export default function Menu({ className, children, onDismiss, relativeTo, widthRelative }) {
+export default function Menu({ className, children, onDismiss, relativeTo, widthRelative, role = 'listbox', ariaLabel, placement }) {
   return relativeTo ? (
     <RelativeModal
       children={children}
       className={`${className || ''} py-2`}
-      role="listbox"
+      role={role}
+      ariaLabel={ariaLabel}
+      placement={placement}
       onDismiss={onDismiss}
       portalRootID="menus"
       relativeTo={relativeTo}

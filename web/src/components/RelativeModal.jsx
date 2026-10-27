@@ -12,6 +12,8 @@ export default function RelativeModal({
   portalRootID,
   relativeTo,
   widthRelative = false,
+  ariaLabel,
+  placement = 'auto',
 }) {
   const [position, setPosition] = useState({ top: -9999, left: -9999 });
   const [show, setShow] = useState(false);
@@ -63,6 +65,25 @@ export default function RelativeModal({
       const _width = widthRelative ? relativeToWidth : menuWidth;
       const width = _width * 1.1;
 
+      if (placement === 'bottom-end') {
+        // Keep the settings menu inside the viewport on phones and desktop.
+        const rightAligned = relativeToX + relativeToWidth - menuWidth;
+        const maxLeft = Math.max(WINDOW_PADDING, windowWidth - menuWidth - WINDOW_PADDING);
+        const menuLeft = Math.max(WINDOW_PADDING, Math.min(rightAligned, maxLeft));
+        const below = relativeToY + relativeToHeight + 8;
+        const above = relativeToY - menuHeight - 8;
+        const menuTop = below + menuHeight <= windowHeight - WINDOW_PADDING
+          ? below : Math.max(WINDOW_PADDING, above);
+        setPosition({
+          left: menuLeft + window.scrollX,
+          top: menuTop + window.scrollY,
+          maxHeight: Math.max(80, windowHeight - 2 * WINDOW_PADDING),
+        });
+        const firstAction = ref.current.querySelector('[tabindex]');
+        firstAction && firstAction.focus();
+        return;
+      }
+
       const left = relativeToX + window.scrollX;
       const top = relativeToY + window.scrollY;
 
@@ -107,7 +128,7 @@ export default function RelativeModal({
       const focusable = ref.current.querySelector('[tabindex]');
       focusable && focusable.focus();
     }
-  }, [relativeTo, ref, widthRelative]);
+  }, [relativeTo, ref, widthRelative, placement]);
 
   useEffect(() => {
     if (position.top >= 0) {
@@ -129,6 +150,7 @@ export default function RelativeModal({
         } ${className}`}
         onKeyDown={handleKeydown}
         role={role}
+        aria-label={ariaLabel}
         ref={ref}
         style={position}
       >
