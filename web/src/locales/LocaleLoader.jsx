@@ -26,6 +26,7 @@ export default function LocaleLoader({ children }) {
       setLocaleMessages(null);
       // If the API is unreachable, logging back to Frigate may also fail.
       // Keep diagnostic details in the browser console in that case.
+      // eslint-disable-next-line no-console
       console.warn(t('app.error.loading_translations'), error);
       const reason = error?.message === 'Invalid locale response' ? 'invalid_response' : 'request_failed';
       const status = Number.isInteger(error?.response?.status) ? error.response.status : null;

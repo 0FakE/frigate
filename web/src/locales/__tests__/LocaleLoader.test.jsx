@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- verify browser fallback warnings */
 import { h } from 'preact';
 import { render, screen, waitFor } from '@testing-library/preact';
 import axios from 'axios';
