@@ -2,18 +2,30 @@ import { h } from 'preact';
 import * as Context from '../context';
 import AppBar from '../AppBar';
 import { fireEvent, render, screen } from '@testing-library/preact';
+import { setLocaleMessages } from '../locales';
 
 describe('AppBar', () => {
+  let setDarkModeSpy;
+
   beforeEach(() => {
+    setLocaleMessages(null);
+    setDarkModeSpy = vi.fn();
     vi.spyOn(Context, 'useDarkMode').mockImplementation(() => ({
-      setDarkMode: vi.fn(),
+      persistedMode: 'dark',
+      currentMode: 'dark',
+      setDarkMode: setDarkModeSpy,
     }));
-    vi.spyOn(Context, 'DarkModeProvider').mockImplementation(({ children }) => {
-      return <div>{children}</div>;
-    });
+    vi.spyOn(Context, 'DarkModeProvider').mockImplementation(({ children }) => (
+      <div>{children}</div>
+    ));
   });
 
-  test('shows a menu on overflow click', async () => {
+  afterEach(() => {
+    setLocaleMessages(null);
+    vi.restoreAllMocks();
+  });
+
+  function mount() {
     render(
       <Context.DarkModeProvider>
         <Context.DrawerProvider>
@@ -21,54 +33,82 @@ describe('AppBar', () => {
         </Context.DrawerProvider>
       </Context.DarkModeProvider>
     );
+  }
 
-    const overflowButton = await screen.findByLabelText('More options');
-    fireEvent.click(overflowButton);
+  function openSettings() {
+    fireEvent.click(screen.getByRole('button', { name: 'Weitere Optionen' }));
+    return screen.getByRole('menu', { name: 'Darstellung und System' });
+  }
 
-    const menu = await screen.findByRole('listbox');
-    expect(menu).toBeInTheDocument();
+  test('compact localized settings menu has only two theme modes and restart', () => {
+    mount();
+    const menu = openSettings();
+    expect(menu).toHaveClass('frigate-settings-menu');
+    expect(menu).toHaveTextContent('Design');
+    expect(menu).toHaveTextContent('System');
+    expect(menu).not.toHaveTextContent('Automatisch');
+    expect(menu.querySelectorAll('[role="menuitemradio"]')).toHaveLength(2);
+    const dark = screen.getByRole('menuitemradio', { name: 'Dunkel' });
+    expect(dark).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('menuitemradio', { name: 'Hell' })).toHaveAttribute('aria-checked', 'false');
+    expect(screen.getByRole('menuitem', { name: 'Frigate neu starten' })).toBeInTheDocument();
+    expect(menu).not.toHaveTextContent('Dunkles Design verwenden');
   });
 
-  test('opens responsive restart confirmation with explicit buttons and no close icon', async () => {
-    render(
-      <Context.DarkModeProvider>
-        <Context.DrawerProvider>
-          <AppBar />
-        </Context.DrawerProvider>
-      </Context.DarkModeProvider>
-    );
-    fireEvent.click(await screen.findByLabelText('More options'));
-    fireEvent.click(screen.getByText('Restart Frigate'));
+  test('theme selection persists and closes the menu', () => {
+    mount();
+    openSettings();
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Hell' }));
+    expect(setDarkModeSpy).toHaveBeenCalledWith('light');
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+
+  test('light mode highlights light and allows switching back to dark', () => {
+    vi.spyOn(Context, 'useDarkMode').mockImplementation(() => ({
+      persistedMode: 'light', currentMode: 'light', setDarkMode: setDarkModeSpy,
+    }));
+    mount();
+    openSettings();
+    expect(screen.getByRole('menuitemradio', { name: 'Hell' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('menuitemradio', { name: 'Dunkel' })).toHaveAttribute('aria-checked', 'false');
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Dunkel' }));
+    expect(setDarkModeSpy).toHaveBeenCalledWith('dark');
+  });
+
+  test('restart uses localized responsive confirmation, with no close icon', () => {
+    mount();
+    openSettings();
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Frigate neu starten' }));
     const dialog = screen.getByRole('dialog', { name: 'Frigate neu starten' });
     expect(dialog).toHaveAttribute('aria-modal', 'true');
     expect(dialog).toHaveTextContent('Alle laufenden Prozesse');
     expect(dialog).toHaveClass('w-full', 'max-w-[460px]');
     expect(screen.queryByRole('button', { name: /schließen/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Abbrechen' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Neu starten' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Abbrechen' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  test('sets dark mode on MenuItem select', async () => {
-    const setDarkModeSpy = vi.fn();
-    vi.spyOn(Context, 'useDarkMode').mockImplementation(() => ({
-      setDarkMode: setDarkModeSpy,
-    }));
-    render(
-      <Context.DarkModeProvider>
-        <Context.DrawerProvider>
-          <AppBar />
-        </Context.DrawerProvider>
-      </Context.DarkModeProvider>
-    );
-
-    const overflowButton = await screen.findByLabelText('More options');
-    fireEvent.click(overflowButton);
-
-    await screen.findByRole('listbox');
-
-    fireEvent.click(screen.getByText('Light'));
-    expect(setDarkModeSpy).toHaveBeenCalledWith('light');
+  test('new menu and restart use external locale overrides', () => {
+    setLocaleMessages({
+      app: {
+        menu: {
+          more_options: 'More custom', settings_label: 'Settings custom',
+          design: 'Theme custom', light: 'Light custom', dark: 'Dark custom',
+          system: 'System custom', restart: 'Restart custom',
+        },
+        modal: { restart: {
+          title: 'Restart title custom', confirm: 'Restart confirmation custom',
+          restart: 'Restart action custom', cancel: 'Cancel custom',
+        } },
+      },
+    });
+    mount();
+    fireEvent.click(screen.getByRole('button', { name: 'More custom' }));
+    expect(screen.getByRole('menu', { name: 'Settings custom' })).toHaveTextContent('Theme custom');
+    expect(screen.getByRole('menuitemradio', { name: 'Dark custom' })).toHaveAttribute('aria-checked', 'true');
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Restart custom' }));
+    expect(screen.getByRole('dialog', { name: 'Restart title custom' })).toHaveTextContent('Restart confirmation custom');
+    expect(screen.getByRole('button', { name: 'Restart action custom' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Cancel custom' })).toBeInTheDocument();
   });
 });

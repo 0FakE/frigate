@@ -3,6 +3,29 @@ import { setLocaleMessages, t } from '../index';
 describe('nested German camera editor translations', () => {
   afterEach(() => setLocaleMessages(null));
 
+  test('new navigation, theme menu and modal texts support host overrides', () => {
+    expect(t('app.menu.design')).toBe('Design');
+    expect(t('app.menu.light')).toBe('Hell');
+    expect(t('app.menu.dark')).toBe('Dunkel');
+    expect(t('app.menu.restart')).toBe('Frigate neu starten');
+    expect(t('app.navigation.cameras')).toBe('Kameras');
+    expect(t('app.navigation.github')).toBe('GitHub');
+    expect(t('app.modal.restart.title')).toBe('Frigate neu starten');
+    expect(t('app.modal.restart.cancel')).toBe('Abbrechen');
+    expect(t('app.modal.please_wait')).toBe('Bitte warten');
+    setLocaleMessages({ app: {
+      menu: { light: 'Light custom', dark: 'Dark custom', restart: 'Restart custom' },
+      modal: { restart: { title: 'Restart title custom' } },
+      navigation: { cameras: 'Cameras custom' },
+    } });
+    expect(t('app.menu.light')).toBe('Light custom');
+    expect(t('app.menu.dark')).toBe('Dark custom');
+    expect(t('app.menu.restart')).toBe('Restart custom');
+    expect(t('app.modal.restart.title')).toBe('Restart title custom');
+    expect(t('app.navigation.cameras')).toBe('Cameras custom');
+    expect(t('app.modal.restart.cancel')).toBe('Abbrechen');
+  });
+
   test('resolves UI copy by page, view, component and key', () => {
     expect(t('cameras.debug.editor.button.open')).toBe('Zonen & Masken Editor');
     expect(t('cameras.debug.editor.button.close')).toBe('Editor schließen');

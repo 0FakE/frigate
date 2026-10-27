@@ -1,8 +1,20 @@
 import { h } from 'preact';
 import { fireEvent, render, screen } from '@testing-library/preact';
 import Prompt from '../Prompt';
+import { setLocaleMessages } from '../../locales';
 
 describe('reusable responsive confirmation prompt', () => {
+  afterEach(() => setLocaleMessages(null));
+
+  test('loading status uses the host locale and falls back to bundled German', () => {
+    setLocaleMessages({ app: { modal: { please_wait: 'Loading custom' } } });
+    const { rerender } = render(<Prompt title="Hinweis" variant="info" />);
+    expect(screen.getByRole('status', { name: 'Loading custom' })).toBeInTheDocument();
+    setLocaleMessages(null);
+    rerender(<Prompt title="Hinweis" variant="info" />);
+    expect(screen.getByRole('status', { name: 'Bitte warten' })).toBeInTheDocument();
+  });
+
   test('shows explicit primary and cancel actions without close controls', () => {
     const confirm = vi.fn();
     const cancel = vi.fn();

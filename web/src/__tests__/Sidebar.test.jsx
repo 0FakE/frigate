@@ -14,6 +14,8 @@ describe('Sidebar', () => {
     useSWR.mockReturnValue({ data: { cameras: {}, birdseye: { enabled: false } } });
     render(<DrawerProvider><Sidebar /></DrawerProvider>);
     expect(screen.queryByRole('link', { name: 'Documentation' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Kameras' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Ereignisse' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'GitHub' })).toHaveAttribute('href', 'https://github.com/blakeblackshear/frigate');
   });
 
