@@ -72,7 +72,7 @@
             "save_failed": "Die Änderungen konnten nicht gespeichert werden. {details}",
             "unknown_details": "Ein unbekannter Fehler ist aufgetreten.",
             "empty_zone_name": "Bitte gib einen Zonennamen ein.",
-            "empty_zone_objects": "Bitte wähle mindestens eine Objekt zur Erfassung aus, oder wähle „Alle Objekte erfassen“"
+            "empty_zone_objects": "Bitte wähle mindestens eine Objekt zur Erfassung aus, oder wähle „Alle Objekte erfassen“."
           },
           "warning": {
             "invalid_zone": "Die Zone „{name}“ kann nicht gespeichert werden. Bitte lege mindestens drei Eckpunkte fest, die nicht auf einer Linie liegen.",

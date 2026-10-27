@@ -323,7 +323,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     fireEvent.click(screen.getByLabelText('Nur ausgewählte Objekte erfassen'));
     fireEvent.click(screen.getByRole('button', { name: 'Übernehmen' }));
     expect(window.alert).toHaveBeenCalledWith(
-      'Bitte wähle mindestens eine Objekt zur Erfassung aus, oder wähle „Alle Objekte erfassen“'
+      'Bitte wähle mindestens eine Objekt zur Erfassung aus, oder wähle „Alle Objekte erfassen“.'
     );
     expect(window.alert).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();

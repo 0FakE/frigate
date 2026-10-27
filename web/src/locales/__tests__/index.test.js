@@ -138,7 +138,7 @@ describe('nested German camera editor translations', () => {
     expect(t('cameras.debug.editor.label.zone_objects_all')).toBe('Alle Objekte erfassen');
     expect(t('cameras.debug.editor.label.zone_objects_selected')).toBe('Nur ausgewählte Objekte erfassen');
     expect(t('cameras.debug.editor.modal.error.empty_zone_objects'))
-      .toBe('Bitte wähle mindestens eine Objekt zur Erfassung aus, oder wähle „Alle Objekte erfassen“');
+      .toBe('Bitte wähle mindestens eine Objekt zur Erfassung aus, oder wähle „Alle Objekte erfassen“.');
     expect(t('cameras.page.view_events')).toBe('cameras.page.view_events');
   });
 
