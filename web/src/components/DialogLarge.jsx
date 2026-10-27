@@ -1,35 +1,8 @@
-import { h, Fragment } from 'preact';
-import { createPortal } from 'preact/compat';
-import { useState, useEffect } from 'preact/hooks';
+import { h } from 'preact';
+import Dialog from './Dialog';
 
+// Retain the shared large-dialog API while using the same responsive,
+// accessible surface and focus handling as regular confirmation prompts.
 export default function LargeDialog({ children, portalRootID = 'dialogs' }) {
-  const portalRoot = portalRootID && document.getElementById(portalRootID);
-  const [show, setShow] = useState(false);
-
-  useEffect(() => {
-    window.requestAnimationFrame(() => {
-      setShow(true);
-    });
-  }, []);
-
-  const dialog = (
-    <Fragment>
-      <div
-        data-testid="scrim"
-        key="scrim"
-        className="fixed bg-fixed inset-0 z-50 flex justify-center items-center bg-black bg-opacity-40"
-      >
-        <div
-          role="modal"
-          className={`absolute rounded shadow-2xl bg-white w-full max-h-fit sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl dark:bg-gray-700 text-gray-900 dark:text-white transition-transform transition-opacity duration-75 transform scale-90 opacity-0 ${
-            show ? 'scale-100 opacity-100' : ''
-          }`}
-        >
-          {children}
-        </div>
-      </div>
-    </Fragment>
-  );
-
-  return portalRoot ? createPortal(dialog, portalRoot) : dialog;
+  return <Dialog portalRootID={portalRootID} size="lg">{children}</Dialog>;
 }

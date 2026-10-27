@@ -66,19 +66,20 @@ export default function AppBar() {
       ) : null}
       {showDialog ? (
         <Prompt
-          onDismiss={handleDismissRestartDialog}
-          title="Restart Frigate"
-          text="Are you sure?"
+          title="Frigate neu starten"
+          text="Möchtest du Frigate wirklich neu starten? Alle laufenden Prozesse werden beendet und anschließend wieder gestartet."
+          variant="restart"
           actions={[
-            { text: 'Yes', color: 'red', onClick: handleClickRestartDialog },
-            { text: 'Cancel', onClick: handleDismissRestartDialog },
+            { text: 'Neu starten', color: 'blue', onClick: handleClickRestartDialog },
+            { text: 'Abbrechen', onClick: handleDismissRestartDialog },
           ]}
         />
       ) : null}
       {showDialogWait ? (
         <Prompt
-          title="Restart in progress"
-          text="This can take up to one minute, please wait before reloading the page."
+          title="Frigate wird neu gestartet"
+          text="Das kann bis zu einer Minute dauern. Bitte lade die Seite erst danach neu."
+          variant="info"
         />
       ) : null}
     </Fragment>

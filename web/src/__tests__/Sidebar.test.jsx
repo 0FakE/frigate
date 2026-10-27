@@ -2,8 +2,18 @@ import { h } from 'preact';
 import { DrawerProvider }  from '../context';
 import Sidebar from '../Sidebar';
 import { render, screen } from 'testing-library';
+import useSWR from 'swr';
+
+vi.mock('swr', () => ({ default: vi.fn() }));
 
 describe('Sidebar', () => {
+  test('keeps GitHub navigation without the Documentation item', () => {
+    useSWR.mockReturnValue({ data: { cameras: {}, birdseye: { enabled: false } } });
+    render(<DrawerProvider><Sidebar /></DrawerProvider>);
+    expect(screen.queryByRole('link', { name: 'Documentation' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'GitHub' })).toHaveAttribute('href', 'https://github.com/blakeblackshear/frigate');
+  });
+
   // eslint-disable-next-line jest/no-disabled-tests
   test.skip('does not render cameras by default', async () => {
     const { findByText } = render(<DrawerProvider><Sidebar /></DrawerProvider>);

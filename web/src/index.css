@@ -172,9 +172,22 @@
   height: auto;
 }
 
-.camera-modern-page :is(button, a, select):focus-visible {
+/* Keep exactly one keyboard focus indicator across our custom camera controls.
+   Tailwind ring utilities otherwise create a second stroke beside the outline. */
+.camera-modern-page :is(button, a, select, input, textarea, [tabindex]):focus-visible {
   outline: 2px solid #60a5fa;
   outline-offset: 2px;
+  --tw-ring-shadow: 0 0 #0000;
+}
+
+/* Unlike ordinary standalone controls, a segmented control needs a slightly
+   larger outer radius so its container and inner active button do not merge. */
+.camera-modern-page .camera-modern-tab-group {
+  border-radius: 0.75rem;
+}
+
+.camera-modern-page .camera-modern-tab-group > button {
+  border-radius: 0.5rem;
 }
 
 @media (max-width: 767px) {
