@@ -723,7 +723,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                             </label>
                           ))}
                           {trackedObjects.length === 0 && (
-                            <p className="text-xs text-slate-400">{t('cameras.page.tracked_objects_empty')}</p>
+                            <p className="text-xs text-slate-400">{t('cameras.debug.editor.label.zone_objects_unavailable')}</p>
                           )}
                         </div>
                       )}

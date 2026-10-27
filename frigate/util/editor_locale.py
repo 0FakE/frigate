@@ -97,3 +97,22 @@ def read_german_locale(config_dir=None, bundled_path=None):
                 "Die integrierten deutschen Texte werden verwendet."
             ),
         }
+
+
+
+def log_client_locale_failure(reason, status=None):
+    """Log a bounded frontend failure via the same Frigate locale logger.
+
+    Only fixed reason names and valid HTTP status codes are accepted: an
+    unauthenticated browser request cannot inject arbitrary text into logs.
+    """
+    if reason not in ("request_failed", "invalid_response"):
+        return False
+    status_code = status if type(status) is int and 100 <= status <= 599 else None
+    logger.warning(
+        "External German locale could not be loaded in browser (%s, HTTP %s); "
+        "using bundled German translations",
+        reason,
+        status_code if status_code is not None else "unknown",
+    )
+    return True

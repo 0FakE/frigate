@@ -35,7 +35,7 @@ from werkzeug.utils import secure_filename
 
 from frigate.config import FrigateConfig
 from frigate.util.live_polygon_editor import read_polygons, update_polygons, revision
-from frigate.util.editor_locale import ensure_default_locale, read_german_locale
+from frigate.util.editor_locale import ensure_default_locale, read_german_locale, log_client_locale_failure
 from frigate.const import (
     CACHE_DIR,
     CLIPS_DIR,
@@ -1209,6 +1209,17 @@ def language_de():
     response = jsonify(read_german_locale())
     response.headers["Cache-Control"] = "no-store, max-age=0"
     return response
+
+
+@bp.route("/lang/de/client-warning", methods=["POST"])
+def language_de_client_warning():
+    """Log a browser locale bootstrap failure using Frigate's existing logger."""
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict) or not log_client_locale_failure(
+        payload.get("reason"), payload.get("status")
+    ):
+        return jsonify({"success": False, "message": "Invalid locale warning"}), 400
+    return "", 204
 
 
 @bp.route("/config/raw")

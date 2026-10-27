@@ -120,8 +120,9 @@ export default function Camera({ camera }) {
   );
 
   const handleToggleSettings = useCallback(() => {
-    setShowSettings(!showSettings);
-  }, [showSettings, setShowSettings]);
+    if (editLivePolygons) return;
+    setShowSettings((current) => !current);
+  }, [editLivePolygons]);
 
   const handleChangeViewMode = useCallback(
     (nextMode) => {
@@ -140,6 +141,7 @@ export default function Camera({ camera }) {
 
   const handleToggleEditor = useCallback(() => {
     if (editLivePolygons && editorDirty && !window.confirm(t('cameras.debug.editor.prompt.discard_unsaved'))) return;
+    if (!editLivePolygons) setShowSettings(false);
     setEditLivePolygons((current) => !current);
     setEditorDirty(false);
     setEditorStreamReady(false);
@@ -155,7 +157,7 @@ export default function Camera({ camera }) {
     setViewSource('jsmpeg');
   }
 
-  const optionContent = showSettings ? (
+  const optionContent = showSettings && !editLivePolygons ? (
     <div className="flex w-max max-w-full flex-col gap-3">
       <Switch className="!w-auto"
         checked={options['bbox']}
@@ -200,9 +202,9 @@ export default function Camera({ camera }) {
   // and ordinary Debug modes; they remain connected to the existing handlers.
   const debugControls = (
     <div className="flex flex-wrap items-center gap-3 py-4" data-testid="camera-debug-controls">
-      <button type="button" onClick={handleToggleSettings}
-        aria-expanded={showSettings} aria-controls="camera-debug-options"
-        className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/90 px-4 text-sm font-semibold text-slate-100 shadow-sm transition-colors hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
+      <button type="button" onClick={handleToggleSettings} disabled={editLivePolygons}
+        aria-expanded={showSettings && !editLivePolygons} aria-controls="camera-debug-options"
+        className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/90 px-4 text-sm font-semibold text-slate-100 shadow-sm transition-colors hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-not-allowed disabled:opacity-50">
         <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
           <path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.7 5.7l2.1 2.1m8.4 8.4 2.1 2.1m0-12.6-2.1 2.1M7.8 16.2l-2.1 2.1" />
           <circle cx="12" cy="12" r="4" />
@@ -225,7 +227,7 @@ export default function Camera({ camera }) {
       </button>
     </div>
   );
-  const debugOptions = showSettings ? (
+  const debugOptions = showSettings && !editLivePolygons ? (
     <section id="camera-debug-options" aria-label={t('cameras.debug.controls.options_aria')}
       className="inline-block w-fit max-w-full rounded-2xl border border-slate-700/80 bg-slate-900/80 p-4 shadow-lg shadow-black/10">
       <h3 className="mb-4 text-sm font-bold text-white">{t('cameras.debug.controls.options_title')}</h3>

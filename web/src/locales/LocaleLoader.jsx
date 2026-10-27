@@ -1,4 +1,4 @@
-import { h, Fragment } from 'preact';
+import { h } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import axios from 'axios';
 import { setLocaleMessages, t } from './index';
@@ -7,7 +7,6 @@ import { setLocaleMessages, t } from './index';
 // refreshing the browser (no Frigate or Docker restart).
 export default function LocaleLoader({ children }) {
   const [loading, setLoading] = useState(true);
-  const [warning, setWarning] = useState('');
 
   useEffect(() => {
     let mounted = true;
@@ -20,11 +19,19 @@ export default function LocaleLoader({ children }) {
         throw new Error('Invalid locale response');
       }
       setLocaleMessages(data.messages);
-      setWarning(data.warning || '');
-    }).catch(() => {
+      // Server-side file errors are already recorded by the Frigate logger.
+      // Do not render an additional warning in the camera UI.
+    }).catch((error) => {
       if (!mounted) return;
       setLocaleMessages(null);
-      setWarning(t('app.error.loading_translations'));
+      // If the API is unreachable, logging back to Frigate may also fail.
+      // Keep diagnostic details in the browser console in that case.
+      console.warn(t('app.error.loading_translations'), error);
+      const reason = error?.message === 'Invalid locale response' ? 'invalid_response' : 'request_failed';
+      const status = Number.isInteger(error?.response?.status) ? error.response.status : null;
+      axios.post('lang/de/client-warning', { reason, status }).catch(() => {
+        // The console warning above remains available if the server is offline.
+      });
     }).finally(() => {
       if (mounted) setLoading(false);
     });
@@ -40,17 +47,5 @@ export default function LocaleLoader({ children }) {
     );
   }
 
-  return (
-    <Fragment>
-      {children}
-      {warning && (
-        <div role="alert" className="fixed bottom-4 right-4 z-50 flex max-w-md items-start gap-3 whitespace-pre-line rounded-lg bg-slate-700 p-4 text-sm text-yellow-300 shadow-xl">
-          <span>{warning}</span>
-          <button type="button" aria-label={t('app.button.dismiss_warning')}
-            className="shrink-0 rounded px-1 text-yellow-300 hover:bg-slate-600"
-            onClick={() => setWarning('')}>×</button>
-        </div>
-      )}
-    </Fragment>
-  );
+  return children;
 }

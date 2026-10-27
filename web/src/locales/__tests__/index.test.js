@@ -27,6 +27,20 @@ describe('nested German camera editor translations', () => {
     expect(t('cameras.debug.editor.button.zone')).toBe('Zone');
   });
 
+  test('updates the old copied default for detected objects, but preserves custom host text', () => {
+    expect(t('cameras.page.tracked_objects_empty')).toBe('Noch keine Objekte erkannt');
+    setLocaleMessages({ cameras: { page: {
+      tracked_objects_empty: 'Für diese Kamera sind keine Objektklassen verfügbar.',
+    } } });
+    expect(t('cameras.page.tracked_objects_empty')).toBe('Noch keine Objekte erkannt');
+    setLocaleMessages({ cameras: { page: {
+      tracked_objects_empty: 'Meine individuell angepasste Meldung',
+    } } });
+    expect(t('cameras.page.tracked_objects_empty')).toBe('Meine individuell angepasste Meldung');
+    expect(t('cameras.debug.editor.label.zone_objects_unavailable'))
+      .toBe('Für diese Kamera sind keine Objektklassen verfügbar.');
+  });
+
   test('interpolates placeholders from editable host entries and rejects invalid override values', () => {
     setLocaleMessages({ cameras: { debug: { editor: {
       header: { existing_areas: 'Bearbeitete Bereiche' },

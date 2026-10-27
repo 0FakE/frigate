@@ -10,6 +10,7 @@ from frigate.util.editor_locale import (
     ensure_default_locale,
     locale_path,
     read_german_locale,
+    log_client_locale_failure,
 )
 
 BUNDLED = Path(__file__).resolve().parents[2] / "web" / "src" / "locales" / "de.json"
@@ -66,6 +67,18 @@ class TestEditorLocale(unittest.TestCase):
         self.assertIsNotNone(result["warning"])
         self.assertNotIn("password", str(result["messages"]))
         self.assertTrue(self.path.is_symlink())
+
+    def test_browser_warning_uses_existing_locale_logger(self):
+        with self.assertLogs("frigate.util.editor_locale", level="WARNING") as captured:
+            self.assertTrue(log_client_locale_failure("request_failed", 503))
+            self.assertTrue(log_client_locale_failure("invalid_response", "untrusted status"))
+        self.assertIn("HTTP 503", captured.output[0])
+        self.assertIn("HTTP unknown", captured.output[1])
+        self.assertIn("bundled German translations", captured.output[0])
+
+    def test_browser_warning_rejects_arbitrary_log_messages(self):
+        self.assertFalse(log_client_locale_failure("injected log entry", 503))
+        self.assertFalse(log_client_locale_failure(None, 503))
 
     def test_rejects_oversized_locale(self):
         self.path.parent.mkdir(parents=True, exist_ok=True)

@@ -4,6 +4,7 @@ import de from './de.json';
 // The server supplies the optional /config/lang/de.json override before App
 // mounts, so existing components can continue using t(...) without changes.
 let hostMessages = null;
+const LEGACY_TRACKED_OBJECTS_EMPTY = 'Für diese Kamera sind keine Objektklassen verfügbar.';
 
 export function setLocaleMessages(messages) {
   hostMessages = messages && typeof messages === 'object' && !Array.isArray(messages)
@@ -25,7 +26,12 @@ function lookup(root, path) {
 // entries use the bundled German defaults, not superseded host keys.
 export function t(path, params = {}) {
   const translated = lookup(hostMessages, path);
-  const value = typeof translated === 'string' ? translated : lookup(de, path);
+  // Existing /config/lang/de.json files are not overwritten on upgrades.
+  // Replace only the old bundled default; preserve actual host customizations.
+  const outdatedDefault = path === 'cameras.page.tracked_objects_empty'
+    && translated === LEGACY_TRACKED_OBJECTS_EMPTY;
+  const value = typeof translated === 'string' && !outdatedDefault
+    ? translated : lookup(de, path);
   if (typeof value !== 'string') return path;
   return value.replace(/\{([a-z_]+)\}/g, (match, key) =>
     Object.prototype.hasOwnProperty.call(params, key) ? String(params[key]) : match

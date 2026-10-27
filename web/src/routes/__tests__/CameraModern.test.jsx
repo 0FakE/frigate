@@ -136,6 +136,16 @@ describe('modern camera page keeps its original actions', () => {
     expect(screen.getByText('ONVIF Kamera-Steuerung')).toBeInTheDocument();
   });
 
+  test('shows a short no-objects message below detected objects', () => {
+    useSWR.mockImplementation((key) => key === 'config'
+      ? { data: cameraConfig } : { data: [] });
+    render(<Camera camera="test_camera" />);
+    const section = screen.getByRole('region', { name: 'Erkannte Objekte' });
+    expect(section).toHaveTextContent('Noch keine Objekte erkannt');
+    expect(section).not.toHaveTextContent('Für diese Kamera sind keine Objektklassen verfügbar.');
+    expect(section.querySelectorAll('img')).toHaveLength(0);
+  });
+
   test('object cards emphasize border and background without moving when hovered', () => {
     render(<Camera camera="test_camera" />);
     const card = screen.getByRole('link', { name: /Person/ });
@@ -201,8 +211,19 @@ describe('modern camera page keeps its original actions', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Zonen & Masken Editor' }));
     const editor = screen.getByTestId('camera-editor');
     expect(editor).toHaveTextContent('JSMpeg Livebild');
-    expect(editor).toHaveTextContent('Anzeigeoptionen');
+    expect(editor).not.toHaveTextContent('Anzeigeoptionen');
     expect(editor).toHaveTextContent('Editor schließen');
+    const lockedOptions = screen.getByRole('button', { name: 'Show Options' });
+    expect(lockedOptions).toBeDisabled();
+    expect(lockedOptions).toHaveAttribute('aria-expanded', 'false');
+    expect(document.getElementById('camera-debug-options')).toBeNull();
+    fireEvent.click(lockedOptions);
+    expect(document.getElementById('camera-debug-options')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Editor schließen' }));
+    expect(screen.getByRole('button', { name: 'Show Options' })).toBeEnabled();
+    expect(screen.queryByText('Anzeigeoptionen')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Show Options' }));
+    expect(screen.getByText('Anzeigeoptionen')).toBeInTheDocument();
     expect(screen.getByTestId('camera-debug-controls')).toHaveClass('py-4');
     expect(screen.queryByRole('combobox', { name: 'Videoquelle' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Debug' }));

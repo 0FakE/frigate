@@ -51,7 +51,8 @@
           "status_badge": "Bearbeitung aktiv",
           "zone_new_name": "Neuer Name der Zone",
           "zone_objects_all": "Alle Objekte erfassen",
-          "zone_objects_selected": "Nur ausgewählte Objekte erfassen"
+          "zone_objects_selected": "Nur ausgewählte Objekte erfassen",
+          "zone_objects_unavailable": "Für diese Kamera sind keine Objektklassen verfügbar."
         },
         "prompt": {
           "zone_name": "Zonenname (Buchstaben, Zahlen, Unterstriche):",
@@ -103,7 +104,7 @@
       "stream_source": "Videoquelle",
       "camera_preview": "Kameravorschau",
       "tracked_objects": "Erkannte Objekte",
-      "tracked_objects_empty": "Für diese Kamera sind keine Objektklassen verfügbar.",
+      "tracked_objects_empty": "Noch keine Objekte erkannt",
       "control_panel": "Kamerasteuerung",
       "object_thumbnail": "Letztes Vorschaubild: {name}",
       "stream_source_jsmpeg": "JSMpeg",
