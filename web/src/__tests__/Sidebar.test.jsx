@@ -1,7 +1,7 @@
 import { h } from 'preact';
 import { DrawerProvider }  from '../context';
 import Sidebar from '../Sidebar';
-import { render, screen } from 'testing-library';
+import { render, screen } from '@testing-library/preact';
 import useSWR from 'swr';
 
 vi.mock('swr', async () => {
