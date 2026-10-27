@@ -139,7 +139,6 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   const [renameError, setRenameError] = useState('');
   const [editingZoneObjects, setEditingZoneObjects] = useState(false);
   const [zoneObjectsDraft, setZoneObjectsDraft] = useState(null);
-  const [zoneObjectsError, setZoneObjectsError] = useState('');
   const [hovered, setHovered] = useState(null);
   const [hoverLabelWidth, setHoverLabelWidth] = useState(0);
   const [status, setStatus] = useState('');
@@ -169,7 +168,6 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
       setRenameError('');
       setEditingZoneObjects(false);
       setZoneObjectsDraft(null);
-      setZoneObjectsError('');
       setHovered(null);
       setStatus('');
     } catch (e) {
@@ -283,7 +281,6 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   const cancelZoneObjectEdit = () => {
     setEditingZoneObjects(false);
     setZoneObjectsDraft(null);
-    setZoneObjectsError('');
   };
 
   const startZoneObjectEdit = () => {
@@ -291,7 +288,6 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     cancelZoneRename();
     const current = data.zone_objects[selected.slice(5)];
     setZoneObjectsDraft(current ? [...current] : null);
-    setZoneObjectsError('');
     setEditingZoneObjects(true);
   };
 
@@ -299,7 +295,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     event.preventDefault();
     if (!selected?.startsWith('zone:')) return;
     if (zoneObjectsDraft !== null && !zoneObjectsDraft.length) {
-      setZoneObjectsError(t('cameras.debug.editor.modal.error.empty_zone_objects'));
+      window.alert(t('cameras.debug.editor.modal.error.empty_zone_objects'));
       return;
     }
     const name = selected.slice(5);
@@ -332,7 +328,8 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
       return;
     }
     if (!/^[A-Za-z0-9_]+$/.test(newName)) {
-      setRenameError(t('cameras.debug.editor.modal.error.invalid_zone_name'));
+      setRenameError('');
+      window.alert(t('cameras.debug.editor.modal.error.invalid_zone_name'));
       return;
     }
     if (newName !== oldName && Object.prototype.hasOwnProperty.call(data.zones, newName)) {
@@ -699,14 +696,14 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                       </h4>
                       <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-200">
                         <input type="radio" name="zone-object-mode" checked={zoneObjectsDraft === null}
-                          onChange={() => { setZoneObjectsDraft(null); setZoneObjectsError(''); }}
+                          onChange={() => setZoneObjectsDraft(null)}
                           className="border-slate-500 bg-slate-900 text-blue-600 focus:ring-blue-400" />
                         {t('cameras.debug.editor.label.zone_objects_all')}
                       </label>
                       <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-200">
                         <input type="radio" name="zone-object-mode" checked={zoneObjectsDraft !== null}
                           disabled={trackedObjects.length === 0 && zoneObjectsDraft === null}
-                          onChange={() => { setZoneObjectsDraft([]); setZoneObjectsError(''); }}
+                          onChange={() => setZoneObjectsDraft([])}
                           className="border-slate-500 bg-slate-900 text-blue-600 focus:ring-blue-400" />
                         {t('cameras.debug.editor.label.zone_objects_selected')}
                       </label>
@@ -720,7 +717,6 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                                   setZoneObjectsDraft((current) => checked
                                     ? [...current, label]
                                     : current.filter((item) => item !== label));
-                                  setZoneObjectsError('');
                                 }}
                                 className="rounded border-slate-500 bg-slate-900 text-blue-600 focus:ring-blue-400" />
                               {label}
@@ -730,9 +726,6 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                             <p className="text-xs text-slate-400">{t('cameras.page.tracked_objects_empty')}</p>
                           )}
                         </div>
-                      )}
-                      {zoneObjectsError && (
-                        <p role="alert" className="text-xs text-red-300">{zoneObjectsError}</p>
                       )}
                       <div className="flex justify-end gap-2">
                         <button type="button" className={secondaryButtonClass} onClick={cancelZoneObjectEdit}>
