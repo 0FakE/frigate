@@ -4,7 +4,10 @@ import Sidebar from '../Sidebar';
 import { render, screen } from 'testing-library';
 import useSWR from 'swr';
 
-vi.mock('swr', () => ({ default: vi.fn() }));
+vi.mock('swr', async () => {
+  const actual = await vi.importActual('swr');
+  return { ...actual, default: vi.fn() };
+});
 
 describe('Sidebar', () => {
   test('keeps GitHub navigation without the Documentation item', () => {

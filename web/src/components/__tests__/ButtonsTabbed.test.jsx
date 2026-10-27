@@ -20,8 +20,8 @@ describe('ButtonsTabbed controlled navigation', () => {
     expect(nav).toHaveClass('justify-end');
     expect(container.querySelectorAll('button svg[aria-hidden="true"]')).toHaveLength(2);
     expect(debug).toHaveAttribute('aria-pressed', 'true');
-    expect(debug).toHaveClass('bg-blue-600', 'h-9', 'sm:h-10', 'px-2', 'sm:px-5', 'sm:ring-1', 'sm:ring-blue-400/60');
-    expect(debug).not.toHaveClass('ring-1', 'ring-blue-400/60');
+    expect(debug).toHaveClass('bg-blue-600', 'h-9', 'sm:h-10', 'px-2', 'sm:px-5');
+    expect(debug).not.toHaveClass('sm:ring-1', 'sm:ring-blue-400/60', 'ring-1', 'ring-blue-400/60');
     expect(live).toHaveAttribute('aria-pressed', 'false');
 
     fireEvent.click(live);
