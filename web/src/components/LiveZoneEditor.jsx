@@ -662,7 +662,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                       <span className="min-w-0 truncate text-sm font-semibold text-white">{selectedShape.label}</span>
                       {selectedShape.id.startsWith('zone:') && (
                         <button type="button"
-                          className="ml-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-white hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                          className="ml-2 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-white hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
                           title={t('cameras.debug.editor.button.rename_zone')}
                           aria-label={t('cameras.debug.editor.button.rename_zone')}
                           onClick={startZoneRename} disabled={busy}>
@@ -675,7 +675,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                       )}
                       {selectedShape.id.startsWith('zone:') && (
                         <button type="button"
-                          className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-white hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                          className="ml-2 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-white hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
                           title={t('cameras.debug.editor.button.edit_zone_objects')}
                           aria-label={t('cameras.debug.editor.button.edit_zone_objects')}
                           aria-expanded={editingZoneObjects}
@@ -746,7 +746,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                   )}
                   {renamingZone && selectedShape.id.startsWith('zone:') && (
                     <form onSubmit={applyZoneRename} className="mt-3 space-y-2 border-t border-slate-700 pt-3">
-                      <label htmlFor="zone-rename-input" className="block text-xs font-semibold text-slate-300">
+                      <label htmlFor="zone-rename-input" className="block text-sm font-semibold text-slate-100">
                         {t('cameras.debug.editor.label.zone_new_name')}
                       </label>
                       <input id="zone-rename-input" type="text" autoFocus

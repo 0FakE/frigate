@@ -26,7 +26,7 @@
           "rename_zone": "Zone umbenennen",
           "rename_apply": "Übernehmen",
           "rename_cancel": "Abbrechen",
-          "edit_zone_objects": "Objekte in dieser Zone bearbeiten"
+          "edit_zone_objects": "Erfasste Objekte bearbeiten"
         },
         "header": {
           "new_area": "Neuen Bereich erstellen",
@@ -35,7 +35,7 @@
           "zones": "Zonen",
           "covered_areas": "Masken",
           "object_filters": "Objektfilter",
-          "zone_objects": "Objekte in dieser Zone"
+          "zone_objects": "Erfasste Objekte dieser Zone"
         },
         "label": {
           "sidebar": "Werkzeuge und Bereiche",
@@ -50,8 +50,8 @@
           "object_filter_select": "Objektklasse für Filter",
           "status_badge": "Bearbeitung aktiv",
           "zone_new_name": "Neuer Name der Zone",
-          "zone_objects_all": "Alle erfassten Objekte",
-          "zone_objects_selected": "Nur ausgewählte Objekte"
+          "zone_objects_all": "Alle Objekte erfassen",
+          "zone_objects_selected": "Nur Ausgewählte Objekte erfassen"
         },
         "prompt": {
           "zone_name": "Zonenname (Buchstaben, Zahlen, Unterstriche):",
@@ -72,7 +72,7 @@
             "save_failed": "Die Änderungen konnten nicht gespeichert werden. {details}",
             "unknown_details": "Ein unbekannter Fehler ist aufgetreten.",
             "empty_zone_name": "Bitte gib einen Zonennamen ein.",
-            "empty_zone_objects": "Bitte wähle mindestens eine Objektklasse aus oder aktiviere „Alle erfassten Objekte“."
+            "empty_zone_objects": "Bitte wähle mindestens eine Objektklasse aus oder aktiviere „Alle Objekte erfassen“."
           },
           "warning": {
             "invalid_zone": "Die Zone „{name}“ kann nicht gespeichert werden. Bitte lege mindestens drei Eckpunkte fest, die nicht auf einer Linie liegen.",
