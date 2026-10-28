@@ -206,23 +206,31 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(areaA).not.toHaveClass('ring-1', 'ring-blue-500/30');
   });
 
-  test('uses valid opacity classes for dark-mode area rows and editor heading icons', async () => {
+  test('uses unobstructed heading icons and subtle theme-specific background contrast for area lists', async () => {
     await openEditor();
-    const existingHeading = screen.getByRole('heading', { name: 'Vorhandene Bereiche' });
-    expect(existingHeading.firstElementChild).toHaveClass('bg-blue-500/[0.15]');
-    expect(existingHeading.firstElementChild).not.toHaveClass('bg-blue-500/15');
+
+    for (const name of ['Neuen Bereich erstellen', 'Vorhandene Bereiche']) {
+      const heading = screen.getByRole('heading', { name });
+      const icon = heading.firstElementChild;
+      expect(icon).toHaveClass('h-7', 'w-7', 'text-blue-600', 'dark:text-blue-400');
+      expect(icon).not.toHaveClass('rounded-lg', 'bg-blue-500/[0.15]');
+    }
+    for (const name of ['Zonen 2', 'Masken 0', 'Objektfilter 0']) {
+      expect(screen.getByRole('heading', { name }))
+        .toHaveClass('bg-slate-200', 'dark:bg-slate-950/80');
+    }
 
     const area = screen.getByRole('button', { name: 'area_a' });
     expect(area).toHaveAttribute('aria-pressed', 'false');
-    expect(area).toHaveClass('bg-slate-50', 'dark:bg-slate-950/[0.35]');
-    expect(area).not.toHaveClass('dark:bg-slate-950/35');
+    expect(area).toHaveClass('bg-slate-100', 'dark:bg-slate-900/40',
+      'hover:bg-slate-200/70', 'dark:hover:bg-slate-800');
     fireEvent.click(area);
     expect(area).toHaveAttribute('aria-pressed', 'true');
     expect(area).toHaveClass('bg-blue-600/20');
-    expect(area).not.toHaveClass('dark:bg-slate-950/[0.35]');
+    expect(area).not.toHaveClass('dark:bg-slate-900/40');
     fireEvent.click(area);
     expect(area).toHaveAttribute('aria-pressed', 'false');
-    expect(area).toHaveClass('bg-slate-50', 'dark:bg-slate-950/[0.35]');
+    expect(area).toHaveClass('bg-slate-100', 'dark:bg-slate-900/40');
   });
   test('keeps compact grouped tools visible on mobile and in the 360px desktop sidebar', async () => {
     const { container } = await openEditor();
@@ -577,7 +585,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     const selector = screen.getByRole('combobox', { name: 'Objektklasse' });
     expect(selector).toHaveClass('bg-white', 'dark:bg-slate-950');
     expect(screen.getByRole('heading', { name: 'Zonen 2' }))
-      .toHaveClass('bg-slate-100', 'dark:bg-slate-950/50');
+      .toHaveClass('bg-slate-200', 'dark:bg-slate-950/80');
   });
 
   test('editor reports an unavailable camera image without showing polygon overlay', async () => {
