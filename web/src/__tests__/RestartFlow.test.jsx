@@ -1,5 +1,5 @@
 import { h } from 'preact';
-import { act, fireEvent, render, screen } from '@testing-library/preact';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/preact';
 import * as Context from '../context';
 import AppBar from '../AppBar';
 
@@ -57,19 +57,18 @@ describe('automatic Frigate restart monitor', () => {
     mountAndConfirm();
     expect(screen.getByRole('dialog', { name: 'Frigate wird neu gestartet' }))
       .toHaveTextContent('Der aktuelle Prozess wird geprüft');
-    await act(async () => { await Promise.resolve(); });
+    await waitFor(() => expect(mocks.send).toHaveBeenCalledTimes(1));
     expect(mocks.started).toHaveBeenCalledTimes(1);
-    expect(mocks.send).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole('dialog', { name: 'Frigate wird neu gestartet' }))
-      .toHaveTextContent('Warte auf den neuen Prozess');
+    await waitFor(() => expect(screen.getByRole('dialog', { name: 'Frigate wird neu gestartet' }))
+      .toHaveTextContent('Warte auf den neuen Prozess'));
   });
 
   test('failed baseline read never sends a restart and offers retry or cancel', async () => {
     mocks.started.mockRejectedValue(new Error('offline'));
     mountAndConfirm();
-    await act(async () => { await Promise.resolve(); });
+    await waitFor(() => expect(screen.getByRole('dialog', { name: 'Neustart konnte nicht ausgelöst werden' }))
+      .toBeInTheDocument());
     expect(mocks.send).not.toHaveBeenCalled();
-    expect(screen.getByRole('dialog', { name: 'Neustart konnte nicht ausgelöst werden' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Abbrechen' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
@@ -80,7 +79,8 @@ describe('automatic Frigate restart monitor', () => {
     mocks.started.mockResolvedValueOnce(100)
       .mockResolvedValueOnce(100).mockResolvedValueOnce(110).mockResolvedValueOnce(110);
     mountAndConfirm();
-    await act(async () => { await Promise.resolve(); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(30); });
+    expect(mocks.send).toHaveBeenCalledTimes(1);
     await act(async () => { await vi.advanceTimersByTimeAsync(3000); });
     expect(mocks.reload).not.toHaveBeenCalled();
     await act(async () => { await vi.advanceTimersByTimeAsync(3000); });
@@ -96,7 +96,8 @@ describe('automatic Frigate restart monitor', () => {
     vi.setSystemTime(1000000);
     mocks.started.mockResolvedValue(100);
     mountAndConfirm();
-    await act(async () => { await Promise.resolve(); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(30); });
+    expect(mocks.send).toHaveBeenCalledTimes(1);
     await act(async () => { await vi.advanceTimersByTimeAsync(180000); });
     expect(screen.getByRole('dialog', { name: 'Frigate ist weiterhin nicht erreichbar' }))
       .toHaveTextContent('Container-Logs');
