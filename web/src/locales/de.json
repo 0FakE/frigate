@@ -114,7 +114,8 @@
       "back_to_cameras": "Zur Kameraübersicht",
       "streaming": "Videowiedergabe",
       "preview_loading": "Kamera Vorschau wird geladen…",
-      "preview_error": "Die Kameravorschau konnte nicht geladen werden. Bitte prüfe die Verbindung und lade die Seite neu."
+      "preview_error": "Die Kameravorschau konnte nicht geladen werden. Bitte prüfe die Verbindung und lade die Seite neu.",
+      "camera_disabled": "Kamera ist deaktiviert"
     },
     "objects": {
       "class": {

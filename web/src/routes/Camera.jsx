@@ -26,7 +26,6 @@ export default function Camera({ camera }) {
   const [editLivePolygons, setEditLivePolygons] = useState(false);
   const [editorDirty, setEditorDirty] = useState(false);
   const [editorReadyCamera, setEditorReadyCamera] = useState(null);
-  const editorStreamReady = editorReadyCamera === camera;
   const [liveReadyKey, setLiveReadyKey] = useState(null);
   const [debugReady, setDebugReady] = useState(false);
   const [previewError, setPreviewError] = useState(null);
@@ -41,6 +40,8 @@ export default function Camera({ camera }) {
   }, []);
 
   const cameraConfig = config?.cameras[camera];
+  const cameraDisabled = cameraConfig?.enabled === false;
+  const editorStreamReady = !cameraDisabled && editorReadyCamera === camera;
   const restreamEnabled =
     cameraConfig && Object.keys(config.go2rtc.streams || {}).includes(cameraConfig.live.stream_name);
   const jsmpegWidth = cameraConfig
@@ -67,7 +68,7 @@ export default function Camera({ camera }) {
   // Capture the event at the fixed-size viewport: this covers the <video>
   // inside the go2rtc MSE custom element and the native WebRTC player alike.
   useEffect(() => {
-    if (viewMode !== 'live') return;
+    if (viewMode !== 'live' || cameraDisabled) return;
     const frame = livePreviewRef.current;
     if (!frame) return;
     const firstFrame = (event) => {
@@ -91,7 +92,7 @@ export default function Camera({ camera }) {
       frame.removeEventListener('playing', firstFrame, true);
       frame.removeEventListener('error', failed, true);
     };
-  }, [viewMode, liveSourceKey, handleFirstLiveFrame]);
+  }, [viewMode, liveSourceKey, handleFirstLiveFrame, cameraDisabled]);
 
   // Reused camera routes must not carry a decoded frame or dirty editor state
   // over from the previous camera. The editor subtree is keyed separately.
@@ -134,6 +135,7 @@ export default function Camera({ camera }) {
 
   // Report a failed stream rather than showing an indefinite loading state.
   useEffect(() => {
+    if (cameraDisabled) return;
     const liveLoading = viewMode === 'live' && !liveReady;
     const debugLoading = viewMode === 'debug' && !editLivePolygons && !debugReady;
     const editorLoading = viewMode === 'debug' && editLivePolygons && !editorStreamReady;
@@ -142,7 +144,7 @@ export default function Camera({ camera }) {
       : editorLoading ? 'editor:' + camera : 'debug:' + camera;
     const timeout = setTimeout(() => setPreviewError(currentKey), 20000);
     return () => clearTimeout(timeout);
-  }, [viewMode, editLivePolygons, editorStreamReady, liveReady, debugReady, liveSourceKey, camera]);
+  }, [viewMode, editLivePolygons, editorStreamReady, liveReady, debugReady, liveSourceKey, camera, cameraDisabled]);
   const [options, setOptions] = usePersistence(`${camera}-feed`, emptyObject);
 
   const handleSetOption = useCallback(
@@ -289,7 +291,9 @@ export default function Camera({ camera }) {
   };
   let player;
   if (viewMode === 'live') {
-    if (viewSource === 'mse' && restreamEnabled) {
+    if (cameraDisabled) {
+      player = null;
+    } else if (viewSource === 'mse' && restreamEnabled) {
       player = unsupportedMse ? (
         <div className="flex h-full items-center justify-center p-4 text-center text-sm text-white">
           {t('cameras.page.mse_unsupported')}
@@ -324,9 +328,12 @@ export default function Camera({ camera }) {
             onDirtyChange={setEditorDirty}
             streamReady={editorStreamReady}
             streamError={previewError === 'editor:' + camera}
+            streamDisabled={cameraDisabled}
           >
-            <JSMpegPlayer key={camera} camera={camera} width={jsmpegWidth} height={cameraConfig.live.height}
-              fillContainer onFirstFrame={handleFirstEditorFrame} />
+            {!cameraDisabled && (
+              <JSMpegPlayer key={camera} camera={camera} width={jsmpegWidth} height={cameraConfig.live.height}
+                fillContainer onFirstFrame={handleFirstEditorFrame} />
+            )}
           </LiveZoneEditor>
         ) : (
           <div className="w-full min-w-0">
@@ -337,10 +344,14 @@ export default function Camera({ camera }) {
               style={{ width: cameraConfig.detect.width + 'px', maxWidth: '100%',
                 aspectRatio: cameraConfig.detect.width + ' / ' + cameraConfig.detect.height }}>
               <div className="absolute inset-0">
-                <AutoUpdatingCameraImage camera={camera} searchParams={searchParams}
-                  className="h-full w-full" matchContainer showFps={false} onFirstFrame={handleFirstDebugFrame} />
+                {!cameraDisabled && (
+                  <AutoUpdatingCameraImage camera={camera} searchParams={searchParams}
+                    className="h-full w-full" matchContainer showFps={false} onFirstFrame={handleFirstDebugFrame} />
+                )}
               </div>
-              {!debugReady && <CameraPreviewOverlay error={previewError === 'debug:' + camera} />}
+              {(cameraDisabled || !debugReady) && (
+                <CameraPreviewOverlay disabled={cameraDisabled} error={previewError === 'debug:' + camera} />
+              )}
             </div>
             {debugControls}
             {debugOptions}
@@ -405,8 +416,8 @@ export default function Camera({ camera }) {
               <div key={liveSourceKey} className="absolute inset-0">
                 {player}
               </div>
-              {!liveReady && !unsupportedMse && (
-                <CameraPreviewOverlay error={previewError === liveSourceKey} />
+              {(cameraDisabled || (!liveReady && !unsupportedMse)) && (
+                <CameraPreviewOverlay disabled={cameraDisabled} error={previewError === liveSourceKey} />
               )}
             </div>
           ) : player}
@@ -460,12 +471,14 @@ export default function Camera({ camera }) {
 }
 
 // Keeps the camera viewport dimensions fixed while any source is connecting.
-function CameraPreviewOverlay({ error }) {
+function CameraPreviewOverlay({ error, disabled = false }) {
+  const failed = disabled || error;
   return (
-    <div data-testid="camera-preview-overlay" role={error ? 'alert' : 'status'}
-      className={'pointer-events-none absolute inset-0 z-30 flex items-center justify-center whitespace-pre-line bg-slate-900 px-4 text-center text-base font-semibold ' +
-        (error ? 'text-red-300' : 'text-white')}>
-      {t(error ? 'cameras.page.preview_error' : 'cameras.page.preview_loading')}
+    <div data-testid="camera-preview-overlay" role={failed ? 'alert' : 'status'}
+      className={'pointer-events-none absolute inset-0 z-30 flex items-center justify-center whitespace-pre-line bg-slate-100 dark:bg-slate-900 px-4 text-center text-base font-bold ' +
+        (failed ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white')}>
+      {t(disabled ? 'cameras.page.camera_disabled'
+        : error ? 'cameras.page.preview_error' : 'cameras.page.preview_loading')}
     </div>
   );
 }
