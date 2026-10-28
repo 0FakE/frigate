@@ -28,9 +28,22 @@ export default function JSMpegPlayer({ camera, width, height, onFirstFrame, fill
       }
     };
 
-    video.els.canvas.addEventListener('click',fullscreen);
+    const canvas = video.els.canvas;
+    canvas.addEventListener('click', fullscreen);
 
     return () => {
+      canvas.removeEventListener('click', fullscreen);
+
+      // The bundled JSMpeg WebSocket source unconditionally calls
+      // this.socket.close() in destroy(), even if the connection has not
+      // created a socket yet. Preserve the player's remaining cleanup while
+      // making that source teardown safe during rapid camera navigation.
+      const source = video.player?.source;
+      if (source && 'socket' in source && source.socket == null) {
+        clearTimeout(source.reconnectTimeoutId);
+        source.shouldAttemptReconnect = false;
+        source.destroy = () => {};
+      }
       video.destroy();
     };
   }, [url, onFirstFrame]);
