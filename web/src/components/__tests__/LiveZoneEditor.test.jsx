@@ -191,7 +191,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     await openEditor();
     const zoneHeading = screen.getByRole('heading', { name: 'Zonen 2' });
     expect(zoneHeading).toHaveClass('text-sm');
-    expect(zoneHeading.lastElementChild).toHaveClass('ml-auto', 'tabular-nums', 'bg-slate-800/70');
+    expect(zoneHeading.lastElementChild).toHaveClass('ml-auto', 'tabular-nums', 'bg-slate-100', 'dark:bg-slate-800/70');
     expect(zoneHeading.lastElementChild).toHaveTextContent('2');
     expect(screen.getByRole('heading', { name: 'Masken 0' })).toHaveClass('text-sm');
     expect(screen.getByRole('heading', { name: 'Objektfilter 0' })).toHaveClass('text-sm');
@@ -239,9 +239,9 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(zone).toHaveClass('h-10');
     expect(mask).toHaveClass('h-10');
     expect(filter).toHaveClass('h-10');
-    expect(zone).toHaveClass('border-green-500', 'bg-slate-800/90', 'text-green-500');
-    expect(mask).toHaveClass('border-red-500', 'bg-slate-800/90', 'text-red-500');
-    expect(filter).toHaveClass('border-blue-500', 'bg-slate-800/90', 'text-blue-500');
+    expect(zone).toHaveClass('border-green-500', 'bg-white', 'dark:bg-slate-800/90', 'text-green-500');
+    expect(mask).toHaveClass('border-red-500', 'bg-white', 'dark:bg-slate-800/90', 'text-red-500');
+    expect(filter).toHaveClass('border-blue-500', 'bg-white', 'dark:bg-slate-800/90', 'text-blue-500');
     expect(objectClass).toHaveClass('h-10', 'w-full', 'min-w-0');
     expect(zone.parentElement).toHaveClass('grid', 'grid-cols-2', 'gap-2');
     expect(filter.parentElement).toHaveClass('grid', 'grid-cols-2', 'gap-2');
@@ -272,14 +272,14 @@ describe('LiveZoneEditor vertex interactions', () => {
     fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
     const edit = screen.getByRole('button', { name: 'Zone umbenennen' });
     expect(edit).toHaveAttribute('title', 'Zone umbenennen');
-    expect(edit).toHaveClass('ml-2', 'h-5', 'w-5', 'text-white');
+    expect(edit).toHaveClass('ml-2', 'h-5', 'w-5', 'text-slate-800', 'dark:text-white');
     expect(edit).not.toHaveClass('h-7', 'w-7', 'text-blue-300');
     expect(edit.querySelector('svg')).toHaveClass('h-5', 'w-5');
     expect(edit.querySelectorAll('svg path')).toHaveLength(2);
     expect(edit.parentElement.nextElementSibling).toHaveTextContent('Eckpunkte: 3');
     fireEvent.click(edit);
     const input = screen.getByRole('textbox', { name: 'Neuer Name der Zone' });
-    expect(screen.getByText('Neuer Name der Zone')).toHaveClass('text-sm', 'font-semibold', 'text-slate-100');
+    expect(screen.getByText('Neuer Name der Zone')).toHaveClass('text-sm', 'font-semibold', 'text-slate-900', 'dark:text-slate-100');
     fireEvent.input(input, { target: { value: 'area_b' } });
     fireEvent.click(screen.getByRole('button', { name: 'Übernehmen' }));
     expect(screen.getByRole('alert')).toHaveTextContent('ist bereits vorhanden');
@@ -311,7 +311,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     const settings = screen.getByRole('button', { name: 'Erfasste Objekte bearbeiten' });
     expect(settings).toHaveAttribute('title', 'Erfasste Objekte bearbeiten');
     expect(settings).toHaveAttribute('aria-label', 'Erfasste Objekte bearbeiten');
-    expect(settings).toHaveClass('ml-2', 'h-5', 'w-5', 'text-white');
+    expect(settings).toHaveClass('ml-2', 'h-5', 'w-5', 'text-slate-800', 'dark:text-white');
     expect(settings).toHaveAttribute('aria-expanded', 'false');
     expect(settings.querySelector('svg')).toHaveClass('h-5', 'w-5');
     expect(settings.parentElement).toBe(screen.getByRole('button', { name: 'Zone umbenennen' }).parentElement);
@@ -412,7 +412,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     const warning = screen.getByRole('status');
     expect(warning).toHaveTextContent('Nicht gespeicherte Änderungen');
     expect(warning).not.toHaveClass('mb-4');
-    expect(warning.firstElementChild).toHaveClass('font-bold', 'text-white', 'text-base');
+    expect(warning.firstElementChild).toHaveClass('font-bold', 'text-slate-900', 'dark:text-white', 'text-base');
     expect(warning.firstElementChild).not.toHaveClass('text-lg');
     expect(warning.querySelector('svg[stroke="currentColor"]')).not.toBeNull();
 
@@ -421,8 +421,8 @@ describe('LiveZoneEditor vertex interactions', () => {
 
     const saved = screen.getByRole('status');
     expect(saved).not.toHaveClass('mb-4');
-    expect(saved.firstElementChild).toHaveClass('text-green-400', 'text-base');
-    expect(saved.firstElementChild).not.toHaveClass('text-white');
+    expect(saved.firstElementChild).toHaveClass('text-green-700', 'dark:text-green-400', 'text-base');
+    expect(saved.firstElementChild).not.toHaveClass('text-white', 'dark:text-white');
     expect(saved).toHaveTextContent('Die Änderungen wurden gespeichert. Ein Neustart von Frigate ist erforderlich.');
     expect(saved.querySelector('strong')).toHaveTextContent('Ein Neustart von Frigate ist erforderlich.');
     expect(saved.querySelector('svg[stroke="currentColor"]')).not.toBeNull();
@@ -548,14 +548,15 @@ describe('LiveZoneEditor vertex interactions', () => {
 
   test('editor panels, fields and group rows use light and dark variants', async () => {
     const { container } = await openEditor({ streamReady: true });
-    const sidebar = screen.getByRole('complementary', { name: 'Bereiche verwalten' });
+    const sidebar = screen.getByRole('complementary', { name: 'Werkzeuge und Bereiche' });
     expect(sidebar).toHaveClass('text-slate-900', 'dark:text-slate-100');
     const newArea = screen.getByRole('region', { name: 'Neuen Bereich erstellen' });
     expect(newArea).toHaveClass('bg-white', 'dark:bg-slate-800/90');
     expect(newArea).toHaveClass('border-slate-300', 'dark:border-slate-700/80');
     const selector = screen.getByRole('combobox', { name: 'Objektklasse' });
     expect(selector).toHaveClass('bg-white', 'dark:bg-slate-950');
-    expect(container.querySelectorAll('.dark\\:bg-slate-950\\/50').length).toBeGreaterThan(0);
+    expect(screen.getByRole('heading', { name: 'Zonen 2' }))
+      .toHaveClass('bg-slate-100', 'dark:bg-slate-950/50');
   });
 
   test('editor reports an unavailable camera image without showing polygon overlay', async () => {

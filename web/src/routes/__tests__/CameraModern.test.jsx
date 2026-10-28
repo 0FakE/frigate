@@ -131,7 +131,7 @@ describe('modern camera page keeps its original actions', () => {
       expect(img.parentElement).toHaveClass('flex-col');
       expect(img.parentElement).not.toHaveClass('w-[360px]', 'w-[400px]');
       expect(img.previousElementSibling).toHaveClass('text-sm', 'text-center', 'uppercase');
-      expect(img.parentElement).toHaveClass('transition-colors', 'hover:border-blue-500/70', 'hover:bg-slate-800');
+      expect(img.parentElement).toHaveClass('transition-colors', 'hover:border-blue-500/70', 'hover:bg-slate-100', 'dark:hover:bg-slate-800');
       expect(img.parentElement).not.toHaveClass('hover:-translate-y-0.5', 'transition-all');
       expect(img.previousElementSibling).toHaveTextContent(/Person|Auto/);
     });
@@ -155,7 +155,7 @@ describe('modern camera page keeps its original actions', () => {
   test('object cards emphasize border and background without moving when hovered', () => {
     render(<Camera camera="test_camera" />);
     const card = screen.getByRole('link', { name: /Person/ });
-    expect(card).toHaveClass('transition-colors', 'hover:border-blue-500/70', 'hover:bg-slate-800');
+    expect(card).toHaveClass('transition-colors', 'hover:border-blue-500/70', 'hover:bg-slate-100', 'dark:hover:bg-slate-800');
     expect(card).not.toHaveClass('hover:-translate-y-0.5', 'transition-all');
     const title = card.querySelector('span');
     expect(title).toHaveClass('text-center', 'uppercase');
@@ -291,7 +291,7 @@ describe('modern camera page keeps its original actions', () => {
 
   test('camera controls and object cards have contrasting light and dark colors', () => {
     render(<Camera camera="test_camera" />);
-    const cameraName = screen.getByRole('heading', { name: 'TEST CAMERA' });
+    const cameraName = screen.getByRole('heading', { name: /test camera/i });
     expect(cameraName).toHaveClass('text-slate-900', 'dark:text-white');
     const back = screen.getByRole('link', { name: 'Zur Kameraübersicht' });
     expect(back).toHaveClass('bg-slate-100', 'dark:bg-slate-800/90');
