@@ -56,7 +56,7 @@ describe('AppBar', () => {
     expect(dark).toHaveClass('frigate-settings-action--selected');
     expect(dark.querySelector('.frigate-settings-radio--selected')).not.toBeNull();
     expect(screen.getByRole('menuitemradio', { name: 'Hell' })).toHaveAttribute('aria-checked', 'false');
-    const restartItem = screen.getByRole('menuitem', { name: 'Frigate neu starten' });
+    const restartItem = screen.getByRole('menuitem', { name: 'Neu starten' });
     expect(restartItem).toBeInTheDocument();
     expect(restartItem.querySelector('.frigate-settings-chevron')).not.toBeNull();
     expect(menu).not.toHaveTextContent('Dunkles Design verwenden');
@@ -85,10 +85,13 @@ describe('AppBar', () => {
   test('restart uses localized responsive confirmation, with no close icon', () => {
     mount();
     openSettings();
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Frigate neu starten' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Neu starten' }));
     const dialog = screen.getByRole('dialog', { name: 'Frigate neu starten' });
     expect(dialog).toHaveAttribute('aria-modal', 'true');
     expect(dialog).toHaveTextContent('Alle laufenden Prozesse');
+    const description = dialog.querySelector('p');
+    expect(description).toHaveClass('whitespace-pre-line');
+    expect(description.textContent).toBe('Möchtest du Frigate wirklich neu starten?\nAlle laufenden Prozesse werden beendet und anschließend wieder gestartet.');
     expect(dialog).toHaveClass('w-full', 'max-w-[460px]');
     expect(screen.queryByRole('button', { name: /schließen/i })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Abbrechen' }));

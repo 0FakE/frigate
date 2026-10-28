@@ -32,6 +32,17 @@ describe('reusable responsive confirmation prompt', () => {
     expect(confirm).not.toHaveBeenCalled();
   });
 
+  test('shows only locale-supplied newlines, never additional hardcoded breaks', () => {
+    const { rerender } = render(<Prompt title="Test" text={'Line one\nLine two'} />);
+    const description = screen.getByRole('dialog', { name: 'Test' }).querySelector('p');
+    expect(description).toHaveClass('whitespace-pre-line');
+    expect(description.textContent).toBe('Line one\nLine two');
+    expect(description.querySelector('br')).toBeNull();
+    rerender(<Prompt title="Test" text="Line one. Line two" />);
+    expect(description.textContent).toBe('Line one. Line two');
+    expect(description.querySelector('br')).toBeNull();
+  });
+
   test('supports information without actions and content after the description', () => {
     render(<Prompt title="Hinweis" text="Bitte warten." variant="info">
       <p>Zusätzliche Informationen</p>

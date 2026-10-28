@@ -7,7 +7,7 @@ describe('nested German camera editor translations', () => {
     expect(t('app.menu.design')).toBe('Design');
     expect(t('app.menu.light')).toBe('Hell');
     expect(t('app.menu.dark')).toBe('Dunkel');
-    expect(t('app.menu.restart')).toBe('Frigate neu starten');
+    expect(t('app.menu.restart')).toBe('Neu starten');
     expect(t('app.modal.restart.title')).toBe('Frigate neu starten');
     expect(t('app.modal.restart.cancel')).toBe('Abbrechen');
     expect(t('app.modal.please_wait')).toBe('Bitte warten');
@@ -20,6 +20,27 @@ describe('nested German camera editor translations', () => {
     expect(t('app.menu.restart')).toBe('Restart custom');
     expect(t('app.modal.restart.title')).toBe('Restart title custom');
     expect(t('app.modal.restart.cancel')).toBe('Abbrechen');
+  });
+
+  test('restart newline placement comes entirely from locale strings and can be overridden', () => {
+    expect(t('app.modal.restart.confirm'))
+      .toBe('Möchtest du Frigate wirklich neu starten?\nAlle laufenden Prozesse werden beendet und anschließend wieder gestartet.');
+    expect(t('app.modal.restart.status_restarting'))
+      .toBe('Frigate wird neu gestartet.\nWarte auf den neuen Prozess …');
+    expect(t('app.modal.restart.status_waiting'))
+      .toBe('Verbindung unterbrochen.\nWarte auf Frigate …');
+    expect(t('app.modal.restart.status_verifying'))
+      .toBe('Frigate ist wieder erreichbar.\nDie Verbindung wird überprüft …');
+    setLocaleMessages({ app: { modal: { restart: {
+      status_restarting: 'Restarting. Waiting for the process …',
+      confirm: 'Do you really want to restart Frigate? All services will restart.',
+    } } } });
+    expect(t('app.modal.restart.status_restarting'))
+      .toBe('Restarting. Waiting for the process …');
+    expect(t('app.modal.restart.confirm'))
+      .toBe('Do you really want to restart Frigate? All services will restart.');
+    expect(t('app.modal.restart.status_waiting'))
+      .toBe('Verbindung unterbrochen.\nWarte auf Frigate …');
   });
 
   test('resolves UI copy by page, view, component and key', () => {
