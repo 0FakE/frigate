@@ -57,7 +57,10 @@ describe('LiveZoneEditor vertex interactions', () => {
         <div>Live stream</div>
       </LiveZoneEditor>
     );
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Zone' })).not.toBeDisabled());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'area_a' })).toBeInTheDocument());
+    if (props.streamReady !== false && !props.streamError && !props.streamDisabled) {
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Zone' })).not.toBeDisabled());
+    }
     const svg = view.container.querySelector('[data-testid="live-editor-viewport"] > svg');
     return { ...view, svg, onDirtyChange };
   }
@@ -563,6 +566,40 @@ describe('LiveZoneEditor vertex interactions', () => {
     const { container } = await openEditor({ streamReady: false, streamError: true });
     expect(screen.getByRole('alert')).toHaveTextContent('Die Kameravorschau konnte nicht geladen werden.');
     expect(container.querySelector('[data-testid="live-editor-viewport"] > svg').querySelectorAll('polygon')).toHaveLength(0);
+  });
+
+  test.each([
+    ['loading', { streamReady: false }, 'Kamera Vorschau wird geladen…', 'status'],
+    ['disabled', { streamReady: false, streamDisabled: true }, 'Kamera ist deaktiviert', 'alert'],
+    ['error', { streamReady: false, streamError: true }, 'Die Kameravorschau konnte nicht geladen werden.', 'alert'],
+  ])('locks every editor control while preview is %s', async (_, props, text, role) => {
+    const { svg } = await openEditor(props);
+    const notice = screen.getByRole(role);
+    expect(notice).toHaveTextContent(text);
+    expect(notice).toHaveClass('font-bold');
+    if (role === 'alert') expect(notice).toHaveClass('text-red-600', 'dark:text-red-400');
+
+    for (const name of ['Zone', 'Maske', 'Objektfilter', 'area_a',
+      'Änderungen verwerfen', 'Änderungen speichern']) {
+      expect(screen.getByRole('button', { name })).toBeDisabled();
+    }
+    expect(screen.getByRole('combobox', { name: 'Objektklasse' })).toBeDisabled();
+    expect(svg.querySelectorAll('polygon')).toHaveLength(0);
+    expect(svg).toHaveClass('invisible', 'pointer-events-none');
+    fireEvent.click(svg, { button: 0, clientX: 20, clientY: 20 });
+    expect(window.alert).not.toHaveBeenCalled();
+    expect(axios.put).not.toHaveBeenCalled();
+  });
+
+  test('editor actions unlock as soon as a frame is received', async () => {
+    const { rerender, svg } = await openEditor({ streamReady: false });
+    expect(screen.getByRole('button', { name: 'Zone' })).toBeDisabled();
+    rerender(<LiveZoneEditor camera="test_camera" width={640} height={360} displayWidth={640}
+      streamReady={true} onDirtyChange={vi.fn()}><div>Live stream</div></LiveZoneEditor>);
+    expect(screen.getByRole('button', { name: 'Zone' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'area_a' })).toBeEnabled();
+    expect(screen.getByRole('combobox', { name: 'Objektklasse' })).toBeEnabled();
+    expect(svg.querySelectorAll('polygon')).toHaveLength(2);
   });
 
   test('hides polygons and vertex hit targets until a video frame is available', async () => {

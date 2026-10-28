@@ -40,9 +40,9 @@ vi.mock('../../components/CameraControlPanel', () => ({
   default: () => <div>ONVIF Kamera-Steuerung</div>,
 }));
 vi.mock('../../components/LiveZoneEditor', () => ({
-  default: ({ camera, streamReady, streamError, children, toolbar, optionsPanel, onDirtyChange }) => (
+  default: ({ camera, streamReady, streamError, streamDisabled, children, toolbar, optionsPanel, onDirtyChange }) => (
     <div data-testid="camera-editor" data-camera={camera} data-stream-ready={String(streamReady)}
-      data-stream-error={String(streamError)}>
+      data-stream-error={String(streamError)} data-stream-disabled={String(streamDisabled)}>
       <div>{children}</div>
       {toolbar}
       {optionsPanel}
@@ -262,6 +262,67 @@ describe('modern camera page keeps its original actions', () => {
 
     rerender(<Camera camera="other_camera" />);
     expect(screen.getByTestId('camera-editor')).toHaveAttribute('data-camera', 'other_camera');
+    expect(screen.getByTestId('camera-editor')).toHaveAttribute('data-stream-ready', 'false');
+    fireEvent.click(screen.getByRole('button', { name: 'JSMpeg Bild empfangen' }));
+    expect(screen.getByTestId('camera-editor')).toHaveAttribute('data-stream-ready', 'true');
+  });
+
+  test('an explicitly disabled camera never starts a stream in Live, Debug or editor', () => {
+    const configDisabled = {
+      ...cameraConfig,
+      cameras: {
+        ...cameraConfig.cameras,
+        test_camera: { ...cameraConfig.cameras.test_camera, enabled: false },
+      },
+    };
+    useSWR.mockImplementation((key) => key === 'config'
+      ? { data: configDisabled } : { data: ['person'] });
+    render(<Camera camera="test_camera" />);
+    let warning = screen.getByTestId('camera-preview-overlay');
+    expect(warning).toHaveAttribute('role', 'alert');
+    expect(warning).toHaveTextContent('Kamera ist deaktiviert');
+    expect(warning).toHaveClass('text-red-600', 'dark:text-red-400', 'font-bold');
+    expect(screen.queryByText('Kamera Vorschau wird geladen…')).not.toBeInTheDocument();
+    expect(screen.queryByText('JSMpeg Livebild')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Debug' }));
+    warning = screen.getByTestId('camera-preview-overlay');
+    expect(warning).toHaveTextContent('Kamera ist deaktiviert');
+    expect(screen.queryByText('Debug Kamerabild')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Zonen & Masken Editor' }));
+    const editor = screen.getByTestId('camera-editor');
+    expect(editor).toHaveAttribute('data-stream-disabled', 'true');
+    expect(editor).toHaveAttribute('data-stream-ready', 'false');
+    expect(editor).toHaveAttribute('data-stream-error', 'false');
+    expect(editor).not.toHaveTextContent('JSMpeg Livebild');
+    expect(screen.getByRole('button', { name: 'Editor schließen' })).toBeEnabled();
+  });
+
+  test('switching from a live camera to a disabled camera clears readiness and does not mount a player', () => {
+    const configs = {
+      ...cameraConfig,
+      cameras: {
+        ...cameraConfig.cameras,
+        disabled_camera: {
+          ...cameraConfig.cameras.test_camera,
+          enabled: false,
+        },
+      },
+    };
+    useSWR.mockImplementation((key) => key === 'config' ? { data: configs } : { data: [] });
+    const { rerender } = render(<Camera camera="test_camera" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Debug' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Zonen & Masken Editor' }));
+    fireEvent.click(screen.getByRole('button', { name: 'JSMpeg Bild empfangen' }));
+    expect(screen.getByTestId('camera-editor')).toHaveAttribute('data-stream-ready', 'true');
+
+    rerender(<Camera camera="disabled_camera" />);
+    expect(screen.getByTestId('camera-editor')).toHaveAttribute('data-stream-disabled', 'true');
+    expect(screen.getByTestId('camera-editor')).toHaveAttribute('data-stream-ready', 'false');
+    expect(screen.queryByText('JSMpeg Livebild')).not.toBeInTheDocument();
+
+    rerender(<Camera camera="test_camera" />);
     expect(screen.getByTestId('camera-editor')).toHaveAttribute('data-stream-ready', 'false');
     fireEvent.click(screen.getByRole('button', { name: 'JSMpeg Bild empfangen' }));
     expect(screen.getByTestId('camera-editor')).toHaveAttribute('data-stream-ready', 'true');
