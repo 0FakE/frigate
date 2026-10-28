@@ -344,20 +344,20 @@ describe('modern camera page keeps its original actions', () => {
         expect(screen.queryByText('JSMpeg Livebild')).not.toBeInTheDocument();
         const selector = await screen.findByRole('combobox', { name: 'Videoquelle' });
         expect(selector).toHaveValue(source);
+        const livePlayer = source === 'webrtc'
+          ? screen.queryByText('WebRTC Livebild')
+          : screen.getByTestId('modern-live-preview').querySelector('video-stream');
+        expect(livePlayer).not.toBeNull();
         if (source === 'webrtc') {
-          expect(screen.getByText('WebRTC Livebild')).toBeInTheDocument();
           fireEvent.click(screen.getByRole('button', { name: 'WebRTC Bild dargestellt' }));
-          expect(screen.queryByTestId('camera-preview-overlay')).not.toBeInTheDocument();
         } else {
-          const frame = screen.getByTestId('modern-live-preview');
-          expect(frame.querySelector('video-stream')).not.toBeNull();
           const mseVideo = document.createElement('video');
           Object.defineProperty(mseVideo, 'readyState', { configurable: true, value: 2 });
           Object.defineProperty(mseVideo, 'videoWidth', { configurable: true, value: 640 });
-          frame.querySelector('video-stream').appendChild(mseVideo);
+          livePlayer.appendChild(mseVideo);
           fireEvent.loadedData(mseVideo);
-          expect(screen.queryByTestId('camera-preview-overlay')).not.toBeInTheDocument();
         }
+        expect(screen.queryByTestId('camera-preview-overlay')).not.toBeInTheDocument();
 
         view.rerender(<Camera camera="disabled_camera" />);
         expect(await screen.findByText('Kamera ist deaktiviert')).toBeInTheDocument();
@@ -369,11 +369,10 @@ describe('modern camera page keeps its original actions', () => {
         view.rerender(<Camera camera="active_camera" />);
         expect(screen.queryByText('JSMpeg Livebild')).not.toBeInTheDocument();
         expect(await screen.findByRole('combobox', { name: 'Videoquelle' })).toHaveValue(source);
-        if (source === 'webrtc') {
-          expect(screen.getByText('WebRTC Livebild')).toBeInTheDocument();
-        } else {
-          expect(screen.getByTestId('modern-live-preview').querySelector('video-stream')).not.toBeNull();
-        }
+        const restoredPlayer = source === 'webrtc'
+          ? screen.queryByText('WebRTC Livebild')
+          : screen.getByTestId('modern-live-preview').querySelector('video-stream');
+        expect(restoredPlayer).not.toBeNull();
         view.unmount();
       } finally {
         await deleteData('active_camera-source');
