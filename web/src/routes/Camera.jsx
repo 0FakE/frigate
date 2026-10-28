@@ -52,7 +52,10 @@ export default function Camera({ camera }) {
     getDefaultLiveMode(config, cameraConfig, restreamEnabled)
   );
   const sourceValues = restreamEnabled ? ['mse', 'webrtc', 'jsmpeg'] : ['jsmpeg'];
-  const liveSourceKey = camera + ':' + (restreamEnabled ? viewSource : 'jsmpeg');
+  // Do not persist a fallback during render: disabled/non-restream cameras may
+  // otherwise trigger repeated updates when navigating between camera routes.
+  const activeSource = sourceValues.includes(viewSource) ? viewSource : 'jsmpeg';
+  const liveSourceKey = camera + ':' + activeSource;
   const liveReady = liveReadyKey === liveSourceKey;
   const handleFirstLiveFrame = useCallback(() => {
     setLiveReadyKey(liveSourceKey);
@@ -100,6 +103,7 @@ export default function Camera({ camera }) {
   useEffect(() => {
     setEditorReadyCamera(null);
     setDebugReady(false);
+    setLiveReadyKey(null);
     setPreviewError(null);
     setEditorDirty(false);
     if (cameraDisabled) setShowSettings(false);
@@ -202,10 +206,6 @@ export default function Camera({ camera }) {
     return <ActivityIndicator />;
   }
 
-  if (!restreamEnabled) {
-    setViewSource('jsmpeg');
-  }
-
   const optionContent = showSettings && !editLivePolygons && !cameraDisabled ? (
     <div className="flex w-max max-w-full flex-col gap-3">
       <Switch className="!w-auto"
@@ -285,7 +285,7 @@ export default function Camera({ camera }) {
   ) : null;
 
   const mseSupported = 'MediaSource' in window || 'ManagedMediaSource' in window;
-  const unsupportedMse = viewMode === 'live' && viewSource === 'mse' && restreamEnabled && !mseSupported;
+  const unsupportedMse = viewMode === 'live' && activeSource === 'mse' && restreamEnabled && !mseSupported;
   const resolutionStyle = {
     width: jsmpegWidth + 'px',
     maxWidth: '100%',
@@ -295,7 +295,7 @@ export default function Camera({ camera }) {
   if (viewMode === 'live') {
     if (cameraDisabled) {
       player = null;
-    } else if (viewSource === 'mse' && restreamEnabled) {
+    } else if (activeSource === 'mse' && restreamEnabled) {
       player = unsupportedMse ? (
         <div className="flex h-full items-center justify-center p-4 text-center text-sm text-white">
           {t('cameras.page.mse_unsupported')}
@@ -306,7 +306,7 @@ export default function Camera({ camera }) {
           src={new URL(`${baseUrl.replace(/^http/, 'ws')}live/webrtc/api/ws?src=${cameraConfig.live.stream_name}`)}
         />
       );
-    } else if (viewSource === 'webrtc' && restreamEnabled) {
+    } else if (activeSource === 'webrtc' && restreamEnabled) {
       player = <WebRtcPlayer camera={cameraConfig.live.stream_name} onFirstFrame={handleFirstLiveFrame} />;
     } else {
       player = (
@@ -381,7 +381,7 @@ export default function Camera({ camera }) {
           </div>
         </div>
         <div className="ml-auto flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:gap-3">
-          {viewMode === 'live' && (
+          {viewMode === 'live' && !cameraDisabled && (
             <label className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-slate-300 dark:border-slate-700/80 bg-white dark:bg-slate-900/80 p-1 pl-2 text-xs font-semibold text-slate-500 dark:text-slate-400 shadow-lg shadow-black/10 sm:gap-2 sm:pl-3">
               <span>{t('cameras.page.stream_source')}</span>
               <span className="relative inline-flex shrink-0 items-center">
@@ -389,8 +389,8 @@ export default function Camera({ camera }) {
                   aria-label={t('cameras.page.stream_source')}
                   disabled={cameraDisabled}
                   className={'h-9 cursor-pointer appearance-none rounded-lg border-0 bg-slate-100 dark:bg-slate-800 bg-none py-0 pl-2 pr-7 text-xs font-semibold text-slate-900 dark:text-slate-100 disabled:cursor-not-allowed disabled:opacity-60 sm:h-10 sm:pl-3 sm:pr-8 sm:text-sm ' +
-                    (viewSource === 'mse' ? 'w-[4.75rem]' : 'w-[6.5rem]')}
-                  value={viewSource}
+                    (activeSource === 'mse' ? 'w-[4.75rem]' : 'w-[6.5rem]')}
+                  value={activeSource}
                   onChange={(e) => handleChangeSource(e.target.value)}
                 >
                   {sourceValues.map((item) => (
