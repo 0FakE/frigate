@@ -48,7 +48,7 @@ export function Destination({ className = '', href, text, ...other }) {
   const styleProps = {
     [external
       ? className
-      : 'class']: 'block p-2 text-sm font-semibold text-gray-900 rounded hover:bg-blue-500 dark:text-gray-200 hover:text-white dark:hover:text-white focus:outline-none ring-opacity-50 focus:ring-2 ring-blue-300',
+      : 'class']: 'block p-2 text-sm font-semibold text-gray-900 rounded hover:bg-blue-500 dark:text-gray-200 hover:text-white dark:hover:text-white focus:outline-none focus-visible:bg-blue-500 focus-visible:text-white focus-visible:underline',
   };
 
   const El = external ? 'a' : Link;

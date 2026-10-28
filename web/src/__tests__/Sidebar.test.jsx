@@ -21,6 +21,14 @@ describe('Sidebar', () => {
     expect(screen.getByRole('link', { name: 'GitHub' })).toHaveAttribute('href', 'https://github.com/blakeblackshear/frigate');
   });
 
+  test('navigation links have no focus ring or clipped outline', () => {
+    useSWR.mockReturnValue({ data: { cameras: {}, birdseye: { enabled: false } } });
+    render(<DrawerProvider><Sidebar /></DrawerProvider>);
+    const link = screen.getByRole('link', { name: 'Cameras' });
+    expect(link).not.toHaveClass('ring-opacity-50', 'focus:ring-2', 'ring-blue-300');
+    expect(link).toHaveClass('focus:outline-none', 'focus-visible:bg-blue-500', 'focus-visible:underline');
+  });
+
   // eslint-disable-next-line jest/no-disabled-tests
   test.skip('does not render cameras by default', async () => {
     const { findByText } = render(<DrawerProvider><Sidebar /></DrawerProvider>);
