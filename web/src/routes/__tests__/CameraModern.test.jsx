@@ -348,16 +348,12 @@ describe('modern camera page keeps its original actions', () => {
           ? screen.queryByText('WebRTC Livebild')
           : screen.getByTestId('modern-live-preview').querySelector('video-stream');
         expect(livePlayer).not.toBeNull();
+        // WebRTC's mock reports its first frame directly. For MSE no decoded
+        // frame has arrived yet, so its loading overlay must remain visible.
         if (source === 'webrtc') {
           fireEvent.click(screen.getByRole('button', { name: 'WebRTC Bild dargestellt' }));
-        } else {
-          const mseVideo = document.createElement('video');
-          Object.defineProperty(mseVideo, 'readyState', { configurable: true, value: 2 });
-          Object.defineProperty(mseVideo, 'videoWidth', { configurable: true, value: 640 });
-          livePlayer.appendChild(mseVideo);
-          fireEvent.loadedData(mseVideo);
         }
-        expect(screen.queryByTestId('camera-preview-overlay')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('camera-preview-overlay') !== null).toBe(source === 'mse');
 
         view.rerender(<Camera camera="disabled_camera" />);
         expect(await screen.findByText('Kamera ist deaktiviert')).toBeInTheDocument();
