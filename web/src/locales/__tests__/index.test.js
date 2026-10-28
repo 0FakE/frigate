@@ -1,7 +1,14 @@
 import { setLocaleMessages, t } from '../index';
+import de from '../de.json';
 
 describe('nested German camera editor translations', () => {
   afterEach(() => setLocaleMessages(null));
+
+  test('built-in German translations use exactly three dots without preceding spaces', () => {
+    const messages = JSON.stringify(de);
+    expect(messages).not.toContain('…');
+    expect(messages).not.toMatch(/\s\.{3}/);
+  });
 
   test('theme menu and modal texts support host overrides', () => {
     expect(t('app.menu.design')).toBe('Design');
@@ -26,27 +33,27 @@ describe('nested German camera editor translations', () => {
     expect(t('app.modal.restart.confirm'))
       .toBe('Möchtest du Frigate wirklich neu starten?\nAlle laufenden Prozesse werden beendet und anschließend wieder gestartet.');
     expect(t('app.modal.restart.status_restarting'))
-      .toBe('Frigate wird neu gestartet.\nWarte auf den neuen Prozess …');
+      .toBe('Frigate wird neu gestartet.\nWarte auf den neuen Prozess...');
     expect(t('app.modal.restart.status_waiting'))
-      .toBe('Verbindung unterbrochen.\nWarte auf Frigate …');
+      .toBe('Verbindung unterbrochen.\nWarte auf Frigate...');
     expect(t('app.modal.restart.status_verifying'))
-      .toBe('Frigate ist wieder erreichbar.\nDie Verbindung wird überprüft …');
+      .toBe('Frigate ist wieder erreichbar.\nDie Verbindung wird überprüft...');
     setLocaleMessages({ app: { modal: { restart: {
-      status_restarting: 'Restarting. Waiting for the process …',
+      status_restarting: 'Restarting. Waiting for the process...',
       confirm: 'Do you really want to restart Frigate? All services will restart.',
     } } } });
     expect(t('app.modal.restart.status_restarting'))
-      .toBe('Restarting. Waiting for the process …');
+      .toBe('Restarting. Waiting for the process...');
     expect(t('app.modal.restart.confirm'))
       .toBe('Do you really want to restart Frigate? All services will restart.');
     expect(t('app.modal.restart.status_waiting'))
-      .toBe('Verbindung unterbrochen.\nWarte auf Frigate …');
+      .toBe('Verbindung unterbrochen.\nWarte auf Frigate...');
   });
 
   test('resolves UI copy by page, view, component and key', () => {
     expect(t('cameras.debug.editor.button.open')).toBe('Zonen & Masken Editor');
     expect(t('cameras.debug.editor.button.close')).toBe('Editor schließen');
-    expect(t('cameras.debug.editor.status.loading_stream')).toBe('Kamera Vorschau wird geladen…');
+    expect(t('cameras.debug.editor.status.loading_stream')).toBe('Kamera Vorschau wird geladen...');
     expect(t('cameras.debug.editor.button.mask')).toBe('Maske');
     expect(t('cameras.debug.editor.button.object_filter')).toBe('Objektfilter');
     expect(t('cameras.debug.editor.header.new_area')).toBe('Neuen Bereich erstellen');
@@ -184,7 +191,7 @@ describe('nested German camera editor translations', () => {
       .toBe('Eckpunkte: 3');
     expect(t('cameras.debug.editor.label.no_selection'))
       .toBe('Wähle einen Bereich zum Bearbeiten aus.');
-    expect(t('cameras.page.preview_loading')).toBe('Kamera Vorschau wird geladen…');
+    expect(t('cameras.page.preview_loading')).toBe('Kamera Vorschau wird geladen...');
     expect(t('cameras.debug.editor.button.rename_zone')).toBe('Zone umbenennen');
     expect(t('cameras.debug.editor.label.zone_new_name')).toBe('Neuer Name der Zone');
     expect(t('cameras.debug.editor.button.edit_zone_objects')).toBe('Erfasste Objekte bearbeiten');
