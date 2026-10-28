@@ -62,7 +62,7 @@ describe('automatic Frigate restart monitor', () => {
     await waitFor(() => expect(screen.getByRole('dialog', { name: 'Frigate wird neu gestartet' }))
       .toHaveTextContent('Warte auf den neuen Prozess'));
     const statusDescription = screen.getByRole('dialog', { name: 'Frigate wird neu gestartet' }).querySelector('p');
-    expect(statusDescription.textContent).toBe('Frigate wird neu gestartet.\nWarte auf den neuen Prozess …');
+    expect(statusDescription.textContent).toBe('Frigate wird neu gestartet.\nWarte auf den neuen Prozess...');
   });
 
   test('failed baseline read never sends a restart and offers retry or cancel', async () => {
@@ -89,7 +89,7 @@ describe('automatic Frigate restart monitor', () => {
     const verifying = screen.getByRole('dialog', { name: 'Frigate wird neu gestartet' });
     expect(verifying).toHaveTextContent('Verbindung wird überprüft');
     expect(verifying.querySelector('p').textContent)
-      .toBe('Frigate ist wieder erreichbar.\nDie Verbindung wird überprüft …');
+      .toBe('Frigate ist wieder erreichbar.\nDie Verbindung wird überprüft...');
     expect(mocks.reload).not.toHaveBeenCalled();
     await act(async () => { await vi.advanceTimersByTimeAsync(3000); });
     expect(mocks.reload).toHaveBeenCalledTimes(1);
