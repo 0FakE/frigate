@@ -1,5 +1,6 @@
 import { h } from 'preact';
 import { useState } from 'preact/hooks';
+import { set as setData, del as deleteData } from 'idb-keyval';
 import { act, fireEvent, render, screen } from '@testing-library/preact';
 import useSWR from 'swr';
 import { usePersistence } from '../../context';
@@ -305,55 +306,83 @@ describe('modern camera page keeps its original actions', () => {
     expect(screen.getByRole('button', { name: 'Editor schließen' })).toBeEnabled();
   });
 
-  test('disabled to enabled camera navigation restores the live player for WebRTC and MSE', () => {
-    const configs = {
-      ...cameraConfig,
-      ui: { live_mode: 'webrtc' },
-      cameras: {
-        ...cameraConfig.cameras,
-        disabled_camera: { ...cameraConfig.cameras.test_camera, enabled: false },
-        active_camera: {
-          ...cameraConfig.cameras.test_camera,
-          enabled: true,
-          live: { height: 360, stream_name: 'active_camera' },
-        },
-      },
-      go2rtc: { streams: { active_camera: {} } },
-    };
-    useSWR.mockImplementation((key) => key === 'config' ? { data: configs } : { data: [] });
-    usePersistence.mockImplementation((_key, initial) => {
-      const [value, setValue] = useState(initial);
-      return [value, setValue, true];
-    });
-    const view = render(<Camera camera="disabled_camera" />);
-    expect(screen.queryByRole('combobox', { name: 'Videoquelle' })).not.toBeInTheDocument();
-    expect(screen.getByTestId('camera-preview-overlay')).toHaveTextContent('Kamera ist deaktiviert');
+  test.each(['webrtc', 'mse'])(
+    'disabled to enabled navigation waits for the saved %s source without starting JSMpeg',
+    async (source) => {
+      const { usePersistence: realPersistence } = await vi.importActual('../../context');
+      // Use the real IndexedDB-backed hook so the test catches stale source
+      // values during router reuse, not just an instantaneous mock.
+      usePersistence.mockImplementation(realPersistence);
+      await setData('active_camera-source', source);
+      await setData('disabled_camera-source', 'jsmpeg');
+      const originalMediaSource = window.MediaSource;
+      Object.defineProperty(window, 'MediaSource', { configurable: true, value: class MediaSource {} });
 
-    view.rerender(<Camera camera="active_camera" />);
-    expect(screen.getByRole('combobox', { name: 'Videoquelle' })).toHaveValue('webrtc');
-    expect(screen.getByText('WebRTC Livebild')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'WebRTC Bild dargestellt' }));
-    expect(screen.queryByTestId('camera-preview-overlay')).not.toBeInTheDocument();
+      try {
+        const configs = {
+          ...cameraConfig,
+          ui: { live_mode: 'webrtc' },
+          cameras: {
+            ...cameraConfig.cameras,
+            disabled_camera: { ...cameraConfig.cameras.test_camera, enabled: false },
+            active_camera: {
+              ...cameraConfig.cameras.test_camera,
+              enabled: true,
+              live: { height: 360, stream_name: 'active_camera' },
+            },
+          },
+          go2rtc: { streams: { active_camera: {} } },
+        };
+        useSWR.mockImplementation((key) => key === 'config' ? { data: configs } : { data: [] });
 
-    view.rerender(<Camera camera="disabled_camera" />);
-    expect(screen.queryByText('WebRTC Livebild')).not.toBeInTheDocument();
-    expect(screen.queryByRole('combobox', { name: 'Videoquelle' })).not.toBeInTheDocument();
-    view.rerender(<Camera camera="active_camera" />);
-    Object.defineProperty(window, 'MediaSource', { configurable: true, value: class MediaSource {} });
-    try {
-      fireEvent.change(screen.getByRole('combobox', { name: 'Videoquelle' }), { target: { value: 'mse' } });
-      const mse = screen.getByTestId('modern-live-preview').querySelector('video-stream');
-      expect(mse).not.toBeNull();
-      const mseVideo = document.createElement('video');
-      Object.defineProperty(mseVideo, 'readyState', { configurable: true, value: 2 });
-      Object.defineProperty(mseVideo, 'videoWidth', { configurable: true, value: 640 });
-      mse.appendChild(mseVideo);
-      fireEvent.loadedData(mseVideo);
-      expect(screen.queryByTestId('camera-preview-overlay')).not.toBeInTheDocument();
-    } finally {
-      delete window.MediaSource;
+        const view = render(<Camera camera="disabled_camera" />);
+        expect(await screen.findByText('Kamera ist deaktiviert')).toBeInTheDocument();
+        expect(screen.queryByRole('combobox', { name: 'Videoquelle' })).not.toBeInTheDocument();
+
+        view.rerender(<Camera camera="active_camera" />);
+        // No provisional JSMpeg instance while IndexedDB loads the new source.
+        expect(screen.queryByText('JSMpeg Livebild')).not.toBeInTheDocument();
+        const selector = await screen.findByRole('combobox', { name: 'Videoquelle' });
+        expect(selector).toHaveValue(source);
+        if (source === 'webrtc') {
+          expect(screen.getByText('WebRTC Livebild')).toBeInTheDocument();
+          fireEvent.click(screen.getByRole('button', { name: 'WebRTC Bild dargestellt' }));
+          expect(screen.queryByTestId('camera-preview-overlay')).not.toBeInTheDocument();
+        } else {
+          const frame = screen.getByTestId('modern-live-preview');
+          expect(frame.querySelector('video-stream')).not.toBeNull();
+          const mseVideo = document.createElement('video');
+          Object.defineProperty(mseVideo, 'readyState', { configurable: true, value: 2 });
+          Object.defineProperty(mseVideo, 'videoWidth', { configurable: true, value: 640 });
+          frame.querySelector('video-stream').appendChild(mseVideo);
+          fireEvent.loadedData(mseVideo);
+          expect(screen.queryByTestId('camera-preview-overlay')).not.toBeInTheDocument();
+        }
+
+        view.rerender(<Camera camera="disabled_camera" />);
+        expect(await screen.findByText('Kamera ist deaktiviert')).toBeInTheDocument();
+        expect(screen.queryByRole('combobox', { name: 'Videoquelle' })).not.toBeInTheDocument();
+        expect(screen.queryByText('JSMpeg Livebild')).not.toBeInTheDocument();
+        expect(screen.queryByText('WebRTC Livebild')).not.toBeInTheDocument();
+        expect(screen.getByTestId('modern-live-preview').querySelector('video-stream')).toBeNull();
+
+        view.rerender(<Camera camera="active_camera" />);
+        expect(screen.queryByText('JSMpeg Livebild')).not.toBeInTheDocument();
+        expect(await screen.findByRole('combobox', { name: 'Videoquelle' })).toHaveValue(source);
+        if (source === 'webrtc') {
+          expect(screen.getByText('WebRTC Livebild')).toBeInTheDocument();
+        } else {
+          expect(screen.getByTestId('modern-live-preview').querySelector('video-stream')).not.toBeNull();
+        }
+        view.unmount();
+      } finally {
+        await deleteData('active_camera-source');
+        await deleteData('disabled_camera-source');
+        if (originalMediaSource === undefined) delete window.MediaSource;
+        else Object.defineProperty(window, 'MediaSource', { configurable: true, value: originalMediaSource });
+      }
     }
-  });
+  );
 
   test('camera without restream uses JSMpeg without changing persisted source during render', () => {
     const setSource = vi.fn();
