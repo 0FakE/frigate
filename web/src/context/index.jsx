@@ -73,19 +73,24 @@ export function usePersistence(key, defaultValue = undefined) {
   );
 
   useEffect(() => {
+    let cancelled = false;
     setLoaded(false);
     setInternalValue(defaultValue);
 
     async function load() {
-      const value = await getData(key);
-      if (typeof value !== 'undefined') {
-        setValue(value);
+      const storedValue = await getData(key);
+      // A previous camera's IndexedDB read can finish after a new camera
+      // was selected. Never let it overwrite the current camera's settings.
+      if (cancelled) return;
+      if (typeof storedValue !== 'undefined') {
+        setInternalValue(storedValue);
       }
       setLoaded(true);
     }
 
     load();
-  }, [key, defaultValue, setValue]);
+    return () => { cancelled = true; };
+  }, [key, defaultValue]);
 
   return [value, setValue, loaded];
 }
