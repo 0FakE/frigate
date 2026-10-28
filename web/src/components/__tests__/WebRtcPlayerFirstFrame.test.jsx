@@ -28,6 +28,37 @@ describe('WebRTC first visible frame reporting', () => {
     vi.unstubAllGlobals();
   });
 
+  test('closes signaling WebSocket and peer connection when camera changes', async () => {
+    const sockets = [];
+    const connections = [];
+    class TrackedSocket extends FakeWebSocket {
+      constructor() {
+        super();
+        this.close = vi.fn();
+        sockets.push(this);
+      }
+    }
+    class TrackedPeer extends FakePeerConnection {
+      constructor() {
+        super();
+        this.close = vi.fn();
+        connections.push(this);
+      }
+    }
+    vi.stubGlobal('WebSocket', TrackedSocket);
+    vi.stubGlobal('RTCPeerConnection', TrackedPeer);
+    const { rerender, unmount } = render(<WebRtcPlayer camera="first" />);
+    await act(async () => { await Promise.resolve(); });
+    rerender(<WebRtcPlayer camera="second" />);
+    await act(async () => { await Promise.resolve(); });
+    expect(sockets[0].close).toHaveBeenCalled();
+    expect(connections[0].close).toHaveBeenCalled();
+    unmount();
+    await act(async () => { await Promise.resolve(); });
+    expect(sockets[1].close).toHaveBeenCalled();
+    expect(connections[1].close).toHaveBeenCalled();
+  });
+
   test('reports a compositor-presented frame even without loadeddata or playing events', () => {
     let presentFrame;
     const cancelFrame = vi.fn();
