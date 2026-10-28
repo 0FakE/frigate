@@ -577,7 +577,8 @@ describe('LiveZoneEditor vertex interactions', () => {
     const notice = screen.getByRole(role);
     expect(notice).toHaveTextContent(text);
     expect(notice).toHaveClass('font-bold');
-    if (role === 'alert') expect(notice).toHaveClass('text-red-600', 'dark:text-red-400');
+    expect(notice.classList.contains('text-red-600')).toBe(role === 'alert');
+    expect(notice.classList.contains('dark:text-red-400')).toBe(role === 'alert');
 
     for (const name of ['Zone', 'Maske', 'Objektfilter', 'area_a',
       'Änderungen verwerfen', 'Änderungen speichern']) {
