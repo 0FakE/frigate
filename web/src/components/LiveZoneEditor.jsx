@@ -543,7 +543,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     : 0;
   const panelCardClass = 'rounded-lg border border-slate-300 dark:border-slate-700/80 bg-white dark:bg-slate-800/90 p-3 shadow-xl shadow-black/10';
   const headingClass = 'mb-2 flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white';
-  const headingIconClass = 'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-400';
+  const headingIconClass = 'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/[0.15] text-blue-600 dark:text-blue-400';
 
   return (
     <div className="w-full" data-testid="modern-zone-editor">
@@ -639,7 +639,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                               onMouseLeave={() => setHovered((current) => current === shape.id ? null : current)}
                               className={selected === shape.id
                                 ? 'flex min-h-9 w-full min-w-0 items-center gap-2 rounded-lg border border-blue-500/50 bg-blue-600/20 px-2 py-1.5 text-left text-sm font-semibold text-slate-900 dark:text-white transition-colors'
-                                : 'flex min-h-9 w-full min-w-0 items-center gap-2 rounded-lg border border-transparent bg-slate-50 dark:bg-slate-950/35 px-2 py-1.5 text-left text-sm text-slate-800 dark:text-slate-200 transition-colors hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800'}
+                                : 'flex min-h-9 w-full min-w-0 items-center gap-2 rounded-lg border border-transparent bg-slate-50 dark:bg-slate-950/[0.35] px-2 py-1.5 text-left text-sm text-slate-800 dark:text-slate-200 transition-colors hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800'}
                             >
                               <span aria-hidden="true" className={selected === shape.id
                                 ? 'h-3.5 w-3.5 shrink-0 rounded-full border-4 border-blue-400 bg-white'

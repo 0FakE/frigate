@@ -206,6 +206,24 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(areaA).not.toHaveClass('ring-1', 'ring-blue-500/30');
   });
 
+  test('uses valid opacity classes for dark-mode area rows and editor heading icons', async () => {
+    await openEditor();
+    const existingHeading = screen.getByRole('heading', { name: 'Vorhandene Bereiche' });
+    expect(existingHeading.firstElementChild).toHaveClass('bg-blue-500/[0.15]');
+    expect(existingHeading.firstElementChild).not.toHaveClass('bg-blue-500/15');
+
+    const area = screen.getByRole('button', { name: 'area_a' });
+    expect(area).toHaveAttribute('aria-pressed', 'false');
+    expect(area).toHaveClass('bg-slate-50', 'dark:bg-slate-950/[0.35]');
+    expect(area).not.toHaveClass('dark:bg-slate-950/35');
+    fireEvent.click(area);
+    expect(area).toHaveAttribute('aria-pressed', 'true');
+    expect(area).toHaveClass('bg-blue-600/20');
+    expect(area).not.toHaveClass('dark:bg-slate-950/[0.35]');
+    fireEvent.click(area);
+    expect(area).toHaveAttribute('aria-pressed', 'false');
+    expect(area).toHaveClass('bg-slate-50', 'dark:bg-slate-950/[0.35]');
+  });
   test('keeps compact grouped tools visible on mobile and in the 360px desktop sidebar', async () => {
     const { container } = await openEditor();
     const panel = screen.getByRole('complementary', { name: 'Werkzeuge und Bereiche' });
