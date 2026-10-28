@@ -120,7 +120,7 @@ function EditorNotice({ variant, children }) {
   );
 }
 
-export default function LiveZoneEditor({ camera, width, height, displayWidth, trackedObjects = [], onDirtyChange, streamReady = true, toolbar = null, optionsPanel = null, children }) {
+export default function LiveZoneEditor({ camera, width, height, displayWidth, trackedObjects = [], onDirtyChange, streamReady = true, streamError = false, toolbar = null, optionsPanel = null, children }) {
   const svgRef = useRef(null);
   const hoverLabelRef = useRef(null);
   const dragRef = useRef(null);
@@ -819,8 +819,8 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
             style={{ width: (displayWidth || width) + 'px', maxWidth: '100%', aspectRatio: width + ' / ' + height }}>
             <div data-testid="live-editor-video-slot" className="absolute inset-0">{children}</div>
         {!streamReady && (
-          <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-slate-900/80 px-4 text-center text-base font-semibold text-white" role="status">
-            {t('cameras.debug.editor.status.loading_stream')}
+          <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-slate-900 px-4 text-center text-base font-semibold text-white" role={streamError ? 'alert' : 'status'}>
+            {t(streamError ? 'cameras.page.preview_error' : 'cameras.debug.editor.status.loading_stream')}
           </div>
         )}
         <svg ref={svgRef} viewBox={'0 0 ' + width + ' ' + height} preserveAspectRatio="none"

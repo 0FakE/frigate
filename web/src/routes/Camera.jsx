@@ -25,12 +25,16 @@ export default function Camera({ camera }) {
   const [viewMode, setViewMode] = useState('live');
   const [editLivePolygons, setEditLivePolygons] = useState(false);
   const [editorDirty, setEditorDirty] = useState(false);
-  const [editorStreamReady, setEditorStreamReady] = useState(false);
+  const [editorReadyCamera, setEditorReadyCamera] = useState(null);
+  const editorStreamReady = editorReadyCamera === camera;
   const [liveReadyKey, setLiveReadyKey] = useState(null);
   const [debugReady, setDebugReady] = useState(false);
   const [previewError, setPreviewError] = useState(null);
   const livePreviewRef = useRef(null);
-  const handleFirstEditorFrame = useCallback(() => setEditorStreamReady(true), []);
+  const handleFirstEditorFrame = useCallback(() => {
+    setEditorReadyCamera(camera);
+    setPreviewError(null);
+  }, [camera]);
   const handleFirstDebugFrame = useCallback(() => {
     setDebugReady(true);
     setPreviewError(null);
@@ -89,15 +93,56 @@ export default function Camera({ camera }) {
     };
   }, [viewMode, liveSourceKey, handleFirstLiveFrame]);
 
+  // Reused camera routes must not carry a decoded frame or dirty editor state
+  // over from the previous camera. The editor subtree is keyed separately.
+  useEffect(() => {
+    setEditorReadyCamera(null);
+    setDebugReady(false);
+    setPreviewError(null);
+    setEditorDirty(false);
+  }, [camera]);
+
+  // Intercept camera sidebar and back-link navigation before the router handles
+  // them, while retaining the existing editor's unsaved-change confirmation.
+  useEffect(() => {
+    if (!editLivePolygons || !editorDirty) return;
+    const onNavigationClick = (event) => {
+      if (event.defaultPrevented || event.button !== 0 ||
+          event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+      const anchor = event.target?.closest?.('a[href]');
+      if (!anchor || anchor.target === '_blank' || anchor.hasAttribute('download')) return;
+      const target = new URL(anchor.href, window.location.href);
+      const here = new URL(window.location.href);
+      if (target.origin !== here.origin || target.pathname + target.search + target.hash ===
+        here.pathname + here.search + here.hash) return;
+      if (!window.confirm(t('cameras.debug.editor.prompt.discard_unsaved'))) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+    const onBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    document.addEventListener('click', onNavigationClick, true);
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => {
+      document.removeEventListener('click', onNavigationClick, true);
+      window.removeEventListener('beforeunload', onBeforeUnload);
+    };
+  }, [editLivePolygons, editorDirty]);
+
   // Report a failed stream rather than showing an indefinite loading state.
   useEffect(() => {
     const liveLoading = viewMode === 'live' && !liveReady;
     const debugLoading = viewMode === 'debug' && !editLivePolygons && !debugReady;
-    if (!liveLoading && !debugLoading) return;
-    const currentKey = liveLoading ? liveSourceKey : 'debug:' + camera;
+    const editorLoading = viewMode === 'debug' && editLivePolygons && !editorStreamReady;
+    if (!liveLoading && !debugLoading && !editorLoading) return;
+    const currentKey = liveLoading ? liveSourceKey
+      : editorLoading ? 'editor:' + camera : 'debug:' + camera;
     const timeout = setTimeout(() => setPreviewError(currentKey), 20000);
     return () => clearTimeout(timeout);
-  }, [viewMode, editLivePolygons, liveReady, debugReady, liveSourceKey, camera]);
+  }, [viewMode, editLivePolygons, editorStreamReady, liveReady, debugReady, liveSourceKey, camera]);
   const [options, setOptions] = usePersistence(`${camera}-feed`, emptyObject);
 
   const handleSetOption = useCallback(
@@ -130,7 +175,7 @@ export default function Camera({ camera }) {
       if (editLivePolygons && editorDirty && !window.confirm(t('cameras.debug.editor.prompt.discard_unsaved'))) return;
       setEditLivePolygons(false);
       setEditorDirty(false);
-      setEditorStreamReady(false);
+      setEditorReadyCamera(null);
       setLiveReadyKey(null);
       setDebugReady(false);
       setPreviewError(null);
@@ -144,7 +189,7 @@ export default function Camera({ camera }) {
     if (!editLivePolygons) setShowSettings(false);
     setEditLivePolygons((current) => !current);
     setEditorDirty(false);
-    setEditorStreamReady(false);
+    setEditorReadyCamera(null);
     setDebugReady(false);
     setPreviewError(null);
   }, [editLivePolygons, editorDirty]);
@@ -204,7 +249,7 @@ export default function Camera({ camera }) {
     <div className="flex flex-wrap items-center gap-3 py-4" data-testid="camera-debug-controls">
       <button type="button" onClick={handleToggleSettings} disabled={editLivePolygons}
         aria-expanded={showSettings && !editLivePolygons} aria-controls="camera-debug-options"
-        className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/90 px-4 text-sm font-semibold text-slate-100 shadow-sm transition-colors hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-not-allowed disabled:opacity-50">
+        className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/90 px-4 text-sm font-semibold text-slate-900 dark:text-slate-100 shadow-sm transition-colors hover:bg-slate-200 dark:hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-not-allowed disabled:opacity-50">
         <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
           <path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.7 5.7l2.1 2.1m8.4 8.4 2.1 2.1m0-12.6-2.1 2.1M7.8 16.2l-2.1 2.1" />
           <circle cx="12" cy="12" r="4" />
@@ -229,8 +274,8 @@ export default function Camera({ camera }) {
   );
   const debugOptions = showSettings && !editLivePolygons ? (
     <section id="camera-debug-options" aria-label={t('cameras.debug.controls.options_aria')}
-      className="inline-block w-fit max-w-full rounded-2xl border border-slate-700/80 bg-slate-900/80 p-4 shadow-lg shadow-black/10">
-      <h3 className="mb-4 text-sm font-bold text-white">{t('cameras.debug.controls.options_title')}</h3>
+      className="inline-block w-fit max-w-full rounded-2xl border border-slate-300 dark:border-slate-700/80 bg-white dark:bg-slate-900/80 p-4 shadow-lg shadow-black/10">
+      <h3 className="mb-4 text-sm font-bold text-slate-900 dark:text-white">{t('cameras.debug.controls.options_title')}</h3>
       {optionContent}
     </section>
   ) : null;
@@ -268,6 +313,7 @@ export default function Camera({ camera }) {
       <Fragment>
         {editLivePolygons ? (
           <LiveZoneEditor
+            key={camera}
             toolbar={debugControls}
             optionsPanel={debugOptions}
             camera={camera}
@@ -277,8 +323,9 @@ export default function Camera({ camera }) {
             trackedObjects={cameraConfig.objects?.track || []}
             onDirtyChange={setEditorDirty}
             streamReady={editorStreamReady}
+            streamError={previewError === 'editor:' + camera}
           >
-            <JSMpegPlayer camera={camera} width={jsmpegWidth} height={cameraConfig.live.height}
+            <JSMpegPlayer key={camera} camera={camera} width={jsmpegWidth} height={cameraConfig.live.height}
               fillContainer onFirstFrame={handleFirstEditorFrame} />
           </LiveZoneEditor>
         ) : (
@@ -304,30 +351,30 @@ export default function Camera({ camera }) {
   }
 
   return (
-    <div className="camera-modern-page min-h-[calc(100vh-4rem)] px-4 pb-10 pt-6 text-slate-100 sm:px-6 xl:px-8">
+    <div className="camera-modern-page min-h-[calc(100vh-4rem)] px-4 pb-10 pt-6 text-slate-900 dark:text-slate-100 sm:px-6 xl:px-8">
       <header className="mb-6 flex flex-wrap items-center justify-between gap-5" data-testid="modern-camera-header">
         <div className="flex min-w-0 items-center gap-4">
           <a href="/" aria-label={t('cameras.page.back_to_cameras')}
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-700/90 bg-slate-800/90 text-slate-200 shadow-lg shadow-black/10 transition-colors hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-300 dark:border-slate-700/90 bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 shadow-lg shadow-black/10 transition-colors hover:bg-slate-200 dark:hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
             <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M19 12H5m7-7-7 7 7 7" />
             </svg>
           </a>
           <div className="min-w-0">
-            <h1 className="truncate text-2xl font-bold uppercase tracking-tight text-white sm:text-3xl">{camera.replaceAll('_', ' ')}</h1>
-            <p className="mt-1 text-xs text-slate-400">
+            <h1 className="truncate text-2xl font-bold uppercase tracking-tight text-slate-900 dark:text-white sm:text-3xl">{camera.replaceAll('_', ' ')}</h1>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               {t('cameras.page.detect_resolution', { width: cameraConfig.detect.width, height: cameraConfig.detect.height })}
             </p>
           </div>
         </div>
         <div className="ml-auto flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto sm:gap-3">
           {viewMode === 'live' && (
-            <label className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-slate-700/80 bg-slate-900/80 p-1 pl-2 text-xs font-semibold text-slate-400 shadow-lg shadow-black/10 sm:gap-2 sm:pl-3">
+            <label className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-slate-300 dark:border-slate-700/80 bg-white dark:bg-slate-900/80 p-1 pl-2 text-xs font-semibold text-slate-500 dark:text-slate-400 shadow-lg shadow-black/10 sm:gap-2 sm:pl-3">
               <span>{t('cameras.page.stream_source')}</span>
               <span className="relative inline-flex shrink-0 items-center">
                 <select
                   aria-label={t('cameras.page.stream_source')}
-                  className={'h-9 cursor-pointer appearance-none rounded-lg border-0 bg-slate-800 bg-none py-0 pl-2 pr-7 text-xs font-semibold text-slate-100 sm:h-10 sm:pl-3 sm:pr-8 sm:text-sm ' +
+                  className={'h-9 cursor-pointer appearance-none rounded-lg border-0 bg-slate-100 dark:bg-slate-800 bg-none py-0 pl-2 pr-7 text-xs font-semibold text-slate-900 dark:text-slate-100 sm:h-10 sm:pl-3 sm:pr-8 sm:text-sm ' +
                     (viewSource === 'mse' ? 'w-[4.75rem]' : 'w-[6.5rem]')}
                   value={viewSource}
                   onChange={(e) => handleChangeSource(e.target.value)}
@@ -338,7 +385,7 @@ export default function Camera({ camera }) {
                     </option>
                   ))}
                 </select>
-                <svg aria-hidden="true" className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-100 sm:right-3"
+                <svg aria-hidden="true" className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-900 dark:text-slate-100 sm:right-3"
                   viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="m6 9 6 6 6-6" />
                 </svg>
@@ -366,7 +413,7 @@ export default function Camera({ camera }) {
         </section>
 
         {cameraConfig?.onvif?.host && (
-          <section aria-label={t('cameras.page.control_panel')} className="mb-8 w-full rounded-2xl border border-slate-700/80 bg-slate-900/80 p-5 shadow-xl shadow-black/10 sm:w-fit">
+          <section aria-label={t('cameras.page.control_panel')} className="mb-8 w-full rounded-2xl border border-slate-300 dark:border-slate-700/80 bg-white dark:bg-slate-900/80 p-5 shadow-xl shadow-black/10 sm:w-fit">
             <h2 className="mb-3 text-base font-bold text-white">{t('cameras.page.control_panel')}</h2>
             <CameraControlPanel camera={camera} />
           </section>
@@ -374,10 +421,10 @@ export default function Camera({ camera }) {
 
         {viewMode === 'live' && (
         <section aria-label={t('cameras.page.tracked_objects')}
-          className="space-y-4 border-t border-slate-700/80 pt-6">
+          className="space-y-4 border-t border-slate-300 dark:border-slate-700/80 pt-6">
           <div className="flex items-center gap-3">
             <span className="h-1.5 w-1.5 rounded-full bg-blue-400" aria-hidden="true" />
-            <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-slate-300">
+            <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-slate-600 dark:text-slate-300">
               {t('cameras.page.tracked_objects')}
             </h2>
           </div>
@@ -387,8 +434,8 @@ export default function Camera({ camera }) {
               const label = t(classKey) === classKey ? objectType : t(classKey);
               return (
                 <a key={objectType} href={`/events?cameras=${camera}&labels=${encodeURIComponent(objectType)}`}
-                  className="group inline-flex max-w-full min-w-0 flex-col items-stretch overflow-hidden rounded-lg border border-slate-700/90 bg-slate-900/90 shadow-lg shadow-black/10 transition-colors hover:border-blue-500/70 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
-                  <span className="min-w-0 px-3 py-2 text-center text-sm font-semibold uppercase text-slate-100">{label}</span>
+                  className="group inline-flex max-w-full min-w-0 flex-col items-stretch overflow-hidden rounded-lg border border-slate-300 dark:border-slate-700/90 bg-slate-900/90 shadow-lg shadow-black/10 transition-colors hover:border-blue-500/70 hover:bg-slate-200 dark:hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
+                  <span className="min-w-0 px-3 py-2 text-center text-sm font-semibold uppercase text-slate-900 dark:text-slate-100">{label}</span>
                   <img className="shrink-0 object-cover grayscale" loading="lazy"
                     width="175" height="175"
                     style={{
@@ -402,7 +449,7 @@ export default function Camera({ camera }) {
               );
             })}
             {trackedLabels && trackedLabels.length === 0 && (
-              <p className="text-sm text-slate-400">{t('cameras.page.tracked_objects_empty')}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">{t('cameras.page.tracked_objects_empty')}</p>
             )}
           </div>
         </section>
