@@ -197,20 +197,137 @@
   }
 }
 
-/* Compact settings menu shared by desktop and mobile app headers. */
+/* Settings dropdown only. Scope styles to avoid changing modals or the sidebar.
+   Important surface properties override inherited RelativeModal gray utilities. */
 .frigate-settings-menu {
-  width: min(18rem, calc(100vw - 2.5rem));
-  max-width: calc(100vw - 2.5rem);
+  width: min(17.5rem, calc(100vw - 2.5rem)) !important;
+  max-width: calc(100vw - 2.5rem) !important;
   padding: 0 !important;
-  border: 1px solid rgba(148, 163, 184, 0.45);
-  border-radius: 0.5rem;
-  background: #fff;
-  color: #0f172a;
-  box-shadow: 0 20px 45px rgba(2, 6, 23, 0.3);
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 0.75rem !important;
+  background: linear-gradient(145deg, #fff, #f1f5f9) !important;
+  color: #172235 !important;
+  box-shadow: 0 22px 56px rgba(2, 6, 23, 0.36), inset 0 1px rgba(255, 255, 255, 0.09) !important;
 }
-
+body.dark .frigate-settings-menu,
 .dark .frigate-settings-menu {
-  border-color: rgba(100, 116, 139, 0.7);
-  background: #172235;
+  border-color: #435773 !important;
+  background: linear-gradient(145deg, #1c2a41 0%, #121d30 100%) !important;
+  color: #f8fafc !important;
+  box-shadow: 0 22px 56px rgba(2, 6, 23, 0.62), inset 0 1px rgba(255, 255, 255, 0.06) !important;
+}
+.frigate-settings-content {
+  padding: 0.625rem;
+}
+.frigate-settings-heading {
+  margin: 0.15rem 0.375rem 0.3rem;
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.dark .frigate-settings-heading {
+  color: #9db2d1;
+}
+.frigate-settings-divider {
+  height: 1px;
+  margin: 0.7rem 0.375rem;
+  background: rgba(100, 116, 139, 0.32);
+}
+.dark .frigate-settings-divider {
+  background: rgba(127, 154, 193, 0.31);
+}
+.frigate-settings-action {
+  display: flex;
+  width: 100%;
+  min-height: 2.875rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: #23344d;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: left;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+.frigate-settings-action:hover,
+.frigate-settings-action:focus-visible {
+  background: #e2e8f0;
+}
+.dark .frigate-settings-action {
   color: #f8fafc;
+}
+.dark .frigate-settings-action:hover,
+.dark .frigate-settings-action:focus-visible {
+  background: rgba(52, 78, 114, 0.55);
+}
+.frigate-settings-action--selected,
+.frigate-settings-action--selected:hover {
+  border-color: rgba(58, 129, 223, 0.24);
+  background: linear-gradient(90deg, #dbeafe 0%, #c7defe 100%);
+  color: #0f376d;
+}
+.dark .frigate-settings-action--selected,
+.dark .frigate-settings-action--selected:hover {
+  border-color: rgba(76, 151, 241, 0.19);
+  background: linear-gradient(95deg, #1d3b63 0%, #183453 100%);
+  color: #ffffff;
+}
+.frigate-settings-action:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: -2px;
+}
+.frigate-settings-icon {
+  display: inline-flex;
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: 0 0 1.25rem;
+  align-items: center;
+  justify-content: center;
+  color: #526b89;
+}
+.dark .frigate-settings-icon {
+  color: #e7efff;
+}
+.frigate-settings-icon svg {
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+.frigate-settings-action-label {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.frigate-settings-radio {
+  display: inline-flex;
+  width: 1.125rem;
+  height: 1.125rem;
+  flex: 0 0 1.125rem;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #8c9bad;
+  border-radius: 9999px;
+}
+.dark .frigate-settings-radio {
+  border-color: #6d83a4;
+}
+.frigate-settings-radio--selected,
+.dark .frigate-settings-radio--selected {
+  border-color: #368bf9;
+  box-shadow: 0 0 0 1px rgba(54, 139, 249, 0.16);
+}
+.frigate-settings-radio-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: #368bf9;
+}
+.frigate-settings-chevron {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 1rem;
+  color: #7d94b5;
 }

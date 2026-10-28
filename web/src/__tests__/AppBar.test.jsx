@@ -44,14 +44,21 @@ describe('AppBar', () => {
     mount();
     const menu = openSettings();
     expect(menu).toHaveClass('frigate-settings-menu');
+    expect(menu.querySelector('.frigate-settings-content')).not.toBeNull();
+    expect(menu.querySelectorAll('.frigate-settings-heading')).toHaveLength(2);
+    expect(menu.querySelectorAll('.frigate-settings-divider')).toHaveLength(1);
     expect(menu).toHaveTextContent('Design');
     expect(menu).toHaveTextContent('System');
     expect(menu).not.toHaveTextContent('Automatisch');
     expect(menu.querySelectorAll('[role="menuitemradio"]')).toHaveLength(2);
     const dark = screen.getByRole('menuitemradio', { name: 'Dunkel' });
     expect(dark).toHaveAttribute('aria-checked', 'true');
+    expect(dark).toHaveClass('frigate-settings-action--selected');
+    expect(dark.querySelector('.frigate-settings-radio--selected')).not.toBeNull();
     expect(screen.getByRole('menuitemradio', { name: 'Hell' })).toHaveAttribute('aria-checked', 'false');
-    expect(screen.getByRole('menuitem', { name: 'Frigate neu starten' })).toBeInTheDocument();
+    const restartItem = screen.getByRole('menuitem', { name: 'Frigate neu starten' });
+    expect(restartItem).toBeInTheDocument();
+    expect(restartItem.querySelector('.frigate-settings-chevron')).not.toBeNull();
     expect(menu).not.toHaveTextContent('Dunkles Design verwenden');
   });
 

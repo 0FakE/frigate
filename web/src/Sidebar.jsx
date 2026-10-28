@@ -6,7 +6,6 @@ import { ENV } from './env';
 import { useMemo } from 'preact/hooks'
 import useSWR from 'swr';
 import NavigationDrawer, { Destination, Separator } from './components/NavigationDrawer';
-import { t } from './locales';
 
 export default function Sidebar() {
   const { data: config } = useSWR('config');
@@ -28,7 +27,7 @@ export default function Sidebar() {
 
   return (
     <NavigationDrawer header={<Header />}>
-      <Destination href="/" text={t('app.navigation.cameras')} />
+      <Destination href="/" text="Cameras" />
       <Match path="/cameras/:camera/:other?">
         {({ matches }) =>
           matches ? (
@@ -43,23 +42,23 @@ export default function Sidebar() {
           ) : null
         }
       </Match>
-      {birdseye?.enabled ? <Destination href="/birdseye" text={t('app.navigation.birdseye')} /> : null}
-      <Destination href="/events" text={t('app.navigation.events')} />
-      <Destination href="/exports" text={t('app.navigation.exports')} />
+      {birdseye?.enabled ? <Destination href="/birdseye" text="Birdseye" /> : null}
+      <Destination href="/events" text="Events" />
+      <Destination href="/exports" text="Exports" />
       <Separator />
-      <Destination href="/storage" text={t('app.navigation.storage')} />
-      <Destination href="/system" text={t('app.navigation.system')} />
-      <Destination href="/config" text={t('app.navigation.config')} />
-      <Destination href="/logs" text={t('app.navigation.logs')} />
+      <Destination href="/storage" text="Storage" />
+      <Destination href="/system" text="System" />
+      <Destination href="/config" text="Config" />
+      <Destination href="/logs" text="Logs" />
       <Separator />
       <div className="flex flex-grow" />
       {ENV !== 'production' ? (
         <Fragment>
-          <Destination href="/styleguide" text={t('app.navigation.styleguide')} />
+          <Destination href="/styleguide" text="Style Guide" />
           <Separator />
         </Fragment>
       ) : null}
-      <Destination className="self-end" href="https://github.com/blakeblackshear/frigate" text={t('app.navigation.github')} />
+      <Destination className="self-end" href="https://github.com/blakeblackshear/frigate" text="GitHub" />
     </NavigationDrawer>
   );
 }

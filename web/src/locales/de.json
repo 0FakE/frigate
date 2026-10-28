@@ -154,18 +154,6 @@
     "error": {
       "loading_translations": "Die externe Sprachdatei konnte nicht geladen werden. Die integrierten deutschen Texte werden verwendet."
     },
-    "navigation": {
-      "cameras": "Kameras",
-      "birdseye": "Birdseye",
-      "events": "Ereignisse",
-      "exports": "Exporte",
-      "storage": "Speicher",
-      "system": "System",
-      "config": "Konfiguration",
-      "logs": "Protokolle",
-      "styleguide": "Styleguide",
-      "github": "GitHub"
-    },
     "menu": {
       "more_options": "Weitere Optionen",
       "settings_label": "Darstellung und System",
