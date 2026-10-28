@@ -450,7 +450,7 @@ export default function Camera({ camera }) {
                 <a key={objectType} href={`/events?cameras=${camera}&labels=${encodeURIComponent(objectType)}`}
                   className="group inline-flex max-w-full min-w-0 flex-col items-stretch overflow-hidden rounded-lg border border-slate-300 dark:border-slate-700/90 bg-white dark:bg-slate-900/90 shadow-lg shadow-black/10 transition-colors hover:border-blue-500/70 hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
                   <span className="min-w-0 px-3 py-2 text-center text-sm font-semibold uppercase text-slate-900 dark:text-slate-100">{label}</span>
-                  <img className="shrink-0 object-cover grayscale" loading="lazy"
+                  <img className="shrink-0 object-cover" loading="lazy"
                     width="175" height="175"
                     style={{
                       width: '175px', height: '175px',
