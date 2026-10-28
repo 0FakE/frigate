@@ -99,13 +99,13 @@ function polygonLabelPoint(vertices) {
 // Keep the icon and every part of a message the same color.
 function EditorNotice({ variant, children }) {
   const styles = {
-    unsaved: 'font-bold text-white',
-    success: 'text-green-400',
+    unsaved: 'font-bold text-slate-900 dark:text-white',
+    success: 'text-green-700 dark:text-green-400',
   };
 
   return (
     <div role="status">
-      <span className={'inline-flex max-w-full items-start gap-2 rounded-md bg-slate-700 px-3 py-2 text-base ' + styles[variant]}>
+      <span className={'inline-flex max-w-full items-start gap-2 rounded-md bg-slate-200 dark:bg-slate-700 px-3 py-2 text-base ' + styles[variant]}>
         <svg aria-hidden="true" className="mt-0.5 h-[22px] w-[22px] shrink-0" viewBox="0 0 24 24"
           fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           {variant === 'success' ? (
@@ -497,7 +497,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
       : 'cameras.debug.editor.modal.warning.invalid_object_filter';
 
   const toolButtonClass = 'inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border px-2 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-not-allowed disabled:opacity-40';
-  const secondaryButtonClass = toolButtonClass + ' border-slate-700 bg-slate-800/90 text-slate-100 hover:border-slate-500 hover:bg-slate-700';
+  const secondaryButtonClass = toolButtonClass + ' border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800/90 text-slate-900 dark:text-slate-100 hover:border-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700';
   const selectedShape = shapes.find((shape) => shape.id === selected);
   // Only hovering an existing list entry triggers this label; pointer
   // movement within the camera preview never selects a label.
@@ -525,16 +525,16 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   const hoverLabelX = hoveredPosition
     ? Math.min(Math.max(hoveredPosition[0] / width * svgPixelSize.width, lowerX), upperX)
     : 0;
-  const panelCardClass = 'rounded-lg border border-slate-700/80 bg-slate-800/90 p-3 shadow-xl shadow-black/10';
-  const headingClass = 'mb-2 flex items-center gap-2 text-sm font-bold text-white';
-  const headingIconClass = 'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/15 text-blue-400';
+  const panelCardClass = 'rounded-lg border border-slate-300 dark:border-slate-700/80 bg-white dark:bg-slate-800/90 p-3 shadow-xl shadow-black/10';
+  const headingClass = 'mb-2 flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white';
+  const headingIconClass = 'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-400';
 
   return (
     <div className="w-full" data-testid="modern-zone-editor">
       <div className="flex flex-col items-start gap-3 xl:flex-row">
         <aside
           aria-label={t('cameras.debug.editor.label.sidebar')}
-          className="order-first w-full shrink-0 text-slate-100 xl:order-last xl:w-[360px]"
+          className="order-first w-full shrink-0 text-slate-900 dark:text-slate-100 xl:order-last xl:w-[360px]"
         >
           <div id="live-polygon-tools" className="space-y-2">
             <section aria-label={t('cameras.debug.editor.header.new_area')} className={panelCardClass}>
@@ -548,7 +548,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
               </h3>
               <div className="grid grid-cols-2 gap-2">
                 <button type="button"
-                  className={toolButtonClass + ' h-10 min-w-0 border-green-500 bg-slate-800/90 text-green-500 hover:bg-slate-700'}
+                  className={toolButtonClass + ' h-10 min-w-0 border-green-500 bg-white dark:bg-slate-800/90 text-green-500 hover:bg-slate-100 dark:hover:bg-slate-700'}
                   onClick={addZone} disabled={busy}>
                   <svg aria-hidden="true" className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="4 2">
                     <rect x="4" y="4" width="16" height="16" rx="2" />
@@ -556,7 +556,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                   {t('cameras.debug.editor.button.zone')}
                 </button>
                 <button type="button"
-                  className={toolButtonClass + ' h-10 min-w-0 border-red-500 bg-slate-800/90 text-red-500 hover:bg-slate-700'}
+                  className={toolButtonClass + ' h-10 min-w-0 border-red-500 bg-white dark:bg-slate-800/90 text-red-500 hover:bg-slate-100 dark:hover:bg-slate-700'}
                   onClick={addMotionMask} disabled={busy}>
                   <svg aria-hidden="true" className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                     <path d="m3 3 18 18M10.6 5.4A10.6 10.6 0 0 1 12 5c5 0 9 7 9 7a16.6 16.6 0 0 1-3 3.5M6.2 6.2A17.7 17.7 0 0 0 3 12s4 7 9 7c1.4 0 2.8-.5 4-1.3" />
@@ -566,7 +566,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
               </div>
               <div className="mt-2 grid grid-cols-2 gap-2">
                 <select
-                  className="h-10 w-full min-w-0 rounded-lg border border-slate-600 bg-slate-950 px-2 text-sm text-slate-100 focus-visible:ring-2 focus-visible:ring-blue-400"
+                  className="h-10 w-full min-w-0 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-950 px-2 text-sm text-slate-900 dark:text-slate-100 focus-visible:ring-2 focus-visible:ring-blue-400"
                   aria-label={t('cameras.debug.editor.label.object_class')}
                   title={t('cameras.debug.editor.label.object_filter_select')}
                   value={objectLabel}
@@ -576,7 +576,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                     <option key={item} value={item}>{item}</option>
                   ))}
                 </select>
-                <button type="button" className={toolButtonClass + ' h-10 w-full min-w-0 border-blue-500 bg-slate-800/90 text-blue-500 hover:border-blue-400 hover:bg-slate-700'}
+                <button type="button" className={toolButtonClass + ' h-10 w-full min-w-0 border-blue-500 bg-white dark:bg-slate-800/90 text-blue-500 hover:border-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700'}
                   onClick={addObjectMask} disabled={busy}>
                   <svg aria-hidden="true" className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M4 5h16l-6 7v6l-4 2v-8Z" />
@@ -601,10 +601,10 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                   const groupShapes = shapes.filter((shape) => shape.id.startsWith(group.key));
                   return (
                     <div key={group.key} className="space-y-1.5">
-                      <h4 className="flex items-center gap-2 rounded-lg bg-slate-950/50 px-2 py-1.5 text-sm font-semibold text-slate-200">
+                      <h4 className="flex items-center gap-2 rounded-lg bg-slate-100 dark:bg-slate-950/50 px-2 py-1.5 text-sm font-semibold text-slate-800 dark:text-slate-200">
                         <span aria-hidden="true" className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: group.color }} />
                         <span className="min-w-0 flex-1">{t(group.titleKey)}</span>
-                        <span className="ml-auto inline-flex min-w-[2rem] shrink-0 items-center justify-center rounded-md border border-slate-700/70 bg-slate-800/70 px-2 py-0.5 text-xs font-medium tabular-nums text-slate-400">{groupShapes.length}</span>
+                        <span className="ml-auto inline-flex min-w-[2rem] shrink-0 items-center justify-center rounded-md border border-slate-300 dark:border-slate-700/70 bg-slate-100 dark:bg-slate-800/70 px-2 py-0.5 text-xs font-medium tabular-nums text-slate-500 dark:text-slate-400">{groupShapes.length}</span>
                       </h4>
                       {groupShapes.length ? (
                         <div className="space-y-0.5">
@@ -621,19 +621,19 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                               onMouseEnter={() => setHovered(shape.id)}
                               onMouseLeave={() => setHovered((current) => current === shape.id ? null : current)}
                               className={selected === shape.id
-                                ? 'flex min-h-9 w-full min-w-0 items-center gap-2 rounded-lg border border-blue-500/50 bg-blue-600/20 px-2 py-1.5 text-left text-sm font-semibold text-white transition-colors'
-                                : 'flex min-h-9 w-full min-w-0 items-center gap-2 rounded-lg border border-transparent bg-slate-950/35 px-2 py-1.5 text-left text-sm text-slate-200 transition-colors hover:border-slate-600 hover:bg-slate-800'}
+                                ? 'flex min-h-9 w-full min-w-0 items-center gap-2 rounded-lg border border-blue-500/50 bg-blue-600/20 px-2 py-1.5 text-left text-sm font-semibold text-slate-900 dark:text-white transition-colors'
+                                : 'flex min-h-9 w-full min-w-0 items-center gap-2 rounded-lg border border-transparent bg-slate-50 dark:bg-slate-950/35 px-2 py-1.5 text-left text-sm text-slate-800 dark:text-slate-200 transition-colors hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800'}
                             >
                               <span aria-hidden="true" className={selected === shape.id
                                 ? 'h-3.5 w-3.5 shrink-0 rounded-full border-4 border-blue-400 bg-white'
-                                : 'h-3.5 w-3.5 shrink-0 rounded-full border border-slate-500'} />
+                                : 'h-3.5 w-3.5 shrink-0 rounded-full border border-slate-400 dark:border-slate-500'} />
                               <span className="min-w-0 flex-1 break-all">{shape.label}</span>
                               <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: shape.color }} />
                             </button>
                           ))}
                         </div>
                       ) : (
-                        <p className="whitespace-pre-line px-2 text-sm text-slate-400">{t('cameras.debug.editor.label.empty')}</p>
+                        <p className="whitespace-pre-line px-2 text-sm text-slate-500 dark:text-slate-400">{t('cameras.debug.editor.label.empty')}</p>
                       )}
                     </div>
                   );
@@ -643,7 +643,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
 
             <section aria-label={t('cameras.debug.editor.header.selected_area')} className={panelCardClass}>
               <h3 className={headingClass}>
-                <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400">
+                <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M12 21s7-6 7-11a7 7 0 1 0-14 0c0 5 7 11 7 11Z" />
                     <circle cx="12" cy="10" r="2" />
@@ -652,14 +652,14 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                 {t('cameras.debug.editor.header.selected_area')}
               </h3>
               {selectedShape ? (
-                <div className="mb-2 rounded-lg border border-slate-700 bg-slate-950/50 px-2 py-2">
+                <div className="mb-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-950/50 px-2 py-2">
                   <div className="flex min-w-0 items-center gap-2">
                     <span aria-hidden="true" className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: selectedShape.color }} />
                     <span className="flex min-w-0 flex-1 items-center gap-1">
-                      <span className="min-w-0 truncate text-sm font-semibold text-white">{selectedShape.label}</span>
+                      <span className="min-w-0 truncate text-sm font-semibold text-slate-900 dark:text-white">{selectedShape.label}</span>
                       {selectedShape.id.startsWith('zone:') && (
                         <button type="button"
-                          className="ml-2 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-white hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                          className="ml-2 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-slate-800 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
                           title={t('cameras.debug.editor.button.rename_zone')}
                           aria-label={t('cameras.debug.editor.button.rename_zone')}
                           onClick={startZoneRename} disabled={busy}>
@@ -672,7 +672,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                       )}
                       {selectedShape.id.startsWith('zone:') && (
                         <button type="button"
-                          className="ml-2 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-white hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                          className="ml-2 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-slate-800 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
                           title={t('cameras.debug.editor.button.edit_zone_objects')}
                           aria-label={t('cameras.debug.editor.button.edit_zone_objects')}
                           aria-expanded={editingZoneObjects}
@@ -687,30 +687,30 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                         </button>
                       )}
                     </span>
-                    <span className="shrink-0 text-xs text-slate-400">{t('cameras.debug.editor.label.vertex_count', { count: selectedShape.points.length })}</span>
+                    <span className="shrink-0 text-xs text-slate-500 dark:text-slate-400">{t('cameras.debug.editor.label.vertex_count', { count: selectedShape.points.length })}</span>
                   </div>
                   {editingZoneObjects && selectedShape.id.startsWith('zone:') && (
-                    <form id="zone-objects-editor" onSubmit={applyZoneObjects} className="mt-3 space-y-3 border-t border-slate-700 pt-3">
-                      <h4 className="text-sm font-semibold text-slate-100">
+                    <form id="zone-objects-editor" onSubmit={applyZoneObjects} className="mt-3 space-y-3 border-t border-slate-300 dark:border-slate-700 pt-3">
+                      <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                         {t('cameras.debug.editor.header.zone_objects')}
                       </h4>
-                      <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-200">
+                      <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-800 dark:text-slate-200">
                         <input type="radio" name="zone-object-mode" checked={zoneObjectsDraft === null}
                           onChange={() => setZoneObjectsDraft(null)}
-                          className="border-slate-500 bg-slate-900 text-blue-600 focus:ring-blue-400" />
+                          className="border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-900 text-blue-600 focus:ring-blue-400" />
                         {t('cameras.debug.editor.label.zone_objects_all')}
                       </label>
-                      <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-200">
+                      <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-800 dark:text-slate-200">
                         <input type="radio" name="zone-object-mode" checked={zoneObjectsDraft !== null}
                           disabled={trackedObjects.length === 0 && zoneObjectsDraft === null}
                           onChange={() => setZoneObjectsDraft([])}
-                          className="border-slate-500 bg-slate-900 text-blue-600 focus:ring-blue-400" />
+                          className="border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-900 text-blue-600 focus:ring-blue-400" />
                         {t('cameras.debug.editor.label.zone_objects_selected')}
                       </label>
                       {zoneObjectsDraft !== null && (
-                        <div className="space-y-2 rounded-lg border border-slate-700 bg-slate-900/80 p-3">
+                        <div className="space-y-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/80 p-3">
                           {[...new Set([...trackedObjects, ...zoneObjectsDraft])].map((label) => (
-                            <label key={label} className="flex cursor-pointer items-center gap-2 text-sm text-slate-200">
+                            <label key={label} className="flex cursor-pointer items-center gap-2 text-sm text-slate-800 dark:text-slate-200">
                               <input type="checkbox" checked={zoneObjectsDraft.includes(label)}
                                 onChange={(event) => {
                                   const checked = event.currentTarget.checked;
@@ -718,12 +718,12 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                                     ? [...current, label]
                                     : current.filter((item) => item !== label));
                                 }}
-                                className="rounded border-slate-500 bg-slate-900 text-blue-600 focus:ring-blue-400" />
+                                className="rounded border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-900 text-blue-600 focus:ring-blue-400" />
                               {label}
                             </label>
                           ))}
                           {trackedObjects.length === 0 && (
-                            <p className="text-xs text-slate-400">{t('cameras.debug.editor.label.zone_objects_unavailable')}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{t('cameras.debug.editor.label.zone_objects_unavailable')}</p>
                           )}
                         </div>
                       )}
@@ -738,8 +738,8 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                     </form>
                   )}
                   {renamingZone && selectedShape.id.startsWith('zone:') && (
-                    <form onSubmit={applyZoneRename} className="mt-3 space-y-2 border-t border-slate-700 pt-3">
-                      <label htmlFor="zone-rename-input" className="block text-sm font-semibold text-slate-100">
+                    <form onSubmit={applyZoneRename} className="mt-3 space-y-2 border-t border-slate-300 dark:border-slate-700 pt-3">
+                      <label htmlFor="zone-rename-input" className="block text-sm font-semibold text-slate-900 dark:text-slate-100">
                         {t('cameras.debug.editor.label.zone_new_name')}
                       </label>
                       <input id="zone-rename-input" type="text" autoFocus
@@ -752,7 +752,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                         }}
                         aria-invalid={Boolean(renameError)}
                         aria-describedby={renameError ? 'zone-rename-error' : undefined}
-                        className="h-10 w-full min-w-0 rounded-lg border border-slate-600 bg-slate-950 px-3 text-sm text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400" />
+                        className="h-10 w-full min-w-0 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-950 px-3 text-sm text-slate-900 dark:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400" />
                       {renameError && (
                         <p id="zone-rename-error" role="alert" className="whitespace-pre-line text-xs text-red-300">
                           {renameError}
@@ -770,7 +770,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                   )}
                 </div>
               ) : (
-                <p className="mb-3 whitespace-pre-line text-sm leading-5 text-slate-400">{t('cameras.debug.editor.label.no_selection')}</p>
+                <p className="mb-3 whitespace-pre-line text-sm leading-5 text-slate-500 dark:text-slate-400">{t('cameras.debug.editor.label.no_selection')}</p>
               )}
               <div className="grid grid-cols-2 gap-2">
                 <button type="button" className={secondaryButtonClass + ' w-full'} onClick={() => { cancelZoneRename(); cancelZoneObjectEdit(); setSelected(null); }} disabled={!selected || busy}>
@@ -782,7 +782,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                   {t('cameras.debug.editor.button.delete_area')}
                 </button>
               </div>
-              <div className="mt-2 grid grid-cols-2 gap-2 border-t border-slate-700 pt-2">
+              <div className="mt-2 grid grid-cols-2 gap-2 border-t border-slate-300 dark:border-slate-700 pt-2">
                 <button type="button" className={secondaryButtonClass + ' w-full'} onClick={load} disabled={busy}>
                   {t('cameras.debug.editor.button.discard_changes')}
                 </button>
@@ -819,7 +819,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
             style={{ width: (displayWidth || width) + 'px', maxWidth: '100%', aspectRatio: width + ' / ' + height }}>
             <div data-testid="live-editor-video-slot" className="absolute inset-0">{children}</div>
         {!streamReady && (
-          <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-slate-900 px-4 text-center text-base font-semibold text-white" role={streamError ? 'alert' : 'status'}>
+          <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-slate-100 dark:bg-slate-900 px-4 text-center text-base font-semibold text-slate-900 dark:text-white" role={streamError ? 'alert' : 'status'}>
             {t(streamError ? 'cameras.page.preview_error' : 'cameras.debug.editor.status.loading_stream')}
           </div>
         )}

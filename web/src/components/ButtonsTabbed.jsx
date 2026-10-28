@@ -38,7 +38,7 @@ export default function ButtonsTabbed({
   return (
     <nav className="flex shrink-0 justify-end" aria-label={cameraTabs ? t('cameras.debug.tabs.aria_label') : undefined}>
       {cameraTabs ? (
-        <div data-testid="camera-view-tabs" className="camera-modern-tab-group inline-flex max-w-full items-center gap-1 rounded-xl border border-slate-700/70 bg-slate-900/80 p-1 shadow-lg shadow-black/10">
+        <div data-testid="camera-view-tabs" className="camera-modern-tab-group inline-flex max-w-full items-center gap-1 rounded-xl border border-slate-300 dark:border-slate-700/70 bg-white dark:bg-slate-900/80 p-1 shadow-lg shadow-black/10">
           {viewModes.map((item, i) => (
             <button
               key={item}
@@ -48,7 +48,7 @@ export default function ButtonsTabbed({
               className={'inline-flex h-9 items-center gap-1 rounded-lg px-2 text-xs font-semibold transition-all focus-visible:outline-none sm:h-10 sm:gap-2 sm:px-5 sm:text-sm ' +
                 (selected === i
                   ? 'bg-blue-600 text-white shadow-[0_4px_20px_rgba(37,99,235,0.28)]'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white')}
+                  : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white')}
             >
               {item === 'live' && (
                 <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
