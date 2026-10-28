@@ -285,7 +285,7 @@ describe('modern camera page keeps its original actions', () => {
     expect(warning).toHaveClass('text-red-600', 'dark:text-red-400', 'font-bold');
     expect(screen.queryByText('Kamera Vorschau wird geladen…')).not.toBeInTheDocument();
     expect(screen.queryByText('JSMpeg Livebild')).not.toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: 'Videoquelle' })).toBeDisabled();
+    expect(screen.queryByRole('combobox', { name: 'Videoquelle' })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Debug' }));
     warning = screen.getByTestId('camera-preview-overlay');
@@ -303,6 +303,65 @@ describe('modern camera page keeps its original actions', () => {
     expect(editor).toHaveAttribute('data-stream-error', 'false');
     expect(editor).not.toHaveTextContent('JSMpeg Livebild');
     expect(screen.getByRole('button', { name: 'Editor schließen' })).toBeEnabled();
+  });
+
+  test('disabled to enabled camera navigation restores the live player for WebRTC and MSE', () => {
+    const configs = {
+      ...cameraConfig,
+      ui: { live_mode: 'webrtc' },
+      cameras: {
+        ...cameraConfig.cameras,
+        disabled_camera: { ...cameraConfig.cameras.test_camera, enabled: false },
+        active_camera: {
+          ...cameraConfig.cameras.test_camera,
+          enabled: true,
+          live: { height: 360, stream_name: 'active_camera' },
+        },
+      },
+      go2rtc: { streams: { active_camera: {} } },
+    };
+    useSWR.mockImplementation((key) => key === 'config' ? { data: configs } : { data: [] });
+    usePersistence.mockImplementation((_key, initial) => {
+      const [value, setValue] = useState(initial);
+      return [value, setValue, true];
+    });
+    const view = render(<Camera camera="disabled_camera" />);
+    expect(screen.queryByRole('combobox', { name: 'Videoquelle' })).not.toBeInTheDocument();
+    expect(screen.getByTestId('camera-preview-overlay')).toHaveTextContent('Kamera ist deaktiviert');
+
+    view.rerender(<Camera camera="active_camera" />);
+    expect(screen.getByRole('combobox', { name: 'Videoquelle' })).toHaveValue('webrtc');
+    expect(screen.getByText('WebRTC Livebild')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'WebRTC Bild dargestellt' }));
+    expect(screen.queryByTestId('camera-preview-overlay')).not.toBeInTheDocument();
+
+    view.rerender(<Camera camera="disabled_camera" />);
+    expect(screen.queryByText('WebRTC Livebild')).not.toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'Videoquelle' })).not.toBeInTheDocument();
+    view.rerender(<Camera camera="active_camera" />);
+    Object.defineProperty(window, 'MediaSource', { configurable: true, value: class MediaSource {} });
+    try {
+      fireEvent.change(screen.getByRole('combobox', { name: 'Videoquelle' }), { target: { value: 'mse' } });
+      const mse = screen.getByTestId('modern-live-preview').querySelector('video-stream');
+      expect(mse).not.toBeNull();
+      const mseVideo = document.createElement('video');
+      Object.defineProperty(mseVideo, 'readyState', { configurable: true, value: 2 });
+      Object.defineProperty(mseVideo, 'videoWidth', { configurable: true, value: 640 });
+      mse.appendChild(mseVideo);
+      fireEvent.loadedData(mseVideo);
+      expect(screen.queryByTestId('camera-preview-overlay')).not.toBeInTheDocument();
+    } finally {
+      delete window.MediaSource;
+    }
+  });
+
+  test('camera without restream uses JSMpeg without changing persisted source during render', () => {
+    const setSource = vi.fn();
+    usePersistence.mockImplementation((_key, _initial) => ['webrtc', setSource, true]);
+    render(<Camera camera="test_camera" />);
+    expect(screen.getByRole('combobox', { name: 'Videoquelle' })).toHaveValue('jsmpeg');
+    expect(screen.getByText('JSMpeg Livebild')).toBeInTheDocument();
+    expect(setSource).not.toHaveBeenCalled();
   });
 
   test('switching from a live camera to a disabled camera clears readiness and does not mount a player', () => {
