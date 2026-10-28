@@ -57,40 +57,41 @@ export function useDrawer() {
 }
 
 export function usePersistence(key, defaultValue = undefined) {
-  const [value, setInternalValue] = useState(defaultValue);
-  const [loaded, setLoaded] = useState(false);
+  // Keep the key together with its value and loading flag. Camera routes are
+  // reused, so a previous camera's loaded value must never be treated as the
+  // current camera's value, even for a single render before effects run.
+  const [entry, setEntry] = useState(() => ({ key, value: defaultValue, loaded: false }));
 
   const setValue = useCallback(
     (value) => {
-      setInternalValue(value);
-      async function update() {
-        await setData(key, value);
-      }
-
-      update();
+      setEntry((current) => ({
+        key,
+        value,
+        loaded: current.key === key && current.loaded,
+      }));
+      setData(key, value);
     },
     [key]
   );
 
   useEffect(() => {
     let cancelled = false;
-    setLoaded(false);
-    setInternalValue(defaultValue);
+    setEntry({ key, value: defaultValue, loaded: false });
 
     async function load() {
       const storedValue = await getData(key);
-      // A previous camera's IndexedDB read can finish after a new camera
-      // was selected. Never let it overwrite the current camera's settings.
       if (cancelled) return;
-      if (typeof storedValue !== 'undefined') {
-        setInternalValue(storedValue);
-      }
-      setLoaded(true);
+      setEntry((current) => current.key === key
+        ? { key, value: storedValue === undefined ? defaultValue : storedValue, loaded: true }
+        : current);
     }
 
     load();
     return () => { cancelled = true; };
   }, [key, defaultValue]);
 
-  return [value, setValue, loaded];
+  // The effect resetting state for a new key runs only after render. Return
+  // an unloaded value immediately on key change to prevent a transient player.
+  const current = entry.key === key;
+  return [current ? entry.value : defaultValue, setValue, current && entry.loaded];
 }
