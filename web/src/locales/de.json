@@ -173,7 +173,18 @@
         "restart": "Neu starten",
         "cancel": "Abbrechen",
         "progress_title": "Frigate wird neu gestartet",
-        "progress_text": "Das kann bis zu einer Minute dauern. Bitte lade die Seite erst danach neu."
+        "progress_text": "Frigate wird neu gestartet. Die Verbindung wird automatisch überprüft.",
+        "status_preparing": "Der aktuelle Prozess wird geprüft …",
+        "status_restarting": "Frigate wird neu gestartet. Warte auf den neuen Prozess …",
+        "status_waiting": "Verbindung unterbrochen. Warte auf Frigate …",
+        "status_verifying": "Frigate ist wieder erreichbar. Die Verbindung wird überprüft …",
+        "unavailable_title": "Frigate ist weiterhin nicht erreichbar",
+        "unavailable_text": "Ein neuer Frigate-Prozess konnte nicht bestätigt werden. Bitte prüfe die Container-Logs oder versuche erneut, die Verbindung herzustellen.",
+        "retry_check": "Erneut prüfen",
+        "reload_page": "Seite neu laden",
+        "request_error_title": "Neustart konnte nicht ausgelöst werden",
+        "request_error_text": "Der aktuelle Frigate-Prozess konnte nicht geprüft werden oder die WebSocket-Verbindung ist nicht verfügbar.",
+        "retry_start": "Erneut versuchen"
       }
     }
   }

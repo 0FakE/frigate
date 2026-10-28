@@ -7,8 +7,9 @@ import DarkModeIcon from './icons/DarkMode';
 import FrigateRestartIcon from './icons/FrigateRestart';
 import Prompt from './components/Prompt';
 import { useDarkMode } from './context';
-import { useCallback, useRef, useState } from 'preact/hooks';
-import { useRestart } from './api/ws';
+import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
+import { useRestart, useWsReady } from './api/ws';
+import { getFrigateStarted, isNewFrigateProcess, RESTART_CHECK_INTERVAL_MS, RESTART_MONITOR_TIMEOUT_MS, RESTART_REQUEST_TIMEOUT_MS } from './util/restartMonitor';
 import { t } from './locales';
 
 function SettingsAction({ icon: Icon, children, selected, onClick, type = 'action' }) {
@@ -43,9 +44,76 @@ function SettingsAction({ icon: Icon, children, selected, onClick, type = 'actio
 export default function AppBar() {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
-  const [showDialogWait, setShowDialogWait] = useState(false);
+  const [restartStage, setRestartStage] = useState('idle');
+  const [restartBaseline, setRestartBaseline] = useState(null);
+  const [restartAttempt, setRestartAttempt] = useState(0);
   const { setDarkMode, persistedMode } = useDarkMode();
   const { send: sendRestart } = useRestart();
+  const wsReady = useWsReady();
+  const wsReadyRef = useRef(wsReady);
+  wsReadyRef.current = wsReady;
+
+  // Polling only starts after a baseline was captured and the restart was sent.
+  // All timers and in-flight HTTP checks are cancelled on unmount or retry.
+  useEffect(() => {
+    if (!restartAttempt || restartBaseline === null) return;
+
+    let active = true;
+    let timer = null;
+    let requestController = null;
+    let requestTimeout = null;
+    let verifiedResponses = 0;
+    const deadline = Date.now() + RESTART_MONITOR_TIMEOUT_MS;
+
+    async function poll() {
+      if (!active) return;
+      if (Date.now() >= deadline) {
+        setRestartStage('timeout');
+        return;
+      }
+      requestController = new AbortController();
+      requestTimeout = setTimeout(() => requestController.abort(), RESTART_REQUEST_TIMEOUT_MS);
+      try {
+        const started = await getFrigateStarted(requestController.signal);
+        if (!active) return;
+
+        if (isNewFrigateProcess(restartBaseline, started)) {
+          setRestartStage('verifying');
+          verifiedResponses = wsReadyRef.current ? verifiedResponses + 1 : 0;
+          if (verifiedResponses >= 2) {
+            window.location.reload();
+            return;
+          }
+        } else {
+          verifiedResponses = 0;
+          setRestartStage('restarting');
+        }
+      } catch (error) {
+        if (!active) return;
+        verifiedResponses = 0;
+        setRestartStage('waiting');
+      } finally {
+        clearTimeout(requestTimeout);
+        requestTimeout = null;
+        requestController = null;
+      }
+      if (active) {
+        if (Date.now() >= deadline) {
+          setRestartStage('timeout');
+        } else {
+          timer = setTimeout(poll, RESTART_CHECK_INTERVAL_MS);
+        }
+      }
+    }
+
+    timer = setTimeout(poll, RESTART_CHECK_INTERVAL_MS);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+      clearTimeout(requestTimeout);
+      requestController?.abort();
+    };
+  }, [restartAttempt, restartBaseline]);
 
   const handleSelectDarkMode = useCallback(
     (value) => {
@@ -65,11 +133,34 @@ export default function AppBar() {
     setShowMoreMenu(false);
   }, [setShowMoreMenu]);
 
-  const handleClickRestartDialog = useCallback(() => {
+  const handleClickRestartDialog = useCallback(async () => {
     setShowDialog(false);
-    setShowDialogWait(true);
-    sendRestart();
-  }, [setShowDialog, sendRestart]);
+    setRestartStage('preparing');
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), RESTART_REQUEST_TIMEOUT_MS);
+    try {
+      // Do not dispatch a restart until we can identify the old process.
+      const oldStart = await getFrigateStarted(controller.signal);
+      if (!wsReadyRef.current) throw new Error('WebSocket unavailable');
+      sendRestart();
+      setRestartBaseline(oldStart);
+      setRestartStage('restarting');
+      setRestartAttempt((current) => current + 1);
+    } catch (error) {
+      setRestartStage('request_error');
+    } finally {
+      clearTimeout(timeout);
+    }
+  }, [sendRestart]);
+
+  const retryMonitoring = useCallback(() => {
+    setRestartStage('restarting');
+    setRestartAttempt((current) => current + 1);
+  }, []);
+
+  const cancelFailedRestart = useCallback(() => {
+    setRestartStage('idle');
+  }, []);
 
   const handleDismissRestartDialog = useCallback(() => {
     setShowDialog(false);
@@ -120,11 +211,33 @@ export default function AppBar() {
           ]}
         />
       )}
-      {showDialogWait && (
+      {['preparing', 'restarting', 'waiting', 'verifying'].includes(restartStage) && (
         <Prompt
           title={t('app.modal.restart.progress_title')}
-          text={t('app.modal.restart.progress_text')}
+          text={t('app.modal.restart.status_' + restartStage)}
           variant="info"
+        />
+      )}
+      {restartStage === 'timeout' && (
+        <Prompt
+          title={t('app.modal.restart.unavailable_title')}
+          text={t('app.modal.restart.unavailable_text')}
+          variant="error"
+          actions={[
+            { text: t('app.modal.restart.retry_check'), onClick: retryMonitoring },
+            { text: t('app.modal.restart.reload_page'), onClick: () => window.location.reload() },
+          ]}
+        />
+      )}
+      {restartStage === 'request_error' && (
+        <Prompt
+          title={t('app.modal.restart.request_error_title')}
+          text={t('app.modal.restart.request_error_text')}
+          variant="error"
+          actions={[
+            { text: t('app.modal.restart.retry_start'), onClick: handleClickRestartDialog },
+            { text: t('app.modal.restart.cancel'), onClick: cancelFailedRestart },
+          ]}
         />
       )}
     </Fragment>

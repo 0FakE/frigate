@@ -124,6 +124,11 @@ export function usePtzCommand(camera) {
   return { payload, send, connected };
 }
 
+export function useWsReady() {
+  const { readyState } = useContext(WS);
+  return readyState === ReadyState.OPEN;
+}
+
 export function useRestart() {
   const {
     value: { payload },
