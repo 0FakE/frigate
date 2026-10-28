@@ -120,7 +120,7 @@ function EditorNotice({ variant, children }) {
   );
 }
 
-export default function LiveZoneEditor({ camera, width, height, displayWidth, trackedObjects = [], onDirtyChange, streamReady = true, streamError = false, toolbar = null, optionsPanel = null, children }) {
+export default function LiveZoneEditor({ camera, width, height, displayWidth, trackedObjects = [], onDirtyChange, streamReady = true, streamError = false, streamDisabled = false, toolbar = null, optionsPanel = null, children }) {
   const svgRef = useRef(null);
   const hoverLabelRef = useRef(null);
   const dragRef = useRef(null);
@@ -143,6 +143,8 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   const [hoverLabelWidth, setHoverLabelWidth] = useState(0);
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(true);
+  const editorLocked = !streamReady || streamError || streamDisabled;
+  const interactionBusy = busy || editorLocked;
   const [objectLabel, setObjectLabel] = useState(trackedObjects[0] || 'person');
 
   const load = useCallback(async () => {
@@ -216,13 +218,14 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   };
 
   const addPoint = (event) => {
+    if (editorLocked) return;
     // A pointer drag can finish with a synthetic click targeting the SVG.
     // Never turn that click into another vertex.
     if (suppressNextClickRef.current) {
       suppressNextClickRef.current = false;
       return;
     }
-    if (event.button !== 0 || event.target !== svgRef.current || !selected || dragRef.current || busy) return;
+    if (event.button !== 0 || event.target !== svgRef.current || !selected || dragRef.current || interactionBusy) return;
     const point = eventPoint(event);
     setData((current) => editShape(current, selected, (points) => {
       const next = [...points];
@@ -241,8 +244,9 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   };
 
   const startDrag = (event, id, index) => {
+    if (editorLocked) return;
     // Only a primary-button press is a drag. Right-click stays available to remove points.
-    if ((event.button != null && event.button !== 0) || busy) return;
+    if ((event.button != null && event.button !== 0) || interactionBusy) return;
     event.stopPropagation();
     event.preventDefault();
     suppressNextClickRef.current = true;
@@ -253,6 +257,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     }
   };
   const moveDrag = (event) => {
+    if (editorLocked) return;
     if (!dragRef.current) return;
     const { id, index } = dragRef.current;
     const point = eventPoint(event);
@@ -267,6 +272,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   };
 
   const handleCanvasPointerDown = (event) => {
+    if (editorLocked) return;
     // A fresh click on the background must work even if a prior drag was cancelled.
     if (event.target === svgRef.current) suppressNextClickRef.current = false;
     setHovered(null);
@@ -284,7 +290,8 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   };
 
   const startZoneObjectEdit = () => {
-    if (!selected?.startsWith('zone:') || busy) return;
+    if (editorLocked) return;
+    if (!selected?.startsWith('zone:') || interactionBusy) return;
     cancelZoneRename();
     const current = data.zone_objects[selected.slice(5)];
     setZoneObjectsDraft(current ? [...current] : null);
@@ -293,6 +300,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
 
   const applyZoneObjects = (event) => {
     event.preventDefault();
+    if (editorLocked) return;
     if (!selected?.startsWith('zone:')) return;
     if (zoneObjectsDraft !== null && !zoneObjectsDraft.length) {
       window.alert(t('cameras.debug.editor.modal.error.empty_zone_objects'));
@@ -311,7 +319,8 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   };
 
   const startZoneRename = () => {
-    if (!selected?.startsWith('zone:') || busy) return;
+    if (editorLocked) return;
+    if (!selected?.startsWith('zone:') || interactionBusy) return;
     cancelZoneObjectEdit();
     setRenameDraft(selected.slice(5));
     setRenameError('');
@@ -320,6 +329,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
 
   const applyZoneRename = (event) => {
     event.preventDefault();
+    if (editorLocked) return;
     if (!selected?.startsWith('zone:')) return;
     const oldName = selected.slice(5);
     const newName = renameDraft.trim();
@@ -366,6 +376,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   };
 
   const addZone = () => {
+    if (editorLocked) return;
     const name = window.prompt(t('cameras.debug.editor.prompt.zone_name'));
     if (!name) return;
     if (!/^[A-Za-z0-9_]+$/.test(name)) {
@@ -388,6 +399,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   };
 
   const addMotionMask = () => {
+    if (editorLocked) return;
     const index = data.motion_masks.length;
     setData((current) => ({ ...current, motion_masks: [...current.motion_masks, []] }));
     setSelected('motion:' + index);
@@ -397,6 +409,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   };
 
   const addObjectMask = () => {
+    if (editorLocked) return;
     const name = objectLabel.trim();
     if (!/^[A-Za-z0-9_]+$/.test(name)) {
       window.alert(t('cameras.debug.editor.modal.error.invalid_object_name'));
@@ -414,6 +427,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   };
 
   const removeSelected = () => {
+    if (editorLocked) return;
     if (!selected) return;
     const [type, key, subkey] = selected.split(':');
     if (type === 'zone') {
@@ -442,12 +456,14 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   };
 
   const removePoint = (index) => {
+    if (editorLocked) return;
     if (!selected) return;
     setData((current) => editShape(current, selected, (points) => points.filter((_, i) => i !== index)));
     setStatus('');
   };
 
   const save = async () => {
+    if (editorLocked) return;
     if (invalidShape) {
       window.alert(t(invalidWarningKey, { name: invalidShape.label }));
       return;
@@ -501,7 +517,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   const selectedShape = shapes.find((shape) => shape.id === selected);
   // Only hovering an existing list entry triggers this label; pointer
   // movement within the camera preview never selects a label.
-  const hoveredShape = streamReady && !dragRef.current
+  const hoveredShape = !editorLocked && !dragRef.current
     ? shapes.find((shape) => shape.id === hovered) : null;
   const hoveredPosition = hoveredShape ? polygonLabelPoint(hoveredShape.points) : null;
   // A max-content label stays on one line unless it genuinely exceeds the
@@ -549,7 +565,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
               <div className="grid grid-cols-2 gap-2">
                 <button type="button"
                   className={toolButtonClass + ' h-10 min-w-0 border-green-500 bg-white dark:bg-slate-800/90 text-green-500 hover:bg-slate-100 dark:hover:bg-slate-700'}
-                  onClick={addZone} disabled={busy}>
+                  onClick={addZone} disabled={interactionBusy}>
                   <svg aria-hidden="true" className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="4 2">
                     <rect x="4" y="4" width="16" height="16" rx="2" />
                   </svg>
@@ -557,7 +573,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                 </button>
                 <button type="button"
                   className={toolButtonClass + ' h-10 min-w-0 border-red-500 bg-white dark:bg-slate-800/90 text-red-500 hover:bg-slate-100 dark:hover:bg-slate-700'}
-                  onClick={addMotionMask} disabled={busy}>
+                  onClick={addMotionMask} disabled={interactionBusy}>
                   <svg aria-hidden="true" className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                     <path d="m3 3 18 18M10.6 5.4A10.6 10.6 0 0 1 12 5c5 0 9 7 9 7a16.6 16.6 0 0 1-3 3.5M6.2 6.2A17.7 17.7 0 0 0 3 12s4 7 9 7c1.4 0 2.8-.5 4-1.3" />
                   </svg>
@@ -566,7 +582,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
               </div>
               <div className="mt-2 grid grid-cols-2 gap-2">
                 <select
-                  className="h-10 w-full min-w-0 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-950 px-2 text-sm text-slate-900 dark:text-slate-100 focus-visible:ring-2 focus-visible:ring-blue-400"
+                  className="h-10 w-full min-w-0 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-950 px-2 text-sm text-slate-900 dark:text-slate-100 focus-visible:ring-2 focus-visible:ring-blue-400" disabled={interactionBusy}
                   aria-label={t('cameras.debug.editor.label.object_class')}
                   title={t('cameras.debug.editor.label.object_filter_select')}
                   value={objectLabel}
@@ -577,7 +593,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                   ))}
                 </select>
                 <button type="button" className={toolButtonClass + ' h-10 w-full min-w-0 border-blue-500 bg-white dark:bg-slate-800/90 text-blue-500 hover:border-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700'}
-                  onClick={addObjectMask} disabled={busy}>
+                  onClick={addObjectMask} disabled={interactionBusy}>
                   <svg aria-hidden="true" className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M4 5h16l-6 7v6l-4 2v-8Z" />
                   </svg>
@@ -611,14 +627,15 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                           {groupShapes.map((shape) => (
                             <button key={shape.id} type="button"
                               aria-pressed={selected === shape.id}
+                               disabled={interactionBusy}
                               aria-label={shape.label}
                               title={shape.label}
                               onClick={() => {
                                 cancelZoneRename();
                                 cancelZoneObjectEdit();
-                                setSelected((current) => current === shape.id ? null : shape.id);
+                                if (!editorLocked) setSelected((current) => current === shape.id ? null : shape.id);
                               }}
-                              onMouseEnter={() => setHovered(shape.id)}
+                              onMouseEnter={() => { if (!editorLocked) setHovered(shape.id); }}
                               onMouseLeave={() => setHovered((current) => current === shape.id ? null : current)}
                               className={selected === shape.id
                                 ? 'flex min-h-9 w-full min-w-0 items-center gap-2 rounded-lg border border-blue-500/50 bg-blue-600/20 px-2 py-1.5 text-left text-sm font-semibold text-slate-900 dark:text-white transition-colors'
@@ -662,7 +679,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                           className="ml-2 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-slate-800 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
                           title={t('cameras.debug.editor.button.rename_zone')}
                           aria-label={t('cameras.debug.editor.button.rename_zone')}
-                          onClick={startZoneRename} disabled={busy}>
+                          onClick={startZoneRename} disabled={interactionBusy}>
                           <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24"
                             fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -677,7 +694,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                           aria-label={t('cameras.debug.editor.button.edit_zone_objects')}
                           aria-expanded={editingZoneObjects}
                           aria-controls="zone-objects-editor"
-                          onClick={editingZoneObjects ? cancelZoneObjectEdit : startZoneObjectEdit} disabled={busy}>
+                          onClick={editingZoneObjects ? cancelZoneObjectEdit : startZoneObjectEdit} disabled={interactionBusy}>
                           <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 24 24"
                             fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M4 7h9m4 0h3M4 17h3m4 0h9" />
@@ -695,14 +712,14 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                         {t('cameras.debug.editor.header.zone_objects')}
                       </h4>
                       <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-800 dark:text-slate-200">
-                        <input type="radio" name="zone-object-mode" checked={zoneObjectsDraft === null}
+                        <input type="radio" name="zone-object-mode" disabled={interactionBusy} checked={zoneObjectsDraft === null}
                           onChange={() => setZoneObjectsDraft(null)}
                           className="border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-900 text-blue-600 focus:ring-blue-400" />
                         {t('cameras.debug.editor.label.zone_objects_all')}
                       </label>
                       <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-800 dark:text-slate-200">
                         <input type="radio" name="zone-object-mode" checked={zoneObjectsDraft !== null}
-                          disabled={trackedObjects.length === 0 && zoneObjectsDraft === null}
+                          disabled={interactionBusy || (trackedObjects.length === 0 && zoneObjectsDraft === null)}
                           onChange={() => setZoneObjectsDraft([])}
                           className="border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-900 text-blue-600 focus:ring-blue-400" />
                         {t('cameras.debug.editor.label.zone_objects_selected')}
@@ -711,7 +728,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                         <div className="space-y-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/80 p-3">
                           {[...new Set([...trackedObjects, ...zoneObjectsDraft])].map((label) => (
                             <label key={label} className="flex cursor-pointer items-center gap-2 text-sm text-slate-800 dark:text-slate-200">
-                              <input type="checkbox" checked={zoneObjectsDraft.includes(label)}
+                              <input type="checkbox" disabled={interactionBusy} checked={zoneObjectsDraft.includes(label)}
                                 onChange={(event) => {
                                   const checked = event.currentTarget.checked;
                                   setZoneObjectsDraft((current) => checked
@@ -728,10 +745,10 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                         </div>
                       )}
                       <div className="flex justify-end gap-2">
-                        <button type="button" className={secondaryButtonClass} onClick={cancelZoneObjectEdit}>
+                        <button type="button" className={secondaryButtonClass} onClick={cancelZoneObjectEdit} disabled={interactionBusy}>
                           {t('cameras.debug.editor.button.rename_cancel')}
                         </button>
-                        <button type="submit" className={toolButtonClass + ' border-blue-500 bg-blue-600 text-white hover:bg-blue-500'}>
+                        <button type="submit" disabled={interactionBusy} className={toolButtonClass + ' border-blue-500 bg-blue-600 text-white hover:bg-blue-500'}>
                           {t('cameras.debug.editor.button.rename_apply')}
                         </button>
                       </div>
@@ -742,7 +759,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                       <label htmlFor="zone-rename-input" className="block text-sm font-semibold text-slate-900 dark:text-slate-100">
                         {t('cameras.debug.editor.label.zone_new_name')}
                       </label>
-                      <input id="zone-rename-input" type="text" autoFocus
+                      <input id="zone-rename-input" type="text" autoFocus disabled={interactionBusy}
                         value={renameDraft} onInput={(event) => {
                           setRenameDraft(event.currentTarget.value);
                           setRenameError('');
@@ -759,10 +776,10 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                         </p>
                       )}
                       <div className="flex justify-end gap-2">
-                        <button type="button" className={secondaryButtonClass} onClick={cancelZoneRename}>
+                        <button type="button" className={secondaryButtonClass} onClick={cancelZoneRename} disabled={interactionBusy}>
                           {t('cameras.debug.editor.button.rename_cancel')}
                         </button>
-                        <button type="submit" className={toolButtonClass + ' border-blue-500 bg-blue-600 text-white hover:bg-blue-500'}>
+                        <button type="submit" disabled={interactionBusy} className={toolButtonClass + ' border-blue-500 bg-blue-600 text-white hover:bg-blue-500'}>
                           {t('cameras.debug.editor.button.rename_apply')}
                         </button>
                       </div>
@@ -773,22 +790,22 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                 <p className="mb-3 whitespace-pre-line text-sm leading-5 text-slate-500 dark:text-slate-400">{t('cameras.debug.editor.label.no_selection')}</p>
               )}
               <div className="grid grid-cols-2 gap-2">
-                <button type="button" className={secondaryButtonClass + ' w-full'} onClick={() => { cancelZoneRename(); cancelZoneObjectEdit(); setSelected(null); }} disabled={!selected || busy}>
+                <button type="button" className={secondaryButtonClass + ' w-full'} onClick={() => { if (editorLocked) return; cancelZoneRename(); cancelZoneObjectEdit(); setSelected(null); }} disabled={!selected || interactionBusy}>
                   {t('cameras.debug.editor.button.end_editing')}
                 </button>
                 <button type="button"
                   className={toolButtonClass + ' w-full border-red-700 bg-red-800 text-white shadow-lg shadow-red-900/20 hover:bg-red-700'}
-                  onClick={removeSelected} disabled={!selected || busy}>
+                  onClick={removeSelected} disabled={!selected || interactionBusy}>
                   {t('cameras.debug.editor.button.delete_area')}
                 </button>
               </div>
               <div className="mt-2 grid grid-cols-2 gap-2 border-t border-slate-300 dark:border-slate-700 pt-2">
-                <button type="button" className={secondaryButtonClass + ' w-full'} onClick={load} disabled={busy}>
+                <button type="button" className={secondaryButtonClass + ' w-full'} onClick={load} disabled={interactionBusy}>
                   {t('cameras.debug.editor.button.discard_changes')}
                 </button>
                 <button type="button"
                   className={toolButtonClass + ' w-full border-blue-500 bg-blue-600 text-white shadow-lg shadow-blue-900/20 hover:bg-blue-500'}
-                  onClick={save} disabled={busy || !revision || !isDirty}>
+                  onClick={save} disabled={interactionBusy || !revision || !isDirty}>
                   {t('cameras.debug.editor.button.save_changes')}
                 </button>
               </div>
@@ -818,19 +835,19 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
           <div data-testid="live-editor-viewport" className="relative live-polygon-preview overflow-hidden"
             style={{ width: (displayWidth || width) + 'px', maxWidth: '100%', aspectRatio: width + ' / ' + height }}>
             <div data-testid="live-editor-video-slot" className="absolute inset-0">{children}</div>
-        {!streamReady && (
-          <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-slate-100 dark:bg-slate-900 px-4 text-center text-base font-semibold text-slate-900 dark:text-white" role={streamError ? 'alert' : 'status'}>
-            {t(streamError ? 'cameras.page.preview_error' : 'cameras.debug.editor.status.loading_stream')}
+        {editorLocked && (
+          <div className={'pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-slate-100 dark:bg-slate-900 px-4 text-center text-base font-bold ' + (streamDisabled || streamError ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white')} role={streamDisabled || streamError ? 'alert' : 'status'}>
+            {t(streamDisabled ? 'cameras.page.camera_disabled' : streamError ? 'cameras.page.preview_error' : 'cameras.debug.editor.status.loading_stream')}
           </div>
         )}
         <svg ref={svgRef} viewBox={'0 0 ' + width + ' ' + height} preserveAspectRatio="none"
-          className={"absolute inset-0 w-full h-full z-20 touch-none cursor-crosshair " + (!streamReady ? "invisible pointer-events-none" : "")}
+          className={"absolute inset-0 w-full h-full z-20 touch-none cursor-crosshair " + (editorLocked ? "invisible pointer-events-none" : "")}
           onPointerDown={handleCanvasPointerDown}
           onClick={addPoint}
           onPointerMove={moveDrag}
           onPointerUp={endDrag}
           onPointerCancel={endDrag}>
-          {streamReady && shapes.map((shape) => (
+          {!editorLocked && shapes.map((shape) => (
             <g key={shape.id} style={{ pointerEvents: 'none' }}>
               {shape.points.length >= 3 && (
                 <polygon
@@ -849,7 +866,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
             </g>
           ))}
           {/* Active vertices are always drawn last, above any overlapping polygons. */}
-          {streamReady && selected && shapes.filter((shape) => shape.id === selected).map((shape) => (
+          {!editorLocked && selected && shapes.filter((shape) => shape.id === selected).map((shape) => (
             <g key={shape.id}>
               {shape.points.map(([x, y], i) => (
                 <g key={i}>
@@ -863,7 +880,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                     onContextMenu={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      if (!busy) removePoint(i);
+                      if (!interactionBusy) removePoint(i);
                     }}
                     aria-label={t('cameras.debug.editor.label.vertex', { number: i + 1, name: shape.label })}
                   />
