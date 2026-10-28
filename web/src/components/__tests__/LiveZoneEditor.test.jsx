@@ -735,6 +735,10 @@ describe('LiveZoneEditor vertex interactions', () => {
         <div>Live stream</div>
       </LiveZoneEditor>
     );
+    // A hover made while the preview was locked is intentionally ignored.
+    // Once the first frame arrives, a new pointer entry can reveal the label.
+    expect(screen.queryByTestId('live-editor-hover-label')).not.toBeInTheDocument();
+    fireEvent.mouseEnter(screen.getByRole('button', { name: 'Maske 1' }));
     expect(screen.getByTestId('live-editor-hover-label')).toHaveTextContent('Maske 1');
     fireEvent.mouseLeave(screen.getByRole('button', { name: 'Maske 1' }));
     fireEvent.mouseEnter(screen.getByRole('button', { name: 'person 1' }));
