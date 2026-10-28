@@ -547,7 +547,7 @@ describe('LiveZoneEditor vertex interactions', () => {
 
 
   test('editor panels, fields and group rows use light and dark variants', async () => {
-    const { container } = await openEditor({ streamReady: true });
+    await openEditor({ streamReady: true });
     const sidebar = screen.getByRole('complementary', { name: 'Werkzeuge und Bereiche' });
     expect(sidebar).toHaveClass('text-slate-900', 'dark:text-slate-100');
     const newArea = screen.getByRole('region', { name: 'Neuen Bereich erstellen' });
