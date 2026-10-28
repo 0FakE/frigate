@@ -114,7 +114,7 @@ describe('modern camera page keeps its original actions', () => {
     expect(liveFrame).not.toHaveClass('rounded-2xl', 'rounded-lg', 'rounded-xl');
     expect(liveFrame.style.width).toBe('640px');
     expect(liveFrame.style.aspectRatio).toBe('640 / 360');
-    expect(screen.getByTestId('camera-preview-overlay')).toHaveTextContent('Kamera Vorschau wird geladen…');
+    expect(screen.getByTestId('camera-preview-overlay')).toHaveTextContent('Kamera Vorschau wird geladen...');
     const trackedSection = screen.getByRole('region', { name: 'Erkannte Objekte' });
     expect(trackedSection).toHaveClass('border-t', 'pt-6');
     const thumbnails = trackedSection.querySelectorAll('img');
@@ -284,7 +284,7 @@ describe('modern camera page keeps its original actions', () => {
     expect(warning).toHaveAttribute('role', 'alert');
     expect(warning).toHaveTextContent('Kamera ist deaktiviert');
     expect(warning).toHaveClass('text-red-600', 'dark:text-red-400', 'font-bold');
-    expect(screen.queryByText('Kamera Vorschau wird geladen…')).not.toBeInTheDocument();
+    expect(screen.queryByText('Kamera Vorschau wird geladen...')).not.toBeInTheDocument();
     expect(screen.queryByText('JSMpeg Livebild')).not.toBeInTheDocument();
     expect(screen.queryByRole('combobox', { name: 'Videoquelle' })).not.toBeInTheDocument();
 
@@ -533,7 +533,7 @@ describe('modern camera page keeps its original actions', () => {
     const frame = screen.getByTestId('modern-live-preview');
     expect(frame.style.aspectRatio).toBe('640 / 360');
     expect(frame).toHaveClass('camera-modern-live-preview');
-    expect(screen.getByRole('status')).toHaveTextContent('Kamera Vorschau wird geladen…');
+    expect(screen.getByRole('status')).toHaveTextContent('Kamera Vorschau wird geladen...');
     fireEvent.click(screen.getByRole('button', { name: 'JSMpeg Bild empfangen' }));
     expect(screen.queryByTestId('camera-preview-overlay')).not.toBeInTheDocument();
     expect(frame.style.aspectRatio).toBe('640 / 360');
@@ -546,7 +546,7 @@ describe('modern camera page keeps its original actions', () => {
     const frame = screen.getByTestId('modern-debug-preview');
     expect(frame.style.width).toBe('640px');
     expect(frame.style.aspectRatio).toBe('640 / 360');
-    expect(screen.getByTestId('camera-preview-overlay')).toHaveTextContent('Kamera Vorschau wird geladen…');
+    expect(screen.getByTestId('camera-preview-overlay')).toHaveTextContent('Kamera Vorschau wird geladen...');
     fireEvent.click(screen.getByRole('button', { name: 'JPEG Bild empfangen' }));
     expect(screen.queryByTestId('camera-preview-overlay')).not.toBeInTheDocument();
     expect(frame.style.aspectRatio).toBe('640 / 360');
