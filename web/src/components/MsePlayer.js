@@ -172,6 +172,10 @@ class VideoRTC extends HTMLElement {
       this.disconnectTID = 0;
     }
 
+    if (this.visibilityHandler) {
+      document.addEventListener('visibilitychange', this.visibilityHandler);
+    }
+
     // because video autopause on disconnected from DOM
     if (this.video) {
       const seek = this.video.seekable;
@@ -191,19 +195,13 @@ class VideoRTC extends HTMLElement {
    * document's DOM.
    */
   disconnectedCallback() {
-    if (this.background || this.disconnectTID) return;
-    if (this.wsState === WebSocket.CLOSED && this.pcState === WebSocket.CLOSED) return;
-
-    this.disconnectTID = setTimeout(() => {
-      if (this.reconnectTID) {
-        clearTimeout(this.reconnectTID);
-        this.reconnectTID = 0;
-      }
-
-      this.disconnectTID = 0;
-
-      this.ondisconnect();
-    }, this.DISCONNECT_TIMEOUT);
+    if (this.background) return;
+    // Camera navigation removes this element permanently. Do not let its
+    // old WebSocket or reconnection timer outlive the selected camera.
+    if (!this.isConnected && this.visibilityHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityHandler);
+    }
+    this.ondisconnect();
   }
 
   /**
@@ -225,13 +223,14 @@ class VideoRTC extends HTMLElement {
     if (this.background) return;
 
     if ('hidden' in document && this.visibilityCheck) {
-      document.addEventListener('visibilitychange', () => {
+      this.visibilityHandler = () => {
         if (document.hidden) {
           this.disconnectedCallback();
         } else if (this.isConnected) {
           this.connectedCallback();
         }
-      });
+      };
+      document.addEventListener('visibilitychange', this.visibilityHandler);
     }
 
     if ('IntersectionObserver' in window && this.visibilityThreshold) {
@@ -272,10 +271,19 @@ class VideoRTC extends HTMLElement {
   }
 
   ondisconnect() {
+    if (this.disconnectTID) {
+      clearTimeout(this.disconnectTID);
+      this.disconnectTID = 0;
+    }
+    if (this.reconnectTID) {
+      clearTimeout(this.reconnectTID);
+      this.reconnectTID = 0;
+    }
     this.wsState = WebSocket.CLOSED;
     if (this.ws) {
-      this.ws.close();
+      const ws = this.ws;
       this.ws = null;
+      ws.close();
     }
 
     this.pcState = WebSocket.CLOSED;
@@ -342,6 +350,10 @@ class VideoRTC extends HTMLElement {
    * @return {boolean} true if reconnection has started.
    */
   onclose() {
+    if (!this.isConnected) {
+      this.ondisconnect();
+      return false;
+    }
     if (this.wsState === WebSocket.CLOSED) return false;
 
     // CONNECTING, OPEN => CONNECTING
