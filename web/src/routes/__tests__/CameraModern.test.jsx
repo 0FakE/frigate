@@ -40,8 +40,9 @@ vi.mock('../../components/CameraControlPanel', () => ({
   default: () => <div>ONVIF Kamera-Steuerung</div>,
 }));
 vi.mock('../../components/LiveZoneEditor', () => ({
-  default: ({ children, toolbar, optionsPanel, onDirtyChange }) => (
-    <div data-testid="camera-editor">
+  default: ({ camera, streamReady, streamError, children, toolbar, optionsPanel, onDirtyChange }) => (
+    <div data-testid="camera-editor" data-camera={camera} data-stream-ready={String(streamReady)}
+      data-stream-error={String(streamError)}>
       <div>{children}</div>
       {toolbar}
       {optionsPanel}
@@ -236,6 +237,74 @@ describe('modern camera page keeps its original actions', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Live' }));
     expect(screen.getByRole('combobox', { name: 'Videoquelle' })).toBeInTheDocument();
     expect(screen.getByTestId('modern-live-preview')).toBeInTheDocument();
+  });
+
+
+  test('switching cameras while editor stays open requires a fresh frame for the new camera', () => {
+    const both = {
+      ...cameraConfig,
+      cameras: {
+        ...cameraConfig.cameras,
+        other_camera: {
+          ...cameraConfig.cameras.test_camera,
+          live: { height: 360, stream_name: 'other_camera' },
+        },
+      },
+    };
+    useSWR.mockImplementation((key) => key === 'config'
+      ? { data: both } : { data: ['person'] });
+    const { rerender } = render(<Camera camera="test_camera" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Debug' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Zonen & Masken Editor' }));
+    expect(screen.getByTestId('camera-editor')).toHaveAttribute('data-stream-ready', 'false');
+    fireEvent.click(screen.getByRole('button', { name: 'JSMpeg Bild empfangen' }));
+    expect(screen.getByTestId('camera-editor')).toHaveAttribute('data-stream-ready', 'true');
+
+    rerender(<Camera camera="other_camera" />);
+    expect(screen.getByTestId('camera-editor')).toHaveAttribute('data-camera', 'other_camera');
+    expect(screen.getByTestId('camera-editor')).toHaveAttribute('data-stream-ready', 'false');
+    fireEvent.click(screen.getByRole('button', { name: 'JSMpeg Bild empfangen' }));
+    expect(screen.getByTestId('camera-editor')).toHaveAttribute('data-stream-ready', 'true');
+  });
+
+  test('dirty editor blocks other camera links unless discard is confirmed', () => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    const { container } = render(
+      <div>
+        <Camera camera="test_camera" />
+        <a href="/cameras/other_camera">Andere Kamera</a>
+      </div>
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Debug' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Zonen & Masken Editor' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Simulierte Änderung' }));
+    expect(screen.getByRole('button', { name: 'Editor schließen' })).toBeInTheDocument();
+
+    const link = screen.getByRole('link', { name: 'Andere Kamera' });
+    const accepted = fireEvent.click(link);
+    expect(accepted).toBe(false);
+    expect(confirm).toHaveBeenCalledWith('Ungespeicherte Änderungen verwerfen?');
+    expect(container.querySelector('[data-testid="camera-editor"]')).toBeInTheDocument();
+    confirm.mockReturnValue(true);
+    expect(fireEvent.click(link)).toBe(true);
+  });
+
+  test('camera controls and object cards have contrasting light and dark colors', () => {
+    render(<Camera camera="test_camera" />);
+    const cameraName = screen.getByRole('heading', { name: 'TEST CAMERA' });
+    expect(cameraName).toHaveClass('text-slate-900', 'dark:text-white');
+    const back = screen.getByRole('link', { name: 'Zur Kameraübersicht' });
+    expect(back).toHaveClass('bg-slate-100', 'dark:bg-slate-800/90');
+    const source = screen.getByRole('combobox', { name: 'Videoquelle' });
+    expect(source).toHaveClass('text-slate-900', 'dark:text-slate-100');
+    const objectLink = screen.getByRole('link', { name: /Person/ });
+    expect(objectLink).toHaveClass('bg-white', 'dark:bg-slate-900/90');
+    expect(screen.getByRole('heading', { name: 'Erkannte Objekte' }))
+      .toHaveClass('text-slate-600', 'dark:text-slate-300');
+    fireEvent.click(screen.getByRole('button', { name: 'Debug' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show Options' }));
+    expect(document.getElementById('camera-debug-options'))
+      .toHaveClass('bg-white', 'dark:bg-slate-900/80');
   });
 
   test('Debug snapshot retains full camera resolution while remaining width-responsive', () => {

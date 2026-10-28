@@ -545,6 +545,25 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(axios.put).not.toHaveBeenCalled();
   });
 
+
+  test('editor panels, fields and group rows use light and dark variants', async () => {
+    const { container } = await openEditor({ streamReady: true });
+    const sidebar = screen.getByRole('complementary', { name: 'Bereiche verwalten' });
+    expect(sidebar).toHaveClass('text-slate-900', 'dark:text-slate-100');
+    const newArea = screen.getByRole('region', { name: 'Neuen Bereich erstellen' });
+    expect(newArea).toHaveClass('bg-white', 'dark:bg-slate-800/90');
+    expect(newArea).toHaveClass('border-slate-300', 'dark:border-slate-700/80');
+    const selector = screen.getByRole('combobox', { name: 'Objektklasse' });
+    expect(selector).toHaveClass('bg-white', 'dark:bg-slate-950');
+    expect(container.querySelectorAll('.dark\\:bg-slate-950\\/50').length).toBeGreaterThan(0);
+  });
+
+  test('editor reports an unavailable camera image without showing polygon overlay', async () => {
+    const { container } = await openEditor({ streamReady: false, streamError: true });
+    expect(screen.getByRole('alert')).toHaveTextContent('Die Kameravorschau konnte nicht geladen werden.');
+    expect(container.querySelector('[data-testid="live-editor-viewport"] > svg').querySelectorAll('polygon')).toHaveLength(0);
+  });
+
   test('hides polygons and vertex hit targets until a video frame is available', async () => {
     const { container, rerender, svg } = await openEditor({ streamReady: false });
     expect(screen.getByText('Kamera Vorschau wird geladen…')).toBeInTheDocument();

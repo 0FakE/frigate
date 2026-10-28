@@ -414,7 +414,7 @@ export default function Camera({ camera }) {
 
         {cameraConfig?.onvif?.host && (
           <section aria-label={t('cameras.page.control_panel')} className="mb-8 w-full rounded-2xl border border-slate-300 dark:border-slate-700/80 bg-white dark:bg-slate-900/80 p-5 shadow-xl shadow-black/10 sm:w-fit">
-            <h2 className="mb-3 text-base font-bold text-white">{t('cameras.page.control_panel')}</h2>
+            <h2 className="mb-3 text-base font-bold text-slate-900 dark:text-white">{t('cameras.page.control_panel')}</h2>
             <CameraControlPanel camera={camera} />
           </section>
         )}
@@ -434,7 +434,7 @@ export default function Camera({ camera }) {
               const label = t(classKey) === classKey ? objectType : t(classKey);
               return (
                 <a key={objectType} href={`/events?cameras=${camera}&labels=${encodeURIComponent(objectType)}`}
-                  className="group inline-flex max-w-full min-w-0 flex-col items-stretch overflow-hidden rounded-lg border border-slate-300 dark:border-slate-700/90 bg-slate-900/90 shadow-lg shadow-black/10 transition-colors hover:border-blue-500/70 hover:bg-slate-200 dark:hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
+                  className="group inline-flex max-w-full min-w-0 flex-col items-stretch overflow-hidden rounded-lg border border-slate-300 dark:border-slate-700/90 bg-white dark:bg-slate-900/90 shadow-lg shadow-black/10 transition-colors hover:border-blue-500/70 hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
                   <span className="min-w-0 px-3 py-2 text-center text-sm font-semibold uppercase text-slate-900 dark:text-slate-100">{label}</span>
                   <img className="shrink-0 object-cover grayscale" loading="lazy"
                     width="175" height="175"
@@ -463,7 +463,7 @@ export default function Camera({ camera }) {
 function CameraPreviewOverlay({ error }) {
   return (
     <div data-testid="camera-preview-overlay" role={error ? 'alert' : 'status'}
-      className={'pointer-events-none absolute inset-0 z-30 flex items-center justify-center whitespace-pre-line bg-slate-900/95 px-4 text-center text-base font-semibold ' +
+      className={'pointer-events-none absolute inset-0 z-30 flex items-center justify-center whitespace-pre-line bg-slate-900 px-4 text-center text-base font-semibold ' +
         (error ? 'text-red-300' : 'text-white')}>
       {t(error ? 'cameras.page.preview_error' : 'cameras.page.preview_loading')}
     </div>

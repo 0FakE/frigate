@@ -18,6 +18,8 @@ describe('ButtonsTabbed controlled navigation', () => {
     const live = screen.getByRole('button', { name: 'Live' });
     const debug = screen.getByRole('button', { name: 'Debug' });
     expect(nav).toHaveClass('justify-end');
+    expect(screen.getByTestId('camera-view-tabs'))
+      .toHaveClass('bg-white', 'dark:bg-slate-900/80', 'border-slate-300', 'dark:border-slate-700/70');
     expect(container.querySelectorAll('button svg[aria-hidden="true"]')).toHaveLength(2);
     expect(debug).toHaveAttribute('aria-pressed', 'true');
     expect(debug).toHaveClass('bg-blue-600', 'h-9', 'sm:h-10', 'px-2', 'sm:px-5');
