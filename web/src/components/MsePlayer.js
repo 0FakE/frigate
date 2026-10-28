@@ -350,7 +350,7 @@ class VideoRTC extends HTMLElement {
    * @return {boolean} true if reconnection has started.
    */
   onclose() {
-    if (!this.isConnected) {
+    if (!this.isConnected || (this.visibilityCheck && document.hidden)) {
       this.ondisconnect();
       return false;
     }
