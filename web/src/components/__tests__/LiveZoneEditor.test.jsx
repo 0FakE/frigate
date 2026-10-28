@@ -595,7 +595,7 @@ describe('LiveZoneEditor vertex interactions', () => {
   });
 
   test.each([
-    ['loading', { streamReady: false }, 'Kamera Vorschau wird geladen…', 'status'],
+    ['loading', { streamReady: false }, 'Kamera Vorschau wird geladen...', 'status'],
     ['disabled', { streamReady: false, streamDisabled: true }, 'Kamera ist deaktiviert', 'alert'],
     ['error', { streamReady: false, streamError: true }, 'Die Kameravorschau konnte nicht geladen werden.', 'alert'],
   ])('locks every editor control while preview is %s', async (_, props, text, role) => {
@@ -631,7 +631,7 @@ describe('LiveZoneEditor vertex interactions', () => {
 
   test('hides polygons and vertex hit targets until a video frame is available', async () => {
     const { container, rerender, svg } = await openEditor({ streamReady: false });
-    expect(screen.getByText('Kamera Vorschau wird geladen…')).toBeInTheDocument();
+    expect(screen.getByText('Kamera Vorschau wird geladen...')).toBeInTheDocument();
     expect(svg.querySelectorAll('polygon')).toHaveLength(0);
     expect(svg).toHaveClass('invisible', 'pointer-events-none');
 
@@ -641,7 +641,7 @@ describe('LiveZoneEditor vertex interactions', () => {
         <div>Live stream</div>
       </LiveZoneEditor>
     );
-    expect(screen.queryByText('Kamera Vorschau wird geladen…')).not.toBeInTheDocument();
+    expect(screen.queryByText('Kamera Vorschau wird geladen...')).not.toBeInTheDocument();
     expect(container.querySelector('[data-testid="live-editor-viewport"] > svg').querySelectorAll('polygon')).toHaveLength(2);
     expect(container.querySelector('[data-testid="live-editor-viewport"] > svg')).not.toHaveClass('invisible');
   });
@@ -650,7 +650,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     const { container, svg } = await openEditor({ streamReady: false });
     const preview = screen.getByTestId('live-editor-viewport');
     const streamSlot = screen.getByTestId('live-editor-video-slot');
-    const loading = screen.getByText('Kamera Vorschau wird geladen…');
+    const loading = screen.getByText('Kamera Vorschau wird geladen...');
 
     expect(preview).toHaveClass('relative', 'live-polygon-preview', 'overflow-hidden');
     expect(preview).not.toHaveClass('grid');
@@ -677,7 +677,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(preview.style.aspectRatio).toBe('800 / 600');
     expect(svg.getAttribute('viewBox')).toBe('0 0 800 600');
     expect(screen.getByTestId('live-editor-video-slot')).toHaveClass('absolute', 'inset-0');
-    expect(screen.getByText('Kamera Vorschau wird geladen…').parentElement).toBe(preview);
+    expect(screen.getByText('Kamera Vorschau wird geladen...').parentElement).toBe(preview);
   });
 
   test('compact object-class select and no selection checkmark', async () => {
