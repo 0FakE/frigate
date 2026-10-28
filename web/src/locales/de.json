@@ -62,7 +62,7 @@
           "unsaved": "Nicht gespeicherte Änderungen",
           "saved": "Die Änderungen wurden gespeichert.",
           "restart_required": "Ein Neustart von Frigate ist erforderlich.",
-          "loading_stream": "Kamera Vorschau wird geladen…"
+          "loading_stream": "Kamera Vorschau wird geladen..."
         },
         "modal": {
           "error": {
@@ -113,7 +113,7 @@
       "mse_unsupported": "MSE wird von diesem Browser nicht unterstützt. Bitte verwende JSMpeg oder WebRTC.",
       "back_to_cameras": "Zur Kameraübersicht",
       "streaming": "Videowiedergabe",
-      "preview_loading": "Kamera Vorschau wird geladen…",
+      "preview_loading": "Kamera Vorschau wird geladen...",
       "preview_error": "Die Kameravorschau konnte nicht geladen werden. Bitte prüfe die Verbindung und lade die Seite neu.",
       "camera_disabled": "Kamera ist deaktiviert"
     },
@@ -147,7 +147,7 @@
   "config": {},
   "app": {
     "status": {
-      "loading_translations": "Sprachdatei wird geladen …"
+      "loading_translations": "Sprachdatei wird geladen..."
     },
     "button": {
       "dismiss_warning": "Hinweis schließen"
@@ -174,10 +174,10 @@
         "cancel": "Abbrechen",
         "progress_title": "Frigate wird neu gestartet",
         "progress_text": "Frigate wird neu gestartet.\nDie Verbindung wird automatisch überprüft.",
-        "status_preparing": "Der aktuelle Prozess wird geprüft …",
-        "status_restarting": "Frigate wird neu gestartet.\nWarte auf den neuen Prozess …",
-        "status_waiting": "Verbindung unterbrochen.\nWarte auf Frigate …",
-        "status_verifying": "Frigate ist wieder erreichbar.\nDie Verbindung wird überprüft …",
+        "status_preparing": "Der aktuelle Prozess wird geprüft...",
+        "status_restarting": "Frigate wird neu gestartet.\nWarte auf den neuen Prozess...",
+        "status_waiting": "Verbindung unterbrochen.\nWarte auf Frigate...",
+        "status_verifying": "Frigate ist wieder erreichbar.\nDie Verbindung wird überprüft...",
         "unavailable_title": "Frigate ist weiterhin nicht erreichbar",
         "unavailable_text": "Ein neuer Frigate-Prozess konnte nicht bestätigt werden.\nBitte prüfe die Container-Logs oder versuche erneut, die Verbindung herzustellen.",
         "retry_check": "Erneut prüfen",
