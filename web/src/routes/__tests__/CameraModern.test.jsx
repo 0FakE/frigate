@@ -85,6 +85,7 @@ describe('modern camera page keeps its original actions', () => {
     expect(screen.getByText('Auflösung: 640 × 360')).toBeInTheDocument();
     const selector = screen.getByRole('combobox', { name: 'Videoquelle' });
     expect(selector).toHaveValue('jsmpeg');
+    expect(selector).toBeEnabled();
     expect(selector).toHaveClass('h-9', 'sm:h-10', 'rounded-lg', 'border-0', 'w-[6.5rem]', 'pr-7', 'sm:pr-8');
     expect(selector).not.toHaveClass('border', 'border-slate-700', 'focus-visible:ring-2');
     expect(selector).not.toHaveClass('min-w-[8rem]', 'pr-10');
@@ -284,11 +285,16 @@ describe('modern camera page keeps its original actions', () => {
     expect(warning).toHaveClass('text-red-600', 'dark:text-red-400', 'font-bold');
     expect(screen.queryByText('Kamera Vorschau wird geladen…')).not.toBeInTheDocument();
     expect(screen.queryByText('JSMpeg Livebild')).not.toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Videoquelle' })).toBeDisabled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Debug' }));
     warning = screen.getByTestId('camera-preview-overlay');
     expect(warning).toHaveTextContent('Kamera ist deaktiviert');
     expect(screen.queryByText('Debug Kamerabild')).not.toBeInTheDocument();
+    const optionsButton = screen.getByRole('button', { name: 'Show Options' });
+    expect(optionsButton).toBeDisabled();
+    fireEvent.click(optionsButton);
+    expect(screen.queryByRole('region', { name: 'Anzeigeoptionen' })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Zonen & Masken Editor' }));
     const editor = screen.getByTestId('camera-editor');
@@ -326,6 +332,30 @@ describe('modern camera page keeps its original actions', () => {
     expect(screen.getByTestId('camera-editor')).toHaveAttribute('data-stream-ready', 'false');
     fireEvent.click(screen.getByRole('button', { name: 'JSMpeg Bild empfangen' }));
     expect(screen.getByTestId('camera-editor')).toHaveAttribute('data-stream-ready', 'true');
+  });
+
+
+  test('camera switch closes existing options and keeps controls locked on a disabled camera', () => {
+    const configs = {
+      ...cameraConfig,
+      cameras: {
+        ...cameraConfig.cameras,
+        disabled_camera: { ...cameraConfig.cameras.test_camera, enabled: false },
+      },
+    };
+    useSWR.mockImplementation((key) => key === 'config' ? { data: configs } : { data: [] });
+    const { rerender } = render(<Camera camera="test_camera" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Debug' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show Options' }));
+    expect(screen.getByRole('button', { name: 'Hide Options' })).toHaveAttribute('aria-expanded', 'true');
+    rerender(<Camera camera="disabled_camera" />);
+    const button = screen.getByRole('button', { name: 'Show Options' });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('region', { name: 'Anzeigeoptionen' })).not.toBeInTheDocument();
+    rerender(<Camera camera="test_camera" />);
+    expect(screen.getByRole('button', { name: 'Show Options' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Show Options' })).toHaveAttribute('aria-expanded', 'false');
   });
 
   test('dirty editor blocks other camera links unless discard is confirmed', () => {

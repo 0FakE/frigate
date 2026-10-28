@@ -121,8 +121,12 @@
 }
 
 .camera-modern-live-preview [data-testid="camera-preview-overlay"] {
-  /* Opaque: JSMpeg can render a gray decoder canvas in the center and dark
-     letterbox strips above/below. A translucent loader shows both shades. */
+  /* Opaque: hide uninitialized canvases and use the same theme background
+     as the debug preview, including explicitly disabled cameras. */
+  background-color: #f1f5f9;
+}
+
+.dark .camera-modern-live-preview [data-testid="camera-preview-overlay"] {
   background-color: #0f172a;
 }
 
