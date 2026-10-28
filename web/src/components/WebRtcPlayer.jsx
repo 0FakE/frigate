@@ -101,10 +101,12 @@ export default function WebRtcPlayer({ camera, width, height, onFirstFrame }) {
     }
   }
 
-  const connect = useCallback(async (ws, aPc) => {
+  const connect = useCallback(async (ws, aPc, isActive) => {
     const pc = await aPc;
+    if (!isActive()) return;
 
     ws.addEventListener('open', () => {
+      if (!isActive()) return;
       pc.addEventListener('icecandidate', (ev) => {
         if (!ev.candidate) return;
         const msg = { type: 'webrtc/candidate', value: ev.candidate.candidate };
@@ -120,6 +122,7 @@ export default function WebRtcPlayer({ camera, width, height, onFirstFrame }) {
     });
 
     ws.addEventListener('message', (ev) => {
+      if (!isActive()) return;
       const msg = JSON.parse(ev.data);
       if (msg.type === 'webrtc/candidate') {
         pc.addIceCandidate({ candidate: msg.value, sdpMid: '0' });
@@ -130,14 +133,20 @@ export default function WebRtcPlayer({ camera, width, height, onFirstFrame }) {
   }, []);
 
   useEffect(() => {
+    let active = true;
     const url = `${baseUrl.replace(/^http/, 'ws')}live/webrtc/api/ws?src=${camera}`;
     const ws = new WebSocket(url);
     const aPc = PeerConnection('video+audio');
-    connect(ws, aPc);
+    connect(ws, aPc, () => active);
 
-    return async () => {
-      (await aPc).close();
-    }
+    // Effects must clean up synchronously. A delayed WebRTC setup must never
+    // resurrect a connection for a camera that is no longer selected.
+    return () => {
+      active = false;
+      ws.close();
+      aPc.then((pc) => pc.close());
+      if (videoRef.current) videoRef.current.srcObject = null;
+    };
   }, [camera, connect, PeerConnection]);
 
   return (
