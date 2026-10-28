@@ -29,3 +29,7 @@ export function isNewFrigateProcess(previous, current) {
   return Number.isFinite(previous) && Number.isFinite(current) &&
     current > previous + 1;
 }
+
+export function reloadFrigatePage() {
+  window.location.reload();
+}

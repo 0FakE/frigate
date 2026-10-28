@@ -9,7 +9,7 @@ import Prompt from './components/Prompt';
 import { useDarkMode } from './context';
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { useRestart, useWsReady } from './api/ws';
-import { getFrigateStarted, isNewFrigateProcess, RESTART_CHECK_INTERVAL_MS, RESTART_MONITOR_TIMEOUT_MS, RESTART_REQUEST_TIMEOUT_MS } from './util/restartMonitor';
+import { getFrigateStarted, isNewFrigateProcess, RESTART_CHECK_INTERVAL_MS, RESTART_MONITOR_TIMEOUT_MS, RESTART_REQUEST_TIMEOUT_MS, reloadFrigatePage } from './util/restartMonitor';
 import { t } from './locales';
 
 function SettingsAction({ icon: Icon, children, selected, onClick, type = 'action' }) {
@@ -81,7 +81,7 @@ export default function AppBar() {
           setRestartStage('verifying');
           verifiedResponses = wsReadyRef.current ? verifiedResponses + 1 : 0;
           if (verifiedResponses >= 2) {
-            window.location.reload();
+            reloadFrigatePage();
             return;
           }
         } else {
@@ -225,7 +225,7 @@ export default function AppBar() {
           variant="error"
           actions={[
             { text: t('app.modal.restart.retry_check'), onClick: retryMonitoring },
-            { text: t('app.modal.restart.reload_page'), onClick: () => window.location.reload() },
+            { text: t('app.modal.restart.reload_page'), onClick: () => reloadFrigatePage() },
           ]}
         />
       )}
