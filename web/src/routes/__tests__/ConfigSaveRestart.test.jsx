@@ -1,81 +1,63 @@
-import { h } from 'preact';
-import { fireEvent, render, screen, waitFor } from '@testing-library/preact';
-import Config from '../Config';
+import { saveConfigAndMaybeRestart } from '../../util/configSaveRestart';
 
 const mocks = vi.hoisted(() => ({
   post: vi.fn(),
   restart: vi.fn(),
-  mutate: vi.fn(),
-  model: {
-    getValue: vi.fn(() => 'mqtt:\\n  host: test'),
-    setValue: vi.fn(),
-  },
-  widget: {
-    getValue: vi.fn(() => 'mqtt:\\n  host: test'),
-    getModel: vi.fn(),
-    dispose: vi.fn(),
-  },
+  onSaved: vi.fn(),
 }));
 
 vi.mock('axios', () => ({ default: { post: mocks.post } }));
-vi.mock('swr', () => ({
-  default: () => ({ data: 'mqtt:\\n  host: test', mutate: mocks.mutate }),
+vi.mock('../../util/restartMonitor', () => ({
+  requestFrigateRestart: mocks.restart,
 }));
-vi.mock('monaco-yaml', () => ({ setDiagnosticsOptions: vi.fn() }));
-vi.mock('monaco-editor', () => ({
-  editor: {
-    getModel: () => mocks.model,
-    createModel: () => mocks.model,
-    create: () => mocks.widget,
-  },
-  Uri: { parse: (url) => url },
-}));
-vi.mock('../../api', () => ({ useApiHost: () => '/' }));
-vi.mock('../../util/restartMonitor', async () => {
-  const real = await vi.importActual('../../util/restartMonitor');
-  return { ...real, requestFrigateRestart: mocks.restart };
-});
 
-describe('Config editor restart flow', () => {
+describe('Config editor save-and-restart contract', () => {
   beforeEach(() => {
     mocks.post.mockReset();
     mocks.restart.mockReset();
-    mocks.mutate.mockReset();
-    mocks.widget.getModel.mockReturnValue(mocks.model);
+    mocks.onSaved.mockReset();
   });
 
-  test('Save & Restart validates and saves once before opening the shared restart modal', async () => {
+  test('Save & Restart validates and saves once before requesting the monitored restart', async () => {
     let finishSave;
     mocks.post.mockImplementation(() => new Promise((resolve) => { finishSave = resolve; }));
-    render(<Config />);
+    const save = saveConfigAndMaybeRestart('mqtt:\\n  host: test', 'restart', mocks.onSaved);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Save & Restart' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Save & Restart' }));
     expect(mocks.post).toHaveBeenCalledTimes(1);
     expect(mocks.post).toHaveBeenCalledWith(
       'config/save?save_option=saveonly', expect.any(String), expect.any(Object)
     );
     expect(mocks.restart).not.toHaveBeenCalled();
+    expect(mocks.onSaved).not.toHaveBeenCalled();
 
     finishSave({ status: 200, data: { success: true, message: 'Config successfully saved.' } });
-    await waitFor(() => expect(mocks.restart).toHaveBeenCalledTimes(1));
-    expect(mocks.mutate).toHaveBeenCalled();
-    expect(screen.queryByText('Config successfully saved.')).not.toBeInTheDocument();
+    await expect(save).resolves.toBe('');
+    expect(mocks.onSaved).toHaveBeenCalledTimes(1);
+    expect(mocks.restart).toHaveBeenCalledTimes(1);
+    expect(mocks.onSaved.mock.invocationCallOrder[0])
+      .toBeLessThan(mocks.restart.mock.invocationCallOrder[0]);
   });
 
-  test('save failure keeps the error visible and does not send a restart', async () => {
+  test('validation errors do not request restart or update the editor baseline', async () => {
     mocks.post.mockRejectedValue({ response: { data: { message: 'Invalid configuration' } } });
-    render(<Config />);
-    fireEvent.click(screen.getByRole('button', { name: 'Save & Restart' }));
-    await waitFor(() => expect(screen.getByText('Invalid configuration')).toBeInTheDocument());
+    await expect(saveConfigAndMaybeRestart('bad config', 'restart', mocks.onSaved)).rejects.toBeDefined();
     expect(mocks.restart).not.toHaveBeenCalled();
+    expect(mocks.onSaved).not.toHaveBeenCalled();
   });
 
-  test('Save Only keeps the normal success message and never restarts', async () => {
+  test('an unsuccessful response, even with HTTP 200, must not restart', async () => {
+    mocks.post.mockResolvedValue({ status: 200, data: { success: false, message: 'Invalid configuration' } });
+    await expect(saveConfigAndMaybeRestart('bad config', 'restart', mocks.onSaved))
+      .rejects.toThrow('Invalid configuration');
+    expect(mocks.restart).not.toHaveBeenCalled();
+    expect(mocks.onSaved).not.toHaveBeenCalled();
+  });
+
+  test('Save Only preserves its success message without restarting', async () => {
     mocks.post.mockResolvedValue({ status: 200, data: { success: true, message: 'Config successfully saved.' } });
-    render(<Config />);
-    fireEvent.click(screen.getByRole('button', { name: 'Save Only' }));
-    await waitFor(() => expect(screen.getByText('Config successfully saved.')).toBeInTheDocument());
+    await expect(saveConfigAndMaybeRestart('mqtt:\\n  host: test', 'saveonly', mocks.onSaved))
+      .resolves.toBe('Config successfully saved.');
+    expect(mocks.onSaved).toHaveBeenCalledTimes(1);
     expect(mocks.restart).not.toHaveBeenCalled();
   });
 });

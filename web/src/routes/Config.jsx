@@ -1,6 +1,5 @@
 import { h } from 'preact';
 import useSWR from 'swr';
-import axios from 'axios';
 import { useApiHost } from '../api';
 import ActivityIndicator from '../components/ActivityIndicator';
 import Heading from '../components/Heading';
@@ -10,7 +9,7 @@ import { editor, Uri } from 'monaco-editor';
 import { setDiagnosticsOptions } from 'monaco-yaml';
 import copy from 'copy-to-clipboard';
 import { setSyncedConfigContents, syncConfigModel } from '../utils/configModelSync';
-import { requestFrigateRestart } from '../util/restartMonitor';
+import { saveConfigAndMaybeRestart } from '../util/configSaveRestart';
 
 export default function Config() {
   const apiHost = useApiHost();
@@ -32,26 +31,13 @@ export default function Config() {
 
     try {
       const submittedConfig = window.editor.getValue();
-      // The backend must not restart itself: first save and validate, then
-      // let the shared frontend restart monitor issue exactly one restart.
-      const response = await axios.post('config/save?save_option=saveonly', submittedConfig, {
-        headers: { 'Content-Type': 'text/plain' },
+      const message = await saveConfigAndMaybeRestart(submittedConfig, save_option, () => {
+        const model = window.editor?.getModel();
+        if (model) setSyncedConfigContents(model, submittedConfig);
+        updateRawConfig(submittedConfig, false);
       });
-      if (response.status !== 200 || response.data?.success === false) {
-        throw new Error(response.data?.message || 'Config could not be saved.');
-      }
-
-      const model = window.editor?.getModel();
-      if (model) setSyncedConfigContents(model, submittedConfig);
-      updateRawConfig(submittedConfig, false);
       setError('');
-
-      if (save_option === 'restart') {
-        setSuccess('');
-        requestFrigateRestart();
-      } else {
-        setSuccess(response.data?.message || '');
-      }
+      setSuccess(message);
     } catch (error) {
       setSuccess('');
       setError(error.response?.data?.message || error.message);
