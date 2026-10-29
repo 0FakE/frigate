@@ -9,7 +9,7 @@ import Prompt from './components/Prompt';
 import { useDarkMode } from './context';
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { useRestart, useWsReady } from './api/ws';
-import { getFrigateStarted, isNewFrigateProcess, RESTART_CHECK_INTERVAL_MS, RESTART_MONITOR_TIMEOUT_MS, RESTART_REQUEST_TIMEOUT_MS, reloadFrigatePage } from './util/restartMonitor';
+import { getFrigateStarted, isNewFrigateProcess, RESTART_CHECK_INTERVAL_MS, RESTART_MONITOR_TIMEOUT_MS, RESTART_REQUEST_TIMEOUT_MS, FRIGATE_RESTART_REQUEST_EVENT, reloadFrigatePage } from './util/restartMonitor';
 import { t } from './locales';
 
 function SettingsAction({ icon: Icon, children, selected, onClick, type = 'action' }) {
@@ -51,6 +51,7 @@ export default function AppBar() {
   const { send: sendRestart } = useRestart();
   const wsReady = useWsReady();
   const wsReadyRef = useRef(wsReady);
+  const restartInProgress = useRef(false);
   wsReadyRef.current = wsReady;
 
   // Polling only starts after a baseline was captured and the restart was sent.
@@ -134,6 +135,8 @@ export default function AppBar() {
   }, [setShowMoreMenu]);
 
   const handleClickRestartDialog = useCallback(async () => {
+    if (restartInProgress.current) return;
+    restartInProgress.current = true;
     setShowDialog(false);
     setRestartStage('preparing');
     const controller = new AbortController();
@@ -147,11 +150,18 @@ export default function AppBar() {
       setRestartStage('restarting');
       setRestartAttempt((current) => current + 1);
     } catch (error) {
+      restartInProgress.current = false;
       setRestartStage('request_error');
     } finally {
       clearTimeout(timeout);
     }
   }, [sendRestart]);
+
+  // SAVE & RESTART opens the existing progress modal without another prompt.
+  useEffect(() => {
+    window.addEventListener(FRIGATE_RESTART_REQUEST_EVENT, handleClickRestartDialog);
+    return () => window.removeEventListener(FRIGATE_RESTART_REQUEST_EVENT, handleClickRestartDialog);
+  }, [handleClickRestartDialog]);
 
   const retryMonitoring = useCallback(() => {
     setRestartStage('restarting');

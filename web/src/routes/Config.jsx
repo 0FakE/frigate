@@ -4,12 +4,13 @@ import axios from 'axios';
 import { useApiHost } from '../api';
 import ActivityIndicator from '../components/ActivityIndicator';
 import Heading from '../components/Heading';
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import Button from '../components/Button';
 import { editor, Uri } from 'monaco-editor';
 import { setDiagnosticsOptions } from 'monaco-yaml';
 import copy from 'copy-to-clipboard';
 import { setSyncedConfigContents, syncConfigModel } from '../utils/configModelSync';
+import { requestFrigateRestart } from '../util/restartMonitor';
 
 export default function Config() {
   const apiHost = useApiHost();
@@ -17,35 +18,47 @@ export default function Config() {
   const { data: config, mutate: updateRawConfig } = useSWR('config/raw', { revalidateOnMount: true });
   const [success, setSuccess] = useState();
   const [error, setError] = useState();
+  const [saving, setSaving] = useState(false);
+  const saveInFlight = useRef(false);
 
   const onHandleSaveConfig = async (e, save_option) => {
     if (e) {
       e.stopPropagation();
     }
+    // The shared Button uses a div, so prevent duplicate submissions here.
+    if (saveInFlight.current) return;
+    saveInFlight.current = true;
+    setSaving(true);
 
-    const submittedConfig = window.editor.getValue();
-    axios
-      .post(`config/save?save_option=${save_option}`, submittedConfig, {
+    try {
+      const submittedConfig = window.editor.getValue();
+      // The backend must not restart itself: first save and validate, then
+      // let the shared frontend restart monitor issue exactly one restart.
+      const response = await axios.post('config/save?save_option=saveonly', submittedConfig, {
         headers: { 'Content-Type': 'text/plain' },
-      })
-      .then((response) => {
-        if (response.status === 200) {
-          const model = window.editor?.getModel();
-          if (model) setSyncedConfigContents(model, submittedConfig);
-          updateRawConfig(submittedConfig, false);
-          setError('');
-          setSuccess(response.data.message);
-        }
-      })
-      .catch((error) => {
-        setSuccess('');
-
-        if (error.response) {
-          setError(error.response.data.message);
-        } else {
-          setError(error.message);
-        }
       });
+      if (response.status !== 200 || response.data?.success === false) {
+        throw new Error(response.data?.message || 'Config could not be saved.');
+      }
+
+      const model = window.editor?.getModel();
+      if (model) setSyncedConfigContents(model, submittedConfig);
+      updateRawConfig(submittedConfig, false);
+      setError('');
+
+      if (save_option === 'restart') {
+        setSuccess('');
+        requestFrigateRestart();
+      } else {
+        setSuccess(response.data?.message || '');
+      }
+    } catch (error) {
+      setSuccess('');
+      setError(error.response?.data?.message || error.message);
+    } finally {
+      saveInFlight.current = false;
+      setSaving(false);
+    }
   };
 
   const handleCopyConfig = async () => {
@@ -108,10 +121,10 @@ export default function Config() {
           <Button className="mx-2" onClick={(e) => handleCopyConfig(e)}>
             Copy Config
           </Button>
-          <Button className="mx-2" onClick={(e) => onHandleSaveConfig(e, 'restart')}>
+          <Button className="mx-2" disabled={saving} onClick={(e) => onHandleSaveConfig(e, 'restart')}>
             Save & Restart
           </Button>
-          <Button className="mx-2" onClick={(e) => onHandleSaveConfig(e, 'saveonly')}>
+          <Button className="mx-2" disabled={saving} onClick={(e) => onHandleSaveConfig(e, 'saveonly')}>
             Save Only
           </Button>
         </div>

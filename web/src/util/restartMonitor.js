@@ -30,6 +30,14 @@ export function isNewFrigateProcess(previous, current) {
     current > previous + 1;
 }
 
+// The Config editor uses the existing AppBar restart monitor rather than
+// starting a separate backend restart with no frontend progress reporting.
+export const FRIGATE_RESTART_REQUEST_EVENT = 'frigate:request-restart';
+
+export function requestFrigateRestart() {
+  window.dispatchEvent(new Event(FRIGATE_RESTART_REQUEST_EVENT));
+}
+
 export function reloadFrigatePage() {
   window.location.reload();
 }

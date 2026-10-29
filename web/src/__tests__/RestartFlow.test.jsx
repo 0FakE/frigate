@@ -2,6 +2,7 @@ import { h } from 'preact';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/preact';
 import * as Context from '../context';
 import AppBar from '../AppBar';
+import { requestFrigateRestart } from '../util/restartMonitor';
 
 const mocks = vi.hoisted(() => ({
   started: vi.fn(),
@@ -51,6 +52,22 @@ describe('automatic Frigate restart monitor', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: 'Neu starten' }));
     fireEvent.click(screen.getByRole('button', { name: 'Neu starten' }));
   }
+
+  test('saved config opens the progress modal without confirmation or duplicate restart', async () => {
+    mocks.started.mockResolvedValue(1234);
+    render(<Context.DarkModeProvider><Context.DrawerProvider><AppBar /></Context.DrawerProvider></Context.DarkModeProvider>);
+
+    act(() => {
+      requestFrigateRestart();
+      requestFrigateRestart();
+    });
+    expect(screen.getByRole('dialog', { name: 'Frigate wird neu gestartet' }))
+      .toHaveTextContent('Der aktuelle Prozess wird geprüft');
+    expect(screen.queryByRole('button', { name: 'Neu starten' })).not.toBeInTheDocument();
+    await waitFor(() => expect(mocks.send).toHaveBeenCalledTimes(1));
+    expect(mocks.started).toHaveBeenCalledTimes(1);
+    expect(mocks.reload).not.toHaveBeenCalled();
+  });
 
   test('baseline read comes before websocket restart send', async () => {
     mocks.started.mockResolvedValue(1234);
