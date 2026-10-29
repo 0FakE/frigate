@@ -1151,7 +1151,16 @@ class FrigateConfig(FrigateBaseModel):
                 {"name": name, **merged_config}
             )
 
-            if (
+            if not camera_config.enabled:
+                # Disabled cameras must not connect to RTSP merely to discover
+                # their dimensions. Runtime masks and frame shapes still need
+                # numeric values; missing dimensions are internal placeholders
+                # until the camera is enabled and its stream can be probed.
+                if camera_config.detect.width is None:
+                    camera_config.detect.width = DEFAULT_DETECT_DIMENSIONS["width"]
+                if camera_config.detect.height is None:
+                    camera_config.detect.height = DEFAULT_DETECT_DIMENSIONS["height"]
+            elif (
                 camera_config.detect.height is None
                 or camera_config.detect.width is None
             ):

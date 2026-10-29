@@ -10,6 +10,9 @@ on:
       - 'frigate/util/live_polygon_editor.py'
       - 'frigate/util/editor_locale.py'
       - 'frigate/test/test_editor_locale.py'
+      - 'frigate/config.py'
+      - 'frigate/test/test_disabled_camera_resolution.py'
+      - 'docker/live-editor/Dockerfile'
       - 'frigate/http.py'
       - 'frigate/test/test_live_polygon_editor.py'
       - '.github/workflows/live-zone-editor.yml'
@@ -35,7 +38,7 @@ jobs:
       - name: Run polygon YAML tests
         run: python -m unittest frigate.test.test_live_polygon_editor frigate.test.test_editor_locale -v
       - name: Check Python syntax
-        run: python -m py_compile frigate/util/live_polygon_editor.py frigate/util/editor_locale.py frigate/http.py frigate/test/test_live_polygon_editor.py frigate/test/test_editor_locale.py
+        run: python -m py_compile frigate/util/live_polygon_editor.py frigate/util/editor_locale.py frigate/config.py frigate/test/test_disabled_camera_resolution.py frigate/http.py frigate/test/test_live_polygon_editor.py frigate/test/test_editor_locale.py
 
   frontend-build:
     runs-on: ubuntu-latest

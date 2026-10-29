@@ -8,6 +8,9 @@ on:
     paths:
       - 'docker/live-editor/**'
       - 'web/**'
+      - 'frigate/config.py'
+      - 'frigate/test/test_disabled_camera_resolution.py'
+      - 'docker/live-editor/Dockerfile'
       - 'frigate/http.py'
       - 'frigate/util/live_polygon_editor.py'
       - 'frigate/util/editor_locale.py'
