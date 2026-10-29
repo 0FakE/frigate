@@ -62,7 +62,7 @@
           "unsaved": "Nicht gespeicherte Änderungen",
           "saved": "Die Änderungen wurden gespeichert.",
           "restart_required": "Ein Neustart von Frigate ist erforderlich.",
-          "loading_stream": "Kamera Vorschau wird geladen..."
+          "loading_stream": "Vorschau wird geladen..."
         },
         "modal": {
           "error": {
@@ -113,7 +113,7 @@
       "mse_unsupported": "MSE wird von diesem Browser nicht unterstützt. Bitte verwende JSMpeg oder WebRTC.",
       "back_to_cameras": "Zur Kameraübersicht",
       "streaming": "Videowiedergabe",
-      "preview_loading": "Kamera Vorschau wird geladen...",
+      "preview_loading": "Vorschau wird geladen...",
       "preview_error": "Die Kameravorschau konnte nicht geladen werden. Bitte prüfe die Verbindung und lade die Seite neu.",
       "camera_disabled": "Kamera ist deaktiviert"
     },
