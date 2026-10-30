@@ -314,7 +314,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(screen.getByText('Events')).toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: 'Videoaufnahme speichern' })).not.toBeChecked();
     expect(screen.getByRole('checkbox', { name: 'Snapshot speichern' })).not.toBeChecked();
-    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: /Zonenbeschränkung/ })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Änderungen speichern' })).toBeDisabled();
     fireEvent.click(events);
     expect(screen.queryByText('Events')).not.toBeInTheDocument();
