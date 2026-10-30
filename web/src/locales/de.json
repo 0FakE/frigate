@@ -35,7 +35,8 @@
           "zones": "Zonen",
           "covered_areas": "Masken",
           "object_filters": "Objektfilter",
-          "zone_objects": "Erfasste Objekte dieser Zone"
+          "zone_objects": "Erfasste Objekte dieser Zone",
+          "events": "Events"
         },
         "label": {
           "sidebar": "Werkzeuge und Bereiche",
@@ -52,7 +53,12 @@
           "zone_new_name": "Neuer Name der Zone",
           "zone_objects_all": "Alle Objekte erfassen",
           "zone_objects_selected": "Nur ausgewählte Objekte erfassen",
-          "zone_objects_unavailable": "Für diese Kamera sind keine Objektklassen verfügbar."
+          "zone_objects_unavailable": "Für diese Kamera sind keine Objektklassen verfügbar.",
+          "record_event": "Videoaufnahme speichern",
+          "snapshot_event": "Snapshot speichern",
+          "event_zone_mode": "Zonenbeschränkung für {type}",
+          "event_all_zones": "Alle Zonen (keine Einschränkung)",
+          "event_selected_zones": "Nur ausgewählte Zonen"
         },
         "prompt": {
           "zone_name": "Zonenname (Buchstaben, Zahlen, Unterstriche):",
@@ -73,7 +79,9 @@
             "save_failed": "Die Änderungen konnten nicht gespeichert werden. {details}",
             "unknown_details": "Ein unbekannter Fehler ist aufgetreten.",
             "empty_zone_name": "Bitte gib einen Zonennamen ein.",
-            "empty_zone_objects": "Bitte wähle mindestens eine Objekt zur Erfassung aus, oder wähle „Alle Objekte erfassen“."
+            "empty_zone_objects": "Bitte wähle mindestens eine Objekt zur Erfassung aus, oder wähle „Alle Objekte erfassen“.",
+            "last_event_zone": "Bitte wähle mindestens eine Zone aus, oder stelle auf „Alle Zonen (keine Einschränkung)“ um.",
+            "last_event_zone_delete": "Diese Zone ist die letzte ausgewählte Zone für Videoaufnahmen oder Snapshots. Wähle zuerst eine andere Zone aus oder stelle die betreffende Zonenbeschränkung auf „Alle Zonen (keine Einschränkung)“ um."
           },
           "warning": {
             "invalid_zone": "Die Zone „{name}“ kann nicht gespeichert werden. Bitte lege mindestens drei Eckpunkte fest, die nicht auf einer Linie liegen.",

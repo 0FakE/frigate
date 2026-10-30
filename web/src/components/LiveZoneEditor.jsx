@@ -4,7 +4,7 @@ import axios from 'axios';
 import { mutate } from 'swr';
 import { t } from '../locales';
 
-const empty = () => ({ zones: {}, zone_objects: {}, motion_masks: [], object_masks: {} });
+const empty = () => ({ zones: {}, zone_objects: {}, zone_event_zones: { record: [], snapshots: [] }, motion_masks: [], object_masks: {} });
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
 function shapesFrom(data) {
@@ -157,6 +157,10 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
           const selection = response.data.zone_objects?.[name];
           return [name, Array.isArray(selection) && selection.length ? selection : null];
         })),
+        zone_event_zones: {
+          record: [...(response.data.zone_event_zones?.record || [])],
+          snapshots: [...(response.data.zone_event_zones?.snapshots || [])],
+        },
         motion_masks: response.data.motion_masks,
         object_masks: response.data.object_masks,
       };
@@ -318,6 +322,42 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     setStatus('');
   };
 
+  // In Frigate 0.13.x an empty required_zones list means "all zones".
+  // Switching to selected mode picks the currently selected zone first.
+  const changeEventZoneMode = (kind, selectedOnly) => {
+    if (!selected?.startsWith('zone:') || interactionBusy) return;
+    const name = selected.slice(5);
+    setData((current) => ({
+      ...current,
+      zone_event_zones: {
+        ...current.zone_event_zones,
+        [kind]: selectedOnly ? [name] : [],
+      },
+    }));
+    setStatus('');
+  };
+
+  const toggleEventZone = (kind, enabled) => {
+    if (!selected?.startsWith('zone:') || interactionBusy) return;
+    const name = selected.slice(5);
+    const currentZones = data.zone_event_zones[kind];
+    if (!currentZones.length) return; // Unrestricted mode is controlled by the dropdown.
+    if (!enabled && currentZones.length === 1 && currentZones[0] === name) {
+      window.alert(t('cameras.debug.editor.modal.error.last_event_zone'));
+      return;
+    }
+    setData((current) => ({
+      ...current,
+      zone_event_zones: {
+        ...current.zone_event_zones,
+        [kind]: enabled
+          ? [...current.zone_event_zones[kind], name]
+          : current.zone_event_zones[kind].filter((zone) => zone !== name),
+      },
+    }));
+    setStatus('');
+  };
+
   const startZoneRename = () => {
     if (editorLocked) return;
     if (!selected?.startsWith('zone:') || interactionBusy) return;
@@ -354,6 +394,9 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
         )),
         zone_objects: Object.fromEntries(Object.entries(current.zone_objects).map(
           ([name, labels]) => [name === oldName ? newName : name, labels]
+        )),
+        zone_event_zones: Object.fromEntries(Object.entries(current.zone_event_zones).map(
+          ([kind, zones]) => [kind, zones.map((zone) => zone === oldName ? newName : zone)]
         )),
       }));
       // A rename of an existing YAML zone must preserve its entire configuration.
@@ -430,6 +473,14 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     if (editorLocked) return;
     if (!selected) return;
     const [type, key, subkey] = selected.split(':');
+    if (type === 'zone' && ['record', 'snapshots'].some((kind) =>
+      data.zone_event_zones[kind].length === 1 && data.zone_event_zones[kind][0] === key
+    )) {
+      // A final selected zone cannot be deleted silently: Frigate interprets
+      // the resulting empty required_zones list as no restriction at all.
+      window.alert(t('cameras.debug.editor.modal.error.last_event_zone_delete'));
+      return;
+    }
     if (type === 'zone') {
       setZoneRenames((current) => Object.fromEntries(
         Object.entries(current).filter(([_original, name]) => name !== key)
@@ -442,6 +493,11 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
       if (type === 'zone') {
         delete next.zones[key];
         delete next.zone_objects[key];
+        // Remove references safely; deleting the last selected zone is
+        // prevented above, so an empty list cannot accidentally mean "all".
+        for (const kind of ['record', 'snapshots']) {
+          next.zone_event_zones[kind] = next.zone_event_zones[kind].filter((zone) => zone !== key);
+        }
       }
       else if (type === 'motion') next.motion_masks.splice(Number(key), 1);
       else if (type === 'object') {
@@ -706,6 +762,42 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                     </span>
                     <span className="shrink-0 text-xs text-slate-500 dark:text-slate-400">{t('cameras.debug.editor.label.vertex_count', { count: selectedShape.points.length })}</span>
                   </div>
+                  {selectedShape.id.startsWith('zone:') && (
+                    <div className="mt-3 space-y-2 border-t border-slate-300 dark:border-slate-700 pt-3">
+                      <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        {t('cameras.debug.editor.header.events')}
+                      </h4>
+                      {[
+                        { kind: 'record', title: 'cameras.debug.editor.label.record_event' },
+                        { kind: 'snapshots', title: 'cameras.debug.editor.label.snapshot_event' },
+                      ].map(({ kind, title }) => {
+                        const selectedZones = data.zone_event_zones[kind];
+                        const unrestricted = selectedZones.length === 0;
+                        const zoneName = selectedShape.id.slice(5);
+                        return (
+                          <div key={kind} className="space-y-1.5">
+                            <label className="flex items-center gap-2 text-sm text-slate-800 dark:text-slate-200">
+                              <input type="checkbox"
+                                checked={unrestricted || selectedZones.includes(zoneName)}
+                                disabled={interactionBusy || unrestricted}
+                                onChange={(event) => toggleEventZone(kind, event.currentTarget.checked)}
+                                className="rounded border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-900 text-blue-600 focus:ring-blue-400" />
+                              {t(title)}
+                            </label>
+                            <select
+                              aria-label={t('cameras.debug.editor.label.event_zone_mode', { type: t(title) })}
+                              disabled={interactionBusy}
+                              value={unrestricted ? 'all' : 'selected'}
+                              onChange={(event) => changeEventZoneMode(kind, event.currentTarget.value === 'selected')}
+                              className="h-9 w-full min-w-0 rounded-lg border border-slate-300 bg-white px-2 text-xs text-slate-800 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100">
+                              <option value="all">{t('cameras.debug.editor.label.event_all_zones')}</option>
+                              <option value="selected">{t('cameras.debug.editor.label.event_selected_zones')}</option>
+                            </select>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                   {editingZoneObjects && selectedShape.id.startsWith('zone:') && (
                     <form id="zone-objects-editor" onSubmit={applyZoneObjects} className="mt-3 space-y-3 border-t border-slate-300 dark:border-slate-700 pt-3">
                       <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">

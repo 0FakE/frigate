@@ -68,6 +68,18 @@ def _camera(data: Any, camera: str):
     return cameras[camera]
 
 
+def _effective_required_zones(document: dict, camera: dict, kind: str) -> list[str]:
+    # Camera-local lists override global ones. An empty list means no restriction,
+    # NOT "do not save events".
+    if kind == "record":
+        camera_section = (camera.get("record") or {}).get("events") or {}
+        global_section = ((document.get("record") or {}).get("events") or {})
+    else:
+        camera_section = camera.get("snapshots") or {}
+        global_section = document.get("snapshots") or {}
+    return list(camera_section.get("required_zones", global_section.get("required_zones") or []) or [])
+
+
 def read_polygons(raw: str, camera: str) -> dict:
     data = _yaml().load(raw)
     cfg = _camera(data, camera)
@@ -77,6 +89,10 @@ def read_polygons(raw: str, camera: str) -> dict:
         "zone_objects": {
             name: list(zone.get("objects") or []) or None
             for name, zone in (cfg.get("zones") or {}).items()
+        },
+        "zone_event_zones": {
+            "record": _effective_required_zones(data, cfg, "record"),
+            "snapshots": _effective_required_zones(data, cfg, "snapshots"),
         },
         "motion_masks": parse_masks((cfg.get("motion") or {}).get("mask")),
         "object_masks": {
@@ -149,6 +165,19 @@ def update_polygons(raw: str, camera: str, payload: dict, width: int, height: in
                 or len(set(labels)) != len(labels)
             ):
                 raise ValueError("Invalid zone object selection")
+    # Optional so older polygon-only clients keep all event restrictions.
+    zone_event_zones = payload.get("zone_event_zones")
+    if zone_event_zones is not None:
+        if not isinstance(zone_event_zones, dict) or set(zone_event_zones) != {"record", "snapshots"}:
+            raise ValueError("Invalid event-zone settings")
+        for names in zone_event_zones.values():
+            if (
+                not isinstance(names, list)
+                or len(names) > MAX_SHAPES
+                or any(not isinstance(name, str) or not _NAME.fullmatch(name) for name in names)
+                or len(set(names)) != len(names)
+            ):
+                raise ValueError("Invalid required event zones")
     renames = payload.get("zone_renames", {})
     if not isinstance(renames, dict) or any(
         not isinstance(old, str) or not isinstance(new, str)
@@ -188,6 +217,18 @@ def update_polygons(raw: str, camera: str, payload: dict, width: int, height: in
                 if labels and any(label not in allowed for label in labels):
                     raise ValueError("Zone objects must be tracked by this camera")
     zone_cfg = cfg.get("zones")
+    removed_zones = set(zone_cfg or {}) - set(checked_zones) - set(renames)
+    for kind in ("record", "snapshots"):
+        original_required = _effective_required_zones(data, cfg, kind)
+        if (removed_zones & set(original_required)) and not (
+            set(original_required) - removed_zones
+        ):
+            # Without an explicit "none" mode in Frigate 0.13, removing the
+            # last required zone would silently permit every zone.
+            raise ValueError(
+                f"Cannot delete the last required {kind} zone; "
+                "choose another zone or remove the restriction first"
+            )
     if renames:
         if zone_cfg is None:
             raise ValueError("No existing zones to rename")
@@ -223,6 +264,41 @@ def update_polygons(raw: str, camera: str, payload: dict, width: int, height: in
                     update_required_zones(value)
 
         update_required_zones(cfg)
+
+    # Removed zones must not linger in record/snapshot/MQTT/autotracking
+    # required_zones references for this camera.
+    if removed_zones:
+        def remove_deleted_zone_references(node):
+            if isinstance(node, dict):
+                for key, value in node.items():
+                    if key == "required_zones" and isinstance(value, list):
+                        value[:] = [name for name in value if name not in removed_zones]
+                    else:
+                        remove_deleted_zone_references(value)
+            elif isinstance(node, list):
+                for value in node:
+                    remove_deleted_zone_references(value)
+
+        remove_deleted_zone_references(cfg)
+
+    if zone_event_zones is not None:
+        for kind in ("record", "snapshots"):
+            requested = zone_event_zones[kind]
+            # No-op saves do not add redundant empty sections.
+            # Global restrictions are considered when deciding whether a
+            # camera-local override is required.
+            current = _effective_required_zones(data, cfg, kind)
+            if requested == current:
+                continue
+            if kind == "record":
+                target = cfg.setdefault("record", {}).setdefault("events", {})
+            else:
+                target = cfg.setdefault("snapshots", {})
+            existing = target.get("required_zones")
+            if isinstance(existing, list):
+                existing[:] = requested
+            else:
+                target["required_zones"] = requested
 
     if checked_zones or zone_cfg is not None:
         zone_cfg = cfg.setdefault("zones", {})

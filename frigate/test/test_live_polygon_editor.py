@@ -169,6 +169,104 @@ class TestLivePolygonEditor(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "non-zero area"):
             update_polygons(BASE, "driveway", data, 640, 360)
 
+    def test_event_zone_flags_preserve_existing_record_and_snapshot_lists(self):
+        raw = BASE.replace(
+            "    motion:\n",
+            "    record:\n      events:\n        required_zones: [front] # keep video\n"
+            "    snapshots:\n      required_zones: [front] # keep snapshots\n"
+            "    motion:\n",
+        )
+        payload = read_polygons(raw, "driveway")
+        self.assertEqual(payload["zone_event_zones"], {
+            "record": ["front"], "snapshots": ["front"]
+        })
+        payload["zones"]["entry"] = [[200, 20], [270, 20], [270, 90]]
+        payload["zone_objects"]["entry"] = None
+        payload["zone_event_zones"]["snapshots"].append("entry")
+        updated = update_polygons(raw, "driveway", payload, 640, 360)
+        self.assertIn("required_zones: [front] # keep video", updated)
+        self.assertIn("required_zones: [front, entry] # keep snapshots", updated)
+        self.assertEqual(read_polygons(updated, "driveway")["zone_event_zones"], {
+            "record": ["front"], "snapshots": ["front", "entry"]
+        })
+
+    def test_unrestricted_mode_is_an_empty_override_not_no_events(self):
+        raw = BASE.replace(
+            "cameras:\n",
+            "record:\n  events:\n    required_zones: [front]\n"
+            "snapshots:\n  required_zones: [front]\n"
+            "cameras:\n",
+        )
+        payload = read_polygons(raw, "driveway")
+        self.assertEqual(payload["zone_event_zones"]["record"], ["front"])
+        payload["zone_event_zones"] = {"record": [], "snapshots": []}
+        updated = update_polygons(raw, "driveway", payload, 640, 360)
+        self.assertIn("required_zones: []", updated)
+        self.assertEqual(read_polygons(updated, "driveway")["zone_event_zones"], {
+            "record": [], "snapshots": []
+        })
+        self.assertIn("required_zones: [front]", updated)
+
+    def test_rename_and_delete_update_related_zone_references(self):
+        raw = BASE.replace(
+            "    motion:\n",
+            "    record:\n      events:\n        required_zones: [front]\n"
+            "    snapshots:\n      required_zones: [front]\n"
+            "    mqtt:\n      required_zones: [front]\n"
+            "    motion:\n",
+        )
+        rename = read_polygons(raw, "driveway")
+        rename["zones"]["entry"] = rename["zones"].pop("front")
+        rename["zone_objects"]["entry"] = rename["zone_objects"].pop("front")
+        rename["zone_event_zones"] = {"record": ["entry"], "snapshots": ["entry"]}
+        rename["zone_renames"] = {"front": "entry"}
+        updated = update_polygons(raw, "driveway", rename, 640, 360)
+        self.assertEqual(updated.count("required_zones: [entry]"), 3)
+
+        removed = read_polygons(updated, "driveway")
+        removed["zones"] = {}
+        removed["zone_objects"] = {}
+        removed["zone_event_zones"] = {"record": [], "snapshots": []}
+        with self.assertRaisesRegex(ValueError, "last required"):
+            update_polygons(updated, "driveway", removed, 640, 360)
+
+        # First explicitly choose unrestricted mode, then deletion is safe.
+        reset = read_polygons(updated, "driveway")
+        reset["zone_event_zones"] = {"record": [], "snapshots": []}
+        unrestricted = update_polygons(updated, "driveway", reset, 640, 360)
+        removed = read_polygons(unrestricted, "driveway")
+        removed["zones"] = {}
+        removed["zone_objects"] = {}
+        deleted = update_polygons(unrestricted, "driveway", removed, 640, 360)
+        self.assertNotIn("required_zones: [entry]", deleted)
+        self.assertEqual(read_polygons(deleted, "driveway")["zone_event_zones"], {
+            "record": [], "snapshots": []
+        })
+
+    def test_legacy_payload_keeps_record_and_snapshot_restrictions(self):
+        raw = BASE.replace(
+            "    motion:\n",
+            "    record:\n      events:\n        required_zones: [front]\n"
+            "    snapshots:\n      required_zones: [front]\n"
+            "    motion:\n",
+        )
+        payload = read_polygons(raw, "driveway")
+        del payload["zone_event_zones"]
+        self.assertIn("required_zones: [front]",
+            update_polygons(raw, "driveway", payload, 640, 360))
+
+    def test_reject_invalid_event_zone_payload(self):
+        for invalid in (
+            {"record": ["front"]},
+            {"record": ["front", "front"], "snapshots": []},
+            {"record": "front", "snapshots": []},
+            {"record": [], "snapshots": [1]},
+        ):
+            payload = read_polygons(BASE, "driveway")
+            payload["zone_event_zones"] = invalid
+            with self.assertRaisesRegex(ValueError, "event.zone|event zones"):
+                update_polygons(BASE, "driveway", payload, 640, 360)
+
     def test_no_extra_empty_sections(self):
         minimal = """cameras:
   driveway:

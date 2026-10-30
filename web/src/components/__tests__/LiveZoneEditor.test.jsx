@@ -295,6 +295,93 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(screen.getByRole('button', { name: 'Änderungen speichern' })).toBeDisabled();
   });
 
+  test('Events shows exactly the requested video and snapshot captions for selected zones only', async () => {
+    await openEditor();
+    expect(screen.queryByText('Events')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
+    expect(screen.getByText('Events')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Videoaufnahme speichern' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Snapshot speichern' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Videoaufnahme speichern' })).toBeDisabled();
+    expect(screen.getByRole('combobox', { name: 'Zonenbeschränkung für Videoaufnahme speichern' }))
+      .toHaveValue('all');
+  });
+
+  test('recording and snapshots can select different zones without changing other editor settings', async () => {
+    const { onDirtyChange } = await openEditor();
+    fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Zonenbeschränkung für Videoaufnahme speichern' }),
+      { target: { value: 'selected' } });
+    expect(screen.getByRole('checkbox', { name: 'Videoaufnahme speichern' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Snapshot speichern' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'area_b' }));
+    expect(screen.getByRole('checkbox', { name: 'Videoaufnahme speichern' })).not.toBeChecked();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Videoaufnahme speichern' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Zonenbeschränkung für Snapshot speichern' }),
+      { target: { value: 'selected' } });
+    expect(screen.getByRole('checkbox', { name: 'Snapshot speichern' })).toBeChecked();
+    await waitFor(() => expect(onDirtyChange).toHaveBeenCalledWith(true));
+    fireEvent.click(screen.getByRole('button', { name: 'Änderungen speichern' }));
+    await waitFor(() => expect(axios.put).toHaveBeenCalledTimes(1));
+    expect(axios.put.mock.calls[0][1].zone_event_zones).toEqual({
+      record: ['area_a', 'area_b'],
+      snapshots: ['area_b'],
+    });
+  });
+
+  test('Events never maps deselecting the last required zone to unrestricted mode', async () => {
+    axios.get.mockResolvedValue({ data: {
+      ...cameraData(),
+      zone_event_zones: { record: ['area_a'], snapshots: ['area_a', 'area_b'] },
+    } });
+    await openEditor();
+    fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Videoaufnahme speichern' }));
+    expect(window.alert).toHaveBeenCalledWith(
+      'Bitte wähle mindestens eine Zone aus, oder stelle auf „Alle Zonen (keine Einschränkung)“ um.'
+    );
+    expect(screen.getByRole('checkbox', { name: 'Videoaufnahme speichern' })).toBeChecked();
+    expect(screen.getByRole('button', { name: 'Änderungen speichern' })).toBeDisabled();
+  });
+
+  test('deleting the last event zone requires an explicit unrestricted choice', async () => {
+    axios.get.mockResolvedValue({ data: {
+      ...cameraData(),
+      zone_event_zones: { record: ['area_a'], snapshots: ['area_a', 'area_b'] },
+    } });
+    await openEditor();
+    fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Bereich löschen' }));
+    expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('letzte ausgewählte Zone'));
+    expect(screen.getByRole('button', { name: 'area_a' })).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Zonenbeschränkung für Videoaufnahme speichern' }),
+      { target: { value: 'all' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Bereich löschen' }));
+    expect(screen.queryByRole('button', { name: 'area_a' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Änderungen speichern' }));
+    await waitFor(() => expect(axios.put).toHaveBeenCalledTimes(1));
+    expect(axios.put.mock.calls[0][1].zone_event_zones)
+      .toEqual({ record: [], snapshots: ['area_b'] });
+  });
+
+  test('Events keeps references on rename and drops them on deletion', async () => {
+    axios.get.mockResolvedValue({ data: {
+      ...cameraData(),
+      zone_event_zones: { record: ['area_a'], snapshots: ['area_a', 'area_b'] },
+    } });
+    await openEditor();
+    fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Zone umbenennen' }));
+    fireEvent.input(screen.getByRole('textbox', { name: 'Neuer Name der Zone' }),
+      { target: { value: 'entry_new' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Übernehmen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Änderungen speichern' }));
+    await waitFor(() => expect(axios.put).toHaveBeenCalledTimes(1));
+    expect(axios.put.mock.calls[0][1].zone_event_zones).toEqual({
+      record: ['entry_new'], snapshots: ['entry_new', 'area_b'],
+    });
+  });
+
   test('renames a zone inline with validation, tooltip and correct save mapping', async () => {
     const { onDirtyChange } = await openEditor();
     expect(screen.queryByRole('button', { name: 'Zone umbenennen' })).not.toBeInTheDocument();
