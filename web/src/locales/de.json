@@ -26,7 +26,8 @@
           "rename_zone": "Zone umbenennen",
           "rename_apply": "Übernehmen",
           "rename_cancel": "Abbrechen",
-          "edit_zone_objects": "Erfasste Objekte bearbeiten"
+          "edit_zone_objects": "Erfasste Objekte bearbeiten",
+          "edit_zone_events": "Events bearbeiten"
         },
         "header": {
           "new_area": "Neuen Bereich erstellen",
@@ -55,10 +56,7 @@
           "zone_objects_selected": "Nur ausgewählte Objekte erfassen",
           "zone_objects_unavailable": "Für diese Kamera sind keine Objektklassen verfügbar.",
           "record_event": "Videoaufnahme speichern",
-          "snapshot_event": "Snapshot speichern",
-          "event_zone_mode": "Zonenbeschränkung für {type}",
-          "event_all_zones": "Alle Zonen (keine Einschränkung)",
-          "event_selected_zones": "Nur ausgewählte Zonen"
+          "snapshot_event": "Snapshot speichern"
         },
         "prompt": {
           "zone_name": "Zonenname (Buchstaben, Zahlen, Unterstriche):",
@@ -80,8 +78,7 @@
             "unknown_details": "Ein unbekannter Fehler ist aufgetreten.",
             "empty_zone_name": "Bitte gib einen Zonennamen ein.",
             "empty_zone_objects": "Bitte wähle mindestens eine Objekt zur Erfassung aus, oder wähle „Alle Objekte erfassen“.",
-            "last_event_zone": "Bitte wähle mindestens eine Zone aus, oder stelle auf „Alle Zonen (keine Einschränkung)“ um.",
-            "last_event_zone_delete": "Diese Zone ist die letzte ausgewählte Zone für Videoaufnahmen oder Snapshots. Wähle zuerst eine andere Zone aus oder stelle die betreffende Zonenbeschränkung auf „Alle Zonen (keine Einschränkung)“ um."
+            "last_event_zone_delete": "Diese Zone ist die letzte ausgewählte Zone für Videoaufnahmen oder Snapshots. Entferne zunächst ihre Zuordnung in „Events“, bevor du sie löschst. Ohne erforderliche Zonen speichert Frigate unabhängig von der Zone."
           },
           "warning": {
             "invalid_zone": "Die Zone „{name}“ kann nicht gespeichert werden. Bitte lege mindestens drei Eckpunkte fest, die nicht auf einer Linie liegen.",

@@ -239,6 +239,22 @@ class TestLivePolygonEditor(unittest.TestCase):
             "record": [], "snapshots": []
         })
 
+    def test_unchecking_last_assigned_zone_empties_only_the_selected_list(self):
+        raw = BASE.replace(
+            "    motion:\n",
+            "    record:\n      events:\n        required_zones: [front]\n"
+            "    snapshots:\n      required_zones: [front]\n"
+            "    motion:\n",
+        )
+        payload = read_polygons(raw, "driveway")
+        payload["zone_event_zones"]["record"] = []
+        updated = update_polygons(raw, "driveway", payload, 640, 360)
+        self.assertEqual(read_polygons(updated, "driveway")["zone_event_zones"], {
+            "record": [], "snapshots": ["front"]
+        })
+        self.assertIn("required_zones: []", updated)
+        self.assertIn("required_zones: [front]", updated)
+
     def test_legacy_payload_keeps_record_and_snapshot_restrictions(self):
         raw = BASE.replace(
             "    motion:\n",
