@@ -780,7 +780,14 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                               <input type="checkbox"
                                 checked={unrestricted || selectedZones.includes(zoneName)}
                                 disabled={interactionBusy || unrestricted}
-                                onChange={(event) => toggleEventZone(kind, event.currentTarget.checked)}
+                                onChange={(event) => {
+                                  const input = event.currentTarget;
+                                  if (input.checked && selectedZones.includes(zoneName)) return;
+                                  if (!input.checked && selectedZones.length === 1 && selectedZones[0] === zoneName) {
+                                    input.checked = true;
+                                  }
+                                  toggleEventZone(kind, input.checked && !selectedZones.includes(zoneName));
+                                }}
                                 className="rounded border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-900 text-blue-600 focus:ring-blue-400" />
                               {t(title)}
                             </label>

@@ -227,17 +227,13 @@ class TestLivePolygonEditor(unittest.TestCase):
         removed["zones"] = {}
         removed["zone_objects"] = {}
         removed["zone_event_zones"] = {"record": [], "snapshots": []}
+        legacy = dict(removed)
+        del legacy["zone_event_zones"]
         with self.assertRaisesRegex(ValueError, "last required"):
-            update_polygons(updated, "driveway", removed, 640, 360)
+            update_polygons(updated, "driveway", legacy, 640, 360)
 
-        # First explicitly choose unrestricted mode, then deletion is safe.
-        reset = read_polygons(updated, "driveway")
-        reset["zone_event_zones"] = {"record": [], "snapshots": []}
-        unrestricted = update_polygons(updated, "driveway", reset, 640, 360)
-        removed = read_polygons(unrestricted, "driveway")
-        removed["zones"] = {}
-        removed["zone_objects"] = {}
-        deleted = update_polygons(unrestricted, "driveway", removed, 640, 360)
+        # An explicit all-zones choice before deleting is permitted.
+        deleted = update_polygons(updated, "driveway", removed, 640, 360)
         self.assertNotIn("required_zones: [entry]", deleted)
         self.assertEqual(read_polygons(deleted, "driveway")["zone_event_zones"], {
             "record": [], "snapshots": []

@@ -223,12 +223,17 @@ def update_polygons(raw: str, camera: str, payload: dict, width: int, height: in
         if (removed_zones & set(original_required)) and not (
             set(original_required) - removed_zones
         ):
-            # Without an explicit "none" mode in Frigate 0.13, removing the
-            # last required zone would silently permit every zone.
-            raise ValueError(
-                f"Cannot delete the last required {kind} zone; "
-                "choose another zone or remove the restriction first"
+            # Older clients cannot explicitly switch to unrestricted mode.
+            # New clients deliberately submit an empty list to do so; the
+            # editor prevents it from occurring as an accidental side effect.
+            explicit_unrestricted = (
+                zone_event_zones is not None and zone_event_zones[kind] == []
             )
+            if not explicit_unrestricted:
+                raise ValueError(
+                    f"Cannot delete the last required {kind} zone; "
+                    "choose another zone or remove the restriction first"
+                )
     if renames:
         if zone_cfg is None:
             raise ValueError("No existing zones to rename")
