@@ -22,6 +22,19 @@ describe('NavigationDrawer', () => {
     expect(screen.queryByTestId('drawer').classList.contains('translate-x-0')).toBe(true);
   });
 
+  test('the mobile drawer and scrim appear above the camera preview overlay', () => {
+    render(<NavigationDrawer><div>Camera links</div></NavigationDrawer>);
+    const drawer = screen.getByTestId('drawer');
+    const scrim = screen.getByTestId('scrim');
+    // The shared camera loading / disabled overlay uses z-30.
+    expect(drawer).toHaveClass('z-40', 'lg:z-0');
+    expect(scrim).toHaveClass('z-40');
+    expect(drawer).not.toHaveClass('z-20');
+    expect(scrim).not.toHaveClass('z-20');
+    // Keep the drawer after the scrim in DOM order for equal-level stacking.
+    expect(scrim.compareDocumentPosition(drawer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   test('is dismissed when the scrim is clicked', async () => {
     useDrawer
       .mockReturnValueOnce({ showDrawer: true, setShowDrawer })
@@ -35,6 +48,7 @@ describe('NavigationDrawer', () => {
     useDrawer.mockReturnValue({ showDrawer: false, setShowDrawer });
     render(<NavigationDrawer />);
     expect(screen.queryByTestId('scrim')).not.toBeInTheDocument();
+    expect(screen.getByTestId('drawer')).toHaveClass('z-40', 'lg:z-0');
     expect(screen.queryByTestId('drawer').classList.contains('-translate-x-full')).toBe(true);
     expect(screen.queryByTestId('drawer').classList.contains('translate-x-0')).toBe(false);
   });
