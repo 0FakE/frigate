@@ -27,7 +27,7 @@
           "rename_apply": "Übernehmen",
           "rename_cancel": "Abbrechen",
           "edit_zone_objects": "Erfasste Objekte bearbeiten",
-          "edit_zone_events": "Events bearbeiten"
+          "edit_zone_events": "Events bei Bewegung bearbeiten"
         },
         "header": {
           "new_area": "Neuen Bereich erstellen",
@@ -37,7 +37,7 @@
           "covered_areas": "Masken",
           "object_filters": "Objektfilter",
           "zone_objects": "Erfasste Objekte dieser Zone",
-          "events": "Events"
+          "events": "Events bei Bewegungserkennung"
         },
         "label": {
           "sidebar": "Werkzeuge und Bereiche",
@@ -78,7 +78,7 @@
             "unknown_details": "Ein unbekannter Fehler ist aufgetreten.",
             "empty_zone_name": "Bitte gib einen Zonennamen ein.",
             "empty_zone_objects": "Bitte wähle mindestens eine Objekt zur Erfassung aus, oder wähle „Alle Objekte erfassen“.",
-            "last_event_zone_delete": "Diese Zone ist die letzte ausgewählte Zone für Videoaufnahmen oder Snapshots. Entferne zunächst ihre Zuordnung in „Events“, bevor du sie löschst. Ohne erforderliche Zonen speichert Frigate unabhängig von der Zone."
+            "last_event_zone_delete": "Diese Zone ist die letzte ausgewählte Zone für Videoaufnahmen oder Snapshots. Entferne zunächst ihre Zuordnung in „Events bei Bewegungserkennung“, bevor du sie löschst. Ohne erforderliche Zonen speichert Frigate unabhängig von der Zone."
           },
           "warning": {
             "invalid_zone": "Die Zone „{name}“ kann nicht gespeichert werden. Bitte lege mindestens drei Eckpunkte fest, die nicht auf einer Linie liegen.",

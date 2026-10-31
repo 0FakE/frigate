@@ -295,46 +295,54 @@ describe('LiveZoneEditor vertex interactions', () => {
     expect(screen.getByRole('button', { name: 'Änderungen speichern' })).toBeDisabled();
   });
 
-  test('Events is hidden by default and opens from the third inline icon', async () => {
+  test('Events opens on demand with matching spacing and matching action buttons', async () => {
     await openEditor();
-    expect(screen.queryByText('Events')).not.toBeInTheDocument();
+    expect(screen.queryByText('Events bei Bewegungserkennung')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
     const rename = screen.getByRole('button', { name: 'Zone umbenennen' });
     const objects = screen.getByRole('button', { name: 'Erfasste Objekte bearbeiten' });
-    const events = screen.getByRole('button', { name: 'Events bearbeiten' });
-    expect(events).toHaveAttribute('title', 'Events bearbeiten');
+    const events = screen.getByRole('button', { name: 'Events bei Bewegung bearbeiten' });
+    expect(events).toHaveAttribute('title', 'Events bei Bewegung bearbeiten');
+    expect(events).toHaveAttribute('aria-label', 'Events bei Bewegung bearbeiten');
     expect(events).toHaveAttribute('aria-expanded', 'false');
     expect(events).toHaveClass('ml-2', 'h-5', 'w-5', 'text-slate-800', 'dark:text-white');
     expect(events.parentElement).toBe(rename.parentElement);
     expect(events.parentElement).toBe(objects.parentElement);
     expect(events.querySelector('svg')).toHaveClass('h-5', 'w-5');
-    expect(screen.queryByText('Events')).not.toBeInTheDocument();
+
     fireEvent.click(events);
     expect(events).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByText('Events')).toBeInTheDocument();
+    const panel = document.getElementById('zone-events-editor');
+    expect(panel).toHaveClass('mt-3', 'space-y-3', 'border-t', 'pt-3');
+    expect(screen.getByText('Events bei Bewegungserkennung')).toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: 'Videoaufnahme speichern' })).not.toBeChecked();
     expect(screen.getByRole('checkbox', { name: 'Snapshot speichern' })).not.toBeChecked();
-    expect(screen.queryByRole('combobox', { name: /Zonenbeschränkung/ })).not.toBeInTheDocument();
+    expect(panel.querySelectorAll('select')).toHaveLength(0);
+    expect(panel.querySelector('button[type="button"]')).toHaveTextContent('Abbrechen');
+    expect(panel.querySelector('button[type="submit"]')).toHaveTextContent('Übernehmen');
+    expect(panel.querySelector('button[type="button"]')).toHaveClass('min-h-10', 'gap-2');
+    expect(panel.querySelector('button[type="submit"]')).toHaveClass('min-h-10', 'gap-2');
     expect(screen.getByRole('button', { name: 'Änderungen speichern' })).toBeDisabled();
     fireEvent.click(events);
-    expect(screen.queryByText('Events')).not.toBeInTheDocument();
+    expect(screen.queryByText('Events bei Bewegungserkennung')).not.toBeInTheDocument();
     expect(events).toHaveAttribute('aria-expanded', 'false');
   });
 
-  test('checkboxes add only the selected zone to the respective YAML lists', async () => {
+  test('Events checkbox changes are pending until Übernehmen and update independent zone lists', async () => {
     const { onDirtyChange } = await openEditor();
     fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Events bearbeiten' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Events bei Bewegung bearbeiten' }));
     fireEvent.click(screen.getByRole('checkbox', { name: 'Videoaufnahme speichern' }));
     expect(screen.getByRole('checkbox', { name: 'Videoaufnahme speichern' })).toBeChecked();
-    expect(screen.getByRole('checkbox', { name: 'Snapshot speichern' })).not.toBeChecked();
+    expect(screen.getByRole('button', { name: 'Änderungen speichern' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Übernehmen' }));
+    expect(screen.queryByText('Events bei Bewegungserkennung')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'area_b' }));
-    expect(screen.queryByText('Events')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Events bearbeiten' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Events bei Bewegung bearbeiten' }));
     expect(screen.getByRole('checkbox', { name: 'Videoaufnahme speichern' })).not.toBeChecked();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Snapshot speichern' }));
-    expect(screen.getByRole('checkbox', { name: 'Snapshot speichern' })).toBeChecked();
+    fireEvent.click(screen.getByRole('button', { name: 'Übernehmen' }));
     await waitFor(() => expect(onDirtyChange).toHaveBeenCalledWith(true));
     fireEvent.click(screen.getByRole('button', { name: 'Änderungen speichern' }));
     await waitFor(() => expect(axios.put).toHaveBeenCalledTimes(1));
@@ -343,19 +351,59 @@ describe('LiveZoneEditor vertex interactions', () => {
     });
   });
 
-  test('unchecking the last assigned zone removes it without a dropdown or an extra confirm', async () => {
+  test('Abbrechen discards changes without altering saved or pending zone configuration', async () => {
+    axios.get.mockResolvedValue({ data: {
+      ...cameraData(),
+      zone_event_zones: { record: ['area_a'], snapshots: ['area_b'] },
+    } });
+    await openEditor();
+    fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Events bei Bewegung bearbeiten' }));
+    expect(screen.getByRole('checkbox', { name: 'Videoaufnahme speichern' })).toBeChecked();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Videoaufnahme speichern' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Snapshot speichern' }));
+    expect(screen.getByRole('button', { name: 'Änderungen speichern' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Abbrechen' }));
+    expect(screen.queryByText('Events bei Bewegungserkennung')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Events bei Bewegung bearbeiten' }));
+    expect(screen.getByRole('checkbox', { name: 'Videoaufnahme speichern' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Snapshot speichern' })).not.toBeChecked();
+    expect(screen.getByRole('button', { name: 'Änderungen speichern' })).toBeDisabled();
+    expect(axios.put).not.toHaveBeenCalled();
+  });
+
+  test('closing Events with its icon or switching zones drops unconfirmed changes', async () => {
+    await openEditor();
+    fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Events bei Bewegung bearbeiten' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Videoaufnahme speichern' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Events bei Bewegung bearbeiten' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Events bei Bewegung bearbeiten' }));
+    expect(screen.getByRole('checkbox', { name: 'Videoaufnahme speichern' })).not.toBeChecked();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Snapshot speichern' }));
+    fireEvent.click(screen.getByRole('button', { name: 'area_b' }));
+    expect(screen.queryByText('Events bei Bewegungserkennung')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Events bei Bewegung bearbeiten' }));
+    expect(screen.getByRole('checkbox', { name: 'Snapshot speichern' })).not.toBeChecked();
+    expect(screen.getByRole('button', { name: 'Änderungen speichern' })).toBeDisabled();
+  });
+
+  test('unchecking the last assigned zone is applied only by Übernehmen', async () => {
     axios.get.mockResolvedValue({ data: {
       ...cameraData(),
       zone_event_zones: { record: ['area_a'], snapshots: ['area_a', 'area_b'] },
     } });
     await openEditor();
     fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Events bearbeiten' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Events bei Bewegung bearbeiten' }));
     expect(screen.getByRole('checkbox', { name: 'Videoaufnahme speichern' })).toBeChecked();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Videoaufnahme speichern' }));
     expect(screen.getByRole('checkbox', { name: 'Videoaufnahme speichern' })).not.toBeChecked();
     expect(screen.getByRole('checkbox', { name: 'Snapshot speichern' })).toBeChecked();
     expect(window.alert).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Änderungen speichern' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Übernehmen' }));
     fireEvent.click(screen.getByRole('button', { name: 'Änderungen speichern' }));
     await waitFor(() => expect(axios.put).toHaveBeenCalledTimes(1));
     expect(axios.put.mock.calls[0][1].zone_event_zones).toEqual({
@@ -363,7 +411,7 @@ describe('LiveZoneEditor vertex interactions', () => {
     });
   });
 
-  test('deleting the last event zone requires first removing its association', async () => {
+  test('deleting the last event zone requires a committed change to its membership', async () => {
     axios.get.mockResolvedValue({ data: {
       ...cameraData(),
       zone_event_zones: { record: ['area_a'], snapshots: ['area_a', 'area_b'] },
@@ -371,28 +419,31 @@ describe('LiveZoneEditor vertex interactions', () => {
     await openEditor();
     fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
     fireEvent.click(screen.getByRole('button', { name: 'Bereich löschen' }));
-    expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('Events'));
-    expect(screen.getByRole('button', { name: 'area_a' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Events bearbeiten' }));
+    expect(window.alert).toHaveBeenCalledWith(expect.stringContaining('Events bei Bewegungserkennung'));
+    fireEvent.click(screen.getByRole('button', { name: 'Events bei Bewegung bearbeiten' }));
     fireEvent.click(screen.getByRole('checkbox', { name: 'Videoaufnahme speichern' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Bereich löschen' }));
+    expect(screen.getByRole('button', { name: 'area_a' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Übernehmen' }));
     fireEvent.click(screen.getByRole('button', { name: 'Bereich löschen' }));
     expect(screen.queryByRole('button', { name: 'area_a' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Änderungen speichern' }));
     await waitFor(() => expect(axios.put).toHaveBeenCalledTimes(1));
-    expect(axios.put.mock.calls[0][1].zone_event_zones)
-      .toEqual({ record: [], snapshots: ['area_b'] });
+    expect(axios.put.mock.calls[0][1].zone_event_zones).toEqual({
+      record: [], snapshots: ['area_b'],
+    });
   });
 
-  test('opening another zone settings panel closes Events', async () => {
+  test('object settings and Events panels cannot be open simultaneously', async () => {
     await openEditor({ trackedObjects: ['Person'] });
     fireEvent.click(screen.getByRole('button', { name: 'area_a' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Events bearbeiten' }));
-    expect(screen.getByText('Events')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Events bei Bewegung bearbeiten' }));
+    expect(screen.getByText('Events bei Bewegungserkennung')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Erfasste Objekte bearbeiten' }));
-    expect(screen.queryByText('Events')).not.toBeInTheDocument();
+    expect(screen.queryByText('Events bei Bewegungserkennung')).not.toBeInTheDocument();
     expect(screen.getByText('Erfasste Objekte dieser Zone')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Events bearbeiten' }));
-    expect(screen.getByText('Events')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Events bei Bewegung bearbeiten' }));
+    expect(screen.getByText('Events bei Bewegungserkennung')).toBeInTheDocument();
     expect(screen.queryByText('Erfasste Objekte dieser Zone')).not.toBeInTheDocument();
   });
 

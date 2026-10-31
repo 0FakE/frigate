@@ -139,6 +139,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
   const [renameError, setRenameError] = useState('');
   const [editingZoneObjects, setEditingZoneObjects] = useState(false);
   const [editingZoneEvents, setEditingZoneEvents] = useState(false);
+  const [zoneEventsDraft, setZoneEventsDraft] = useState(null);
   const [zoneObjectsDraft, setZoneObjectsDraft] = useState(null);
   const [hovered, setHovered] = useState(null);
   const [hoverLabelWidth, setHoverLabelWidth] = useState(0);
@@ -175,6 +176,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
       setRenameError('');
       setEditingZoneObjects(false);
       setEditingZoneEvents(false);
+      setZoneEventsDraft(null);
       setZoneObjectsDraft(null);
       setHovered(null);
       setStatus('');
@@ -194,6 +196,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     // A selected polygon change closes Events even when it originates from
     // canvas interactions, not from the list of existing areas.
     setEditingZoneEvents(false);
+    setZoneEventsDraft(null);
   }, [selected]);
 
   useEffect(() => {
@@ -301,22 +304,52 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     setZoneObjectsDraft(null);
   };
 
+  const cancelZoneEventsEdit = () => {
+    setEditingZoneEvents(false);
+    setZoneEventsDraft(null);
+  };
+
   const toggleZoneEventsPanel = () => {
     if (!selected?.startsWith('zone:') || interactionBusy) return;
     if (editingZoneEvents) {
-      setEditingZoneEvents(false);
+      cancelZoneEventsEdit();
     } else {
       cancelZoneRename();
       cancelZoneObjectEdit();
+      const name = selected.slice(5);
+      setZoneEventsDraft({
+        record: data.zone_event_zones.record.includes(name),
+        snapshots: data.zone_event_zones.snapshots.includes(name),
+      });
       setEditingZoneEvents(true);
     }
+  };
+
+  const applyZoneEvents = (event) => {
+    event.preventDefault();
+    if (!selected?.startsWith('zone:') || interactionBusy || !zoneEventsDraft) return;
+    const name = selected.slice(5);
+    setData((current) => ({
+      ...current,
+      zone_event_zones: Object.fromEntries(
+        ['record', 'snapshots'].map((kind) => {
+          const zones = current.zone_event_zones[kind];
+          const next = zoneEventsDraft[kind]
+            ? (zones.includes(name) ? zones : [...zones, name])
+            : zones.filter((zone) => zone !== name);
+          return [kind, next];
+        })
+      ),
+    }));
+    cancelZoneEventsEdit();
+    setStatus('');
   };
 
   const startZoneObjectEdit = () => {
     if (editorLocked) return;
     if (!selected?.startsWith('zone:') || interactionBusy) return;
     cancelZoneRename();
-    setEditingZoneEvents(false);
+    cancelZoneEventsEdit();
     const current = data.zone_objects[selected.slice(5)];
     setZoneObjectsDraft(current ? [...current] : null);
     setEditingZoneObjects(true);
@@ -342,29 +375,11 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
     setStatus('');
   };
 
-  // A checkbox only manages membership in this camera's required_zones.
-  // Frigate 0.13 interprets an empty list as no zone restriction.
-  const toggleEventZone = (kind, enabled) => {
-    if (!selected?.startsWith('zone:') || interactionBusy) return;
-    const name = selected.slice(5);
-    setData((current) => {
-      const zones = current.zone_event_zones[kind];
-      const updated = enabled
-        ? (zones.includes(name) ? zones : [...zones, name])
-        : zones.filter((zone) => zone !== name);
-      return {
-        ...current,
-        zone_event_zones: { ...current.zone_event_zones, [kind]: updated },
-      };
-    });
-    setStatus('');
-  };
-
   const startZoneRename = () => {
     if (editorLocked) return;
     if (!selected?.startsWith('zone:') || interactionBusy) return;
     cancelZoneObjectEdit();
-    setEditingZoneEvents(false);
+    cancelZoneEventsEdit();
     setRenameDraft(selected.slice(5));
     setRenameError('');
     setRenamingZone(true);
@@ -537,6 +552,7 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
       setZoneRenames({});
       cancelZoneRename();
       cancelZoneObjectEdit();
+      cancelZoneEventsEdit();
       setSelected(null);
       setHovered(null);
       setStatus('saved');
@@ -780,8 +796,8 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                     </span>
                     <span className="shrink-0 text-xs text-slate-500 dark:text-slate-400">{t('cameras.debug.editor.label.vertex_count', { count: selectedShape.points.length })}</span>
                   </div>
-                  {editingZoneEvents && selectedShape.id.startsWith('zone:') && (
-                    <div id="zone-events-editor" className="mt-3 space-y-2 border-t border-slate-300 dark:border-slate-700 pt-3">
+                  {editingZoneEvents && selectedShape.id.startsWith('zone:') && zoneEventsDraft && (
+                    <form id="zone-events-editor" onSubmit={applyZoneEvents} className="mt-3 space-y-3 border-t border-slate-300 dark:border-slate-700 pt-3">
                       <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                         {t('cameras.debug.editor.header.events')}
                       </h4>
@@ -791,14 +807,25 @@ export default function LiveZoneEditor({ camera, width, height, displayWidth, tr
                       ].map(({ kind, title }) => (
                         <label key={kind} className="flex cursor-pointer items-center gap-2 text-sm text-slate-800 dark:text-slate-200">
                           <input type="checkbox"
-                            checked={data.zone_event_zones[kind].includes(selectedShape.id.slice(5))}
+                            checked={zoneEventsDraft[kind]}
                             disabled={interactionBusy}
-                            onChange={(event) => toggleEventZone(kind, event.currentTarget.checked)}
+                            onChange={(event) => {
+                              const checked = event.currentTarget.checked;
+                              setZoneEventsDraft((current) => ({ ...current, [kind]: checked }));
+                            }}
                             className="rounded border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-900 text-blue-600 focus:ring-blue-400" />
                           {t(title)}
                         </label>
                       ))}
-                    </div>
+                      <div className="flex justify-end gap-2">
+                        <button type="button" className={secondaryButtonClass} onClick={cancelZoneEventsEdit} disabled={interactionBusy}>
+                          {t('cameras.debug.editor.button.rename_cancel')}
+                        </button>
+                        <button type="submit" disabled={interactionBusy} className={toolButtonClass + ' border-blue-500 bg-blue-600 text-white hover:bg-blue-500'}>
+                          {t('cameras.debug.editor.button.rename_apply')}
+                        </button>
+                      </div>
+                    </form>
                   )}
                   {editingZoneObjects && selectedShape.id.startsWith('zone:') && (
                     <form id="zone-objects-editor" onSubmit={applyZoneObjects} className="mt-3 space-y-3 border-t border-slate-300 dark:border-slate-700 pt-3">
